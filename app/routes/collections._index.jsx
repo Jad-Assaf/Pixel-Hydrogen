@@ -1,5 +1,5 @@
 import {useLoaderData, Link} from 'react-router';
-import {getPaginationVariables, Image} from '@shopify/hydrogen';
+import {getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 
 /**
@@ -83,12 +83,12 @@ function CollectionItem({collection, index}) {
       prefetch="intent"
     >
       {collection?.image && (
-        <Image
+        <img
           alt={collection.image.altText || collection.title}
-          aspectRatio="1/1"
-          data={collection.image}
+          className="collection-item-image"
           loading={index < 3 ? 'eager' : undefined}
-          sizes="(min-width: 45em) 400px, 100vw"
+          src={collection.image.url}
+          width={400}
         />
       )}
       <h5>{collection.title}</h5>

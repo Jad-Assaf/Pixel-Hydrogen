@@ -1,4 +1,4 @@
-import {CartForm, Image} from '@shopify/hydrogen';
+import {CartForm} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {Link} from 'react-router';
 import {ProductPrice} from './ProductPrice';
@@ -15,36 +15,41 @@ import {useAside} from './Aside';
 export function CartLineItem({layout, line}) {
   const {id, merchandise} = line;
   const {product, title, image, selectedOptions} = merchandise;
-  const lineItemUrl = useVariantUrl(product.handle, selectedOptions);
+  const lineItemUrl = product?.handle
+    ? useVariantUrl(product.handle, selectedOptions)
+    : null;
   const {close} = useAside();
+  const imageUrl = image?.url ? withImageWidth(image.url, 150) : null;
 
   return (
     <li key={id} className="cart-line">
-      {image && (
-        <Image
+      {imageUrl && (
+        <img
           alt={title}
-          aspectRatio="1/1"
-          data={image}
-          height={100}
+          className="cart-line-image"
+          height={80}
           loading="lazy"
-          width={100}
+          src={imageUrl}
+          width={80}
         />
       )}
 
       <div>
-        <Link
-          prefetch="intent"
-          to={lineItemUrl}
-          onClick={() => {
-            if (layout === 'aside') {
-              close();
-            }
-          }}
-        >
-          <p>
-            <strong>{product.title}</strong>
-          </p>
-        </Link>
+        {lineItemUrl ? (
+          <Link
+            prefetch="intent"
+            to={lineItemUrl}
+            onClick={() => {
+              if (layout === 'aside') {
+                close();
+              }
+            }}
+          >
+            <p className="cart-line-title">{product.title}</p>
+          </Link>
+        ) : (
+          <p className="cart-line-title">{product?.title ?? title}</p>
+        )}
         <ProductPrice price={line?.cost?.totalAmount} />
         <ul>
           {selectedOptions.map((option) => (
@@ -157,6 +162,11 @@ function CartLineUpdateButton({children, lines}) {
  */
 function getUpdateKey(lineIds) {
   return [CartForm.ACTIONS.LinesUpdate, ...lineIds].join('-');
+}
+
+function withImageWidth(url, width) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${width}`;
 }
 
 /** @typedef {OptimisticCartLine<CartApiQueryFragment>} CartLine */

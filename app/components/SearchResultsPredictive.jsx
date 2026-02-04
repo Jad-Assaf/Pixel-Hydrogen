@@ -5,15 +5,13 @@ import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
 } from '~/lib/search';
-import {useAside} from './Aside';
 
 /**
  * Component that renders predictive search results
  * @param {SearchResultsPredictiveProps}
  * @return {React.ReactNode}
  */
-export function SearchResultsPredictive({children}) {
-  const aside = useAside();
+export function SearchResultsPredictive({children, onClose}) {
   const {term, inputRef, fetcher, total, items} = usePredictiveSearch();
 
   /*
@@ -31,7 +29,7 @@ export function SearchResultsPredictive({children}) {
    */
   function closeSearch() {
     resetInput();
-    aside.close();
+    onClose?.();
   }
 
   return children({
@@ -107,14 +105,16 @@ function SearchResultsPredictiveCollections({term, collections, closeSearch}) {
             trackingParams: collection.trackingParameters,
             term: term.current,
           });
+          const fallbackImage =
+            collection.image || collection.products?.nodes?.[0]?.featuredImage;
 
           return (
             <li className="predictive-search-result-item" key={collection.id}>
               <Link onClick={closeSearch} to={collectionUrl}>
-                {collection.image?.url && (
+                {fallbackImage?.url && (
                   <Image
-                    alt={collection.image.altText ?? ''}
-                    src={collection.image.url}
+                    alt={fallbackImage.altText ?? ''}
+                    src={fallbackImage.url}
                     width={50}
                     height={50}
                   />
@@ -300,6 +300,7 @@ function usePredictiveSearch() {
 /**
  * @typedef {{
  *   children: (args: SearchResultsPredictiveArgs) => React.ReactNode;
+ *   onClose?: () => void;
  * }} SearchResultsPredictiveProps
  */
 

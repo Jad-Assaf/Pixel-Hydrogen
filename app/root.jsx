@@ -101,13 +101,29 @@ async function loadCriticalData({context}) {
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        headerMenuHandle: 'main-menu', // Adjust to your header menu handle
+        headerMenuHandle: 'new-main-menu', // Adjust to your header menu handle
       },
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  return {header};
+  const collectionIds = getMenuCollectionIds(header?.menu?.items || []);
+  let menuCollectionAvailability = {};
+
+  if (collectionIds.length) {
+    const {nodes} = await storefront.query(MENU_COLLECTIONS_QUERY, {
+      variables: {ids: collectionIds},
+    });
+
+    menuCollectionAvailability = (nodes || []).reduce((acc, node) => {
+      if (node?.__typename === 'Collection') {
+        acc[node.id] = Boolean(node.products?.nodes?.length);
+      }
+      return acc;
+    }, {});
+  }
+
+  return {header, menuCollectionAvailability};
 }
 
 /**
@@ -163,6 +179,41 @@ export function Layout({children}) {
     </html>
   );
 }
+
+function getMenuCollectionIds(items) {
+  const ids = new Set();
+  const stack = [...(items || [])];
+
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) continue;
+    if (item.type === 'COLLECTION' && item.resourceId) {
+      ids.add(item.resourceId);
+    }
+    if (item.items?.length) {
+      stack.push(...item.items);
+    }
+  }
+
+  return Array.from(ids);
+}
+
+const MENU_COLLECTIONS_QUERY = `#graphql
+  query MenuCollections($ids: [ID!]!, $country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    nodes(ids: $ids) {
+      __typename
+      ... on Collection {
+        id
+        products(first: 1) {
+          nodes {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
 
 export default function App() {
   /** @type {RootLoader} */

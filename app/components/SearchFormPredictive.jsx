@@ -1,6 +1,5 @@
 import {useFetcher, useNavigate} from 'react-router';
 import React, {useRef, useEffect} from 'react';
-import {useAside} from './Aside';
 
 export const SEARCH_ENDPOINT = '/search';
 
@@ -11,13 +10,12 @@ export const SEARCH_ENDPOINT = '/search';
 export function SearchFormPredictive({
   children,
   className = 'predictive-search-form',
+  onClose,
   ...props
 }) {
   const fetcher = useFetcher({key: 'search'});
   const inputRef = useRef(null);
   const navigate = useNavigate();
-  const aside = useAside();
-
   /** Reset the input value and blur the input */
   function resetInput(event) {
     event.preventDefault();
@@ -31,7 +29,7 @@ export function SearchFormPredictive({
   function goToSearch() {
     const term = inputRef?.current?.value;
     void navigate(SEARCH_ENDPOINT + (term ? `?q=${term}` : ''));
-    aside.close();
+    onClose?.();
   }
 
   /** Fetch search results based on the input value */
@@ -70,6 +68,7 @@ export function SearchFormPredictive({
 /**
  * @typedef {Omit<FormProps, 'children'> & {
  *   children: SearchFormPredictiveChildren | null;
+ *   onClose?: () => void;
  * }} SearchFormPredictiveProps
  */
 

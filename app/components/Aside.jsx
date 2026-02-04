@@ -36,6 +36,14 @@ export function Aside({children, heading, type}) {
     return () => abortController.abort();
   }, [close, expanded]);
 
+  useEffect(() => {
+    if (!expanded) return;
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, [expanded]);
+
   return (
     <div
       aria-modal
