@@ -1,6 +1,5 @@
-import {redirect, useLoaderData} from 'react-router';
+import {Link, redirect, useLoaderData, useLocation} from 'react-router';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 
@@ -10,6 +9,9 @@ import {ProductItem} from '~/components/ProductItem';
 export const meta = ({data}) => {
   return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
 };
+
+const PAGE_SIZE = 50;
+const PAGES_PER_CHUNK = 4;
 
 /**
  * @param {Route.LoaderArgs} args
@@ -33,7 +35,7 @@ async function loadCriticalData({context, params, request}) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: PAGE_SIZE * PAGES_PER_CHUNK,
   });
 
   if (!handle) {
@@ -74,23 +76,113 @@ function loadDeferredData({context}) {
 export default function Collection() {
   /** @type {LoaderReturnData} */
   const {collection} = useLoaderData();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const requestedPage = Number(searchParams.get('page') || '1') || 1;
+  const chunkCursor = searchParams.get('cursor');
+  const chunkDirection = searchParams.get('direction');
+  const nodes = collection.products?.nodes ?? [];
+  const totalPages = Math.max(1, Math.ceil(nodes.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
+  const visibleNodes = nodes.slice(startIndex, endIndex);
+  const {hasNextPage, hasPreviousPage, endCursor, startCursor} =
+    collection.products.pageInfo;
+
+  const hasNextPageInChunk = currentPage < totalPages;
+  const hasPreviousPageInChunk = currentPage > 1;
+
+  function buildPageUrl(nextPage, cursor = chunkCursor, direction = chunkDirection) {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set('page', String(nextPage));
+    if (cursor && direction) {
+      nextParams.set('cursor', cursor);
+      nextParams.set('direction', direction);
+    } else {
+      nextParams.delete('cursor');
+      nextParams.delete('direction');
+    }
+    return `${location.pathname}?${nextParams.toString()}`;
+  }
+
+  const nextUrl = hasNextPageInChunk
+    ? buildPageUrl(currentPage + 1)
+    : hasNextPage && endCursor
+      ? buildPageUrl(1, endCursor, 'next')
+      : null;
+
+  const prevUrl = hasPreviousPageInChunk
+    ? buildPageUrl(currentPage - 1)
+    : hasPreviousPage && startCursor
+      ? buildPageUrl(PAGES_PER_CHUNK, startCursor, 'previous')
+      : null;
 
   return (
     <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
+      <div className="collection-header">
+        <div>
+          <p className="collection-eyebrow">Collection</p>
+          <h1>{collection.title}</h1>
+          {collection.description ? (
+            <p className="collection-description">{collection.description}</p>
+          ) : null}
+        </div>
+        <span className="collection-count">
+          {collection.products?.nodes?.length ?? 0} items
+        </span>
+      </div>
+      <div className="collection-products-grid">
+        {visibleNodes.map((product, index) => (
           <ProductItem
             key={product.id}
             product={product}
-            loading={index < 8 ? 'eager' : undefined}
+            loading={index < 10 ? 'eager' : undefined}
           />
+        ))}
+      </div>
+      <div className="pagination">
+        {prevUrl ? (
+          <Link className="pagination-link" to={prevUrl} prefetch="intent">
+            Previous page
+          </Link>
+        ) : (
+          <span className="pagination-link is-disabled">Previous page</span>
         )}
-      </PaginatedResourceSection>
+        <div className="pagination-pages" role="navigation" aria-label="Pages">
+          {Array.from({length: totalPages}, (_, index) => {
+            const pageNumber = index + 1;
+            const isActive = pageNumber === currentPage;
+            const pageUrl = buildPageUrl(pageNumber);
+
+            return isActive ? (
+              <span
+                key={pageNumber}
+                className="pagination-link is-active"
+                aria-current="page"
+              >
+                {pageNumber}
+              </span>
+            ) : (
+              <Link
+                key={pageNumber}
+                className="pagination-link"
+                to={pageUrl}
+                prefetch="intent"
+              >
+                {pageNumber}
+              </Link>
+            );
+          })}
+        </div>
+        {nextUrl ? (
+          <Link className="pagination-link" to={nextUrl} prefetch="intent">
+            Next page
+          </Link>
+        ) : (
+          <span className="pagination-link is-disabled">Next page</span>
+        )}
+      </div>
       <Analytics.CollectionView
         data={{
           collection: {

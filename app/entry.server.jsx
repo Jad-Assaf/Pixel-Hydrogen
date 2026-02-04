@@ -17,6 +17,24 @@ export default async function handleRequest(
   reactRouterContext,
   context,
 ) {
+  const youtubeDomains = [
+    'https://www.youtube.com',
+    'https://youtube.com',
+    'https://www.youtube-nocookie.com',
+  ];
+  const commonSelf = ["'self'"];
+  const imageSources = [
+    ...commonSelf,
+    'data:',
+    'blob:',
+    'https://cdn.shopify.com',
+    ...youtubeDomains,
+  ];
+  const scriptSources = [
+    ...commonSelf,
+    'https://cdn.shopify.com',
+    ...youtubeDomains,
+  ];
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
@@ -24,6 +42,12 @@ export default async function handleRequest(
     },
     styleSrc: ['https://fonts.googleapis.com'],
     fontSrc: ['https://fonts.gstatic.com'],
+    scriptSrc: scriptSources,
+    connectSrc: youtubeDomains,
+    imgSrc: imageSources,
+    mediaSrc: [...commonSelf, ...youtubeDomains],
+    frameSrc: [...commonSelf, ...youtubeDomains],
+    childSrc: [...commonSelf, ...youtubeDomains],
   });
 
   const body = await renderToReadableStream(
