@@ -25,21 +25,24 @@ export function PageLayout({
         publicStoreDomain={publicStoreDomain}
         menuCollectionAvailability={menuCollectionAvailability}
       />
-      {header && (
-        <Header
+      <div className="pz-site">
+        {header ? (
+          <Header
+            header={header}
+            cart={cart}
+            isLoggedIn={isLoggedIn}
+            menuCollectionAvailability={menuCollectionAvailability}
+            publicStoreDomain={publicStoreDomain}
+          />
+        ) : null}
+        <main className="pz-main">{children}</main>
+        <Footer
+          footer={footer}
           header={header}
-          cart={cart}
-          isLoggedIn={isLoggedIn}
           menuCollectionAvailability={menuCollectionAvailability}
           publicStoreDomain={publicStoreDomain}
         />
-      )}
-      <main>{children}</main>
-      <Footer
-        footer={footer}
-        header={header}
-        publicStoreDomain={publicStoreDomain}
-      />
+      </div>
     </Aside.Provider>
   );
 }

@@ -1,428 +1,590 @@
-import {useLoaderData, Link} from 'react-router';
-import {Image} from '@shopify/hydrogen';
+import {useRef} from 'react';
+import {Link, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
+import ankerLogo from '~/assets/anker-logo.webp';
+import appleLogo from '~/assets/apple-logo.webp';
+import asusLogo from '~/assets/asus-logo.webp';
+import beatsLogo from '~/assets/beats-logo.webp';
+import hpLogo from '~/assets/hp-logo.webp';
+import lenovoLogo from '~/assets/lenovo-logo.webp';
+import msiLogo from '~/assets/msi-logo.webp';
+import samsungLogo from '~/assets/samsung-logo.webp';
+
+const HEADER_MENU_HANDLE = 'new-main-menu';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: 'Hydrogen | Home'}];
+  return [{title: 'Pixel Zones | Home'}];
 };
-
-const HOME_SECTION_CONFIG = [
-  {key: 'newArrivals', title: 'New arrivals', handle: 'new-arrivals'},
-  {key: 'hotDeals', title: 'Hot Deals', handle: 'hot-deals'},
-  {key: 'apple', title: 'Apple', handle: 'apple'},
-  {key: 'gamingLaptops', title: 'Gaming Laptops', handle: 'gaming-laptops'},
-  {
-    key: 'carbonizeProducts',
-    title: 'Carbonize Products',
-    handle: 'carbonize-collection',
-  },
-];
-
-const BRAND_LIST = [
-  'Apple',
-  'Asus',
-  'MSI',
-  'Razer',
-  'Lenovo',
-  'Dell',
-  'HP',
-  'Alienware',
-];
 
 /**
  * @param {Route.LoaderArgs} args
  */
-export async function loader(args) {
-  const criticalData = await loadCriticalData(args);
-  return criticalData;
-}
+export async function loader({context}) {
+  const {storefront} = context;
 
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
- * @param {Route.LoaderArgs}
- */
-async function loadCriticalData({context}) {
-  const menuResult = await context.storefront.query(MENU_QUERY, {
-    variables: {handle: 'new-main-menu'},
-  });
+  const [homeData, menuData] = await Promise.all([
+    storefront.query(HOME_QUERY),
+    storefront.query(HOME_MENU_QUERY, {
+      cache: storefront.CacheLong(),
+      variables: {menuHandle: HEADER_MENU_HANDLE},
+    }),
+  ]);
 
-  const menu = menuResult?.menu ?? null;
-  const menuCollectionHandles = getUniqueHandles(
-    getCollectionHandlesFromMenu(menu?.items || []),
-  );
+  const mainMenuCollections = getMainMenuCollections(menuData?.menu?.items);
+  let menuCollections = [];
 
-  const [featuredResult, sectionCollections, shopByCollectionsData] =
-    await Promise.all([
-      context.storefront.query(FEATURED_COLLECTION_QUERY),
-      context.storefront.query(buildHomeSectionsQuery(HOME_SECTION_CONFIG)),
-      menuCollectionHandles.length
-        ? context.storefront.query(
-            buildShopByCollectionsQuery(menuCollectionHandles),
-          )
-        : Promise.resolve({}),
+  if (mainMenuCollections.length) {
+    const ids = mainMenuCollections
+      .map((item) => item.resourceId)
+      .filter(Boolean);
+    const handles = mainMenuCollections
+      .map((item) => item.handle)
+      .map((handle) => (typeof handle === 'string' ? handle.toLowerCase() : handle))
+      .filter(Boolean);
+
+    let collectionsById = [];
+    let collectionsByHandle = [];
+
+    if (ids.length) {
+      const {nodes} = await storefront.query(MENU_COLLECTION_ROWS_QUERY, {
+        cache: storefront.CacheLong(),
+        variables: {ids},
+      });
+      collectionsById = nodes || [];
+    }
+
+    if (handles.length) {
+      const handleResults = await Promise.all(
+        handles.map((handle) =>
+          storefront
+            .query(COLLECTION_ROW_BY_HANDLE_QUERY, {
+              cache: storefront.CacheLong(),
+              variables: {handle},
+            })
+            .catch(() => null),
+        ),
+      );
+
+      collectionsByHandle = handleResults
+        .map((result) => result?.collection)
+        .filter(Boolean);
+    }
+
+    menuCollections = buildCollectionRows(mainMenuCollections, [
+      ...collectionsById,
+      ...collectionsByHandle,
     ]);
-
-  const sections = HOME_SECTION_CONFIG.map((section) => ({
-    ...section,
-    collection: sectionCollections?.[section.key] ?? null,
-  }));
-
-  const shopByCollections = menuCollectionHandles
-    .map((_, index) => shopByCollectionsData?.[`collection_${index}`])
-    .filter(Boolean);
+  }
 
   return {
-    featuredCollection: featuredResult?.collections?.nodes?.[0] ?? null,
-    menu,
-    sections,
-    shopByCollections,
-    publicStoreDomain: context.env?.PUBLIC_STORE_DOMAIN,
+    products: homeData?.products?.nodes || [],
+    menuCollections,
   };
 }
 
 export default function Homepage() {
-  /** @type {LoaderReturnData} */
+  /** @type {{products: HomeProduct[]; menuCollections: HomeCollectionRow[]}} */
   const data = useLoaderData();
-
-  const [newArrivals, hotDeals, apple, gamingLaptops, carbonizeProducts] =
-    data.sections;
-
-  return (
-    <div className="home">
-      <FeaturedCollection collection={data.featuredCollection} />
-
-      <HomeSection title={newArrivals.title}>
-        <CollectionRow collection={newArrivals.collection} />
-      </HomeSection>
-
-      <HomeSection title={hotDeals.title}>
-        <CollectionRow collection={hotDeals.collection} />
-      </HomeSection>
-
-      <HomeSection title={apple.title}>
-        <CollectionRow collection={apple.collection} />
-      </HomeSection>
-
-      <HomeSection title="Shop by collection">
-        <CollectionCardGrid collections={data.shopByCollections} />
-      </HomeSection>
-
-      <HomeSection title={gamingLaptops.title}>
-        <CollectionRow collection={gamingLaptops.collection} />
-      </HomeSection>
-
-      <HomeSection title={carbonizeProducts.title}>
-        <CollectionRow collection={carbonizeProducts.collection} />
-      </HomeSection>
-
-      <HomeSection title="Brands">
-        <BrandGrid brands={BRAND_LIST} />
-      </HomeSection>
-
-      <HomeSection title="Quick Links">
-        <QuickLinks
-          menuItems={data.menu?.items ?? []}
-          publicStoreDomain={data.publicStoreDomain}
-        />
-      </HomeSection>
-    </div>
+  const products = data.products || [];
+  const menuCollections = data.menuCollections || [];
+  const visibleMenuCollections = menuCollections.filter(
+    (collection) =>
+      Array.isArray(collection?.products) && collection.products.length > 0,
   );
-}
+  const carouselRef = useRef(null);
+  const carouselBrands = [
+    ...BRANDS.map((brand) => ({...brand, copy: 'a'})),
+    ...BRANDS.map((brand) => ({...brand, copy: 'b'})),
+  ];
 
-/**
- * @param {{title: string; children: React.ReactNode}}
- */
-function HomeSection({title, children}) {
-  return (
-    <section className="home-section">
-      <div className="section-header">
-        <h2 className="section-title">{title}</h2>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/**
- * @param {{collection: SectionCollection | null}}
- */
-function CollectionRow({collection}) {
-  if (!collection) {
-    return <p>Collection coming soon.</p>;
-  }
-
-  const products = collection.products?.nodes ?? [];
-
-  if (!products.length) {
-    return <p>No products available yet.</p>;
+  function scrollProducts(direction) {
+    if (!carouselRef.current) return;
+    const amount = carouselRef.current.clientWidth * 0.85;
+    carouselRef.current.scrollBy({
+      left: direction === 'next' ? amount : -amount,
+      behavior: 'smooth',
+    });
   }
 
   return (
-    <>
-      <div className="section-row">
-        {products.map((product) => (
-          <ProductItem key={product.id} product={product} showAddToCart />
-        ))}
-      </div>
-      <Link className="section-link" to={`/collections/${collection.handle}`}>
-        View all →
-      </Link>
-    </>
-  );
-}
-
-/**
- * @param {{collections: Array<CollectionCard> | undefined}}
- */
-function CollectionCardGrid({collections}) {
-  if (!collections?.length) {
-    return <p>Add collection links to the "new-main-menu" to show them here.</p>;
-  }
-
-  return (
-    <div className="collection-card-grid">
-      {collections.map((collection) => (
-        <CollectionCard key={collection.id} collection={collection} />
-      ))}
-    </div>
-  );
-}
-
-/**
- * @param {{collection: CollectionCard}}
- */
-function CollectionCard({collection}) {
-  const displayImage =
-    collection.image ?? collection.products?.nodes?.[0]?.featuredImage ?? null;
-
-  return (
-    <Link
-      className="collection-card"
-      to={`/collections/${collection.handle}`}
-    >
-      {displayImage ? (
-        <div className="collection-card-image">
-          <img
-            alt={displayImage.altText || collection.title}
-            className="collection-card-img"
-            src={displayImage.url}
-            width={400}
-          />
-        </div>
-      ) : null}
-      <div>
-        <h3>{collection.title}</h3>
-      </div>
-    </Link>
-  );
-}
-/**
- * @param {{brands: string[]}}
- */
-function BrandGrid({brands}) {
-  return (
-    <div className="brand-grid">
-      {brands.map((brand) => (
-        <div className="brand-pill" key={brand}>
-          {brand}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
- * @param {{menuItems: MenuItem[]; publicStoreDomain?: string}}
- */
-function QuickLinks({menuItems, publicStoreDomain}) {
-  const links = (menuItems || []).filter(Boolean);
-
-  if (!links.length) {
-    return <p>Add links to the "new-main-menu" to show quick links here.</p>;
-  }
-
-  return (
-    <div className="quick-links">
-      {links.map((item) => {
-        const normalized = normalizeMenuUrl(item.url, publicStoreDomain);
-        if (!normalized) return null;
-
-        if (normalized.external) {
-          return (
-            <a
-              key={item.id}
-              href={normalized.url}
-              rel="noopener noreferrer"
-              target="_blank"
+    <div className="pz-home">
+      <section className="pz-hero">
+        <div className="pz-shell pz-hero-inner">
+          <p className="pz-kicker">Next Generation Gear</p>
+          <h1>
+            Latest Tech
+            <br />
+            <span>Redefined.</span>
+          </h1>
+          <p>
+            Experience high-performance devices curated for modern professionals.
+            Powerful hardware, clean design, and everyday reliability.
+          </p>
+          <div className="pz-hero-actions">
+            <Link
+              to="/collections/new-arrivals"
+              prefetch="intent"
+              className="pz-btn pz-btn-primary"
             >
-              {item.title}
-            </a>
-          );
-        }
+              Shop Now
+            </Link>
+          </div>
+        </div>
+      </section>
 
-        return (
-          <Link key={item.id} to={normalized.url}>
-            {item.title}
-          </Link>
-        );
-      })}
+      <section className="pz-brand-strip">
+        <div className="pz-shell">
+          <p>Brands</p>
+          <div className="pz-brand-carousel" aria-label="Popular brands">
+            <div className="pz-brand-track" role="list">
+              {carouselBrands.map((brand) => (
+                <Link
+                  key={`${brand.copy}-${brand.handle}`}
+                  to={`/collections/${brand.handle}`}
+                  prefetch="intent"
+                  className="pz-brand-logo-link"
+                  role="listitem"
+                  aria-label={`${brand.name} collection`}
+                >
+                  <img src={brand.logo} alt={brand.name} loading="lazy" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="pz-home-section">
+        <div className="pz-shell">
+          <div className="pz-section-head">
+            <div>
+              <p className="pz-kicker">Curated Collection</p>
+              <h2>New Arrivals</h2>
+            </div>
+            <div className="pz-carousel-controls">
+              <button
+                type="button"
+                className="pz-carousel-btn"
+                onClick={() => scrollProducts('prev')}
+                aria-label="Previous products"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="pz-carousel-btn"
+                onClick={() => scrollProducts('next')}
+                aria-label="Next products"
+              >
+                ›
+              </button>
+              <Link to="/shop" prefetch="intent" className="pz-inline-link">
+                View All
+              </Link>
+            </div>
+          </div>
+
+          {products.length ? (
+            <div className="pz-product-carousel" ref={carouselRef}>
+              {products.map((product, index) => (
+                <div className="pz-product-carousel-item" key={product.id}>
+                  <ProductItem
+                    product={product}
+                    loading={index < 4 ? 'eager' : 'lazy'}
+                    showAddToCart
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="pz-empty">Add products to your store to populate this section.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="pz-home-section pz-home-collections">
+        <div className="pz-shell">
+          <div className="pz-section-head">
+            <div>
+              <p className="pz-kicker">Shop by Collection</p>
+              <h2>Main Collections</h2>
+            </div>
+            <Link to="/collections" prefetch="intent" className="pz-inline-link">
+              View All Collections
+            </Link>
+          </div>
+
+          {visibleMenuCollections.length ? (
+            <div className="pz-collection-card-row">
+              {visibleMenuCollections.map((collection) => (
+                <Link
+                  key={collection.id}
+                  to={`/collections/${collection.handle}`}
+                  prefetch="intent"
+                  className="pz-collection-card"
+                >
+                  <div className="pz-collection-card-image">
+                    {collection.image?.url ? (
+                      <img
+                        src={withImageWidth(collection.image.url, 600)}
+                        alt={collection.image.altText || collection.title}
+                        loading="lazy"
+                        width={collection.image.width || 600}
+                        height={collection.image.height || 600}
+                      />
+                    ) : (
+                      <div className="pz-image-placeholder" aria-hidden="true" />
+                    )}
+                  </div>
+                  <p>{collection.title}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="pz-empty">Add collections to your main menu to populate this row.</p>
+          )}
+        </div>
+      </section>
+
+      {visibleMenuCollections.map((collection) => (
+        <section className="pz-home-section pz-home-collection-products" key={`row-${collection.id}`}>
+          <div className="pz-shell">
+            <div className="pz-section-head">
+              <div>
+                <p className="pz-kicker">Collection Spotlight</p>
+                <h2>{collection.title}</h2>
+              </div>
+              <Link
+                to={`/collections/${collection.handle}`}
+                prefetch="intent"
+                className="pz-inline-link"
+              >
+                View Collection
+              </Link>
+            </div>
+
+            {collection.products.length ? (
+              <div className="pz-product-carousel pz-collection-product-carousel">
+                {collection.products.map((product, index) => (
+                  <div className="pz-product-carousel-item" key={`${collection.id}-${product.id}`}>
+                    <ProductItem
+                      product={product}
+                      loading={index < 3 ? 'eager' : 'lazy'}
+                      showAddToCart
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="pz-empty">
+                Add products to <strong>{collection.title}</strong> to fill this row.
+              </p>
+            )}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
 
-/**
- * @param {{
- *   collection: FeaturedCollectionFragment | null;
- * }}
- */
-function FeaturedCollection({collection}) {
-  if (!collection) return null;
-  const image = collection?.image;
-  return (
-    <Link className="featured-collection" to={`/collections/${collection.handle}`}>
-      {image && (
-        <div className="featured-collection-image">
-          <Image data={image} sizes="100vw" />
-        </div>
-      )}
-      <div>
-        <p className="section-eyebrow">Featured collection</p>
-        <h1>{collection.title}</h1>
-      </div>
-    </Link>
-  );
-}
-
-function getUniqueHandles(handles) {
+function getMainMenuCollections(items) {
   const seen = new Set();
-  return handles.filter((handle) => {
-    if (seen.has(handle)) return false;
-    seen.add(handle);
-    return true;
-  });
+
+  return (items || [])
+    .map((item) => {
+      if (!item) return null;
+
+      const handle = getCollectionHandleFromMenuUrl(item.url);
+      const hasCollectionReference =
+        (item.type === 'COLLECTION' && item.resourceId) || handle;
+
+      if (!hasCollectionReference) return null;
+
+      return {
+        id: item.id,
+        title: item.title,
+        resourceId: item.resourceId || null,
+        handle: handle ? handle.toLowerCase() : null,
+      };
+    })
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item.resourceId || item.handle;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
-function getCollectionHandlesFromMenu(items) {
-  const handles = [];
-  (items || []).forEach((item) => {
-    const handle = getCollectionHandleFromUrl(item?.url);
-    if (handle) handles.push(handle);
-  });
-  return handles;
+function buildCollectionRows(menuItems, nodes) {
+  const collectionNodes = (nodes || []).filter(
+    (node) => node?.__typename === 'Collection',
+  );
+  const collectionById = new Map(collectionNodes.map((collection) => [collection.id, collection]));
+  const collectionByHandle = new Map(
+    collectionNodes
+      .filter((collection) => collection?.handle)
+      .map((collection) => [collection.handle.toLowerCase(), collection]),
+  );
+
+  return menuItems
+    .map((item) => {
+      const collection =
+        (item.resourceId ? collectionById.get(item.resourceId) : null) ||
+        (item.handle ? collectionByHandle.get(item.handle.toLowerCase()) : null);
+      if (!collection?.handle) return null;
+
+      return {
+        id: collection.id,
+        title: collection.title || item.title,
+        handle: collection.handle,
+        image: pickCollectionImage(collection),
+        products: collection.products?.nodes || [],
+      };
+    })
+    .filter(Boolean);
 }
 
-function getCollectionHandleFromUrl(url) {
+function pickCollectionImage(collection) {
+  const candidates = [
+    collection?.image,
+    collection?.latestProduct?.nodes?.[0]?.featuredImage,
+    collection?.products?.nodes?.[0]?.featuredImage,
+  ];
+
+  return candidates.find((image) => image?.url) || null;
+}
+
+function getCollectionHandleFromMenuUrl(url) {
   if (!url) return null;
+
   try {
-    const normalized = url.startsWith('http')
-      ? new URL(url)
-      : new URL(url, 'https://example.com');
-    const match = normalized.pathname.match(/^\/collections\/([^/?#]+)/);
-    return match ? match[1] : null;
-  } catch (error) {
+    const parsed = new URL(url, 'https://example.com');
+    const match = parsed.pathname.match(/\/collections\/([^/]+)/i);
+    if (!match?.[1]) return null;
+    const handle = decodeURIComponent(match[1]);
+    if (!handle || handle.toLowerCase() === 'all') return null;
+    return handle;
+  } catch {
     return null;
   }
 }
 
-function normalizeMenuUrl(url, publicStoreDomain) {
-  if (!url) return null;
+function withImageWidth(url, width) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${width}`;
+}
 
-  const isInternalDomain =
-    url.includes('myshopify.com') ||
-    (publicStoreDomain && url.includes(publicStoreDomain));
-
-  if (url.startsWith('/') || isInternalDomain) {
-    try {
-      const path = url.startsWith('/') ? url : new URL(url).pathname;
-      return {url: path, external: false};
-    } catch (error) {
-      return {url, external: false};
+const HOME_QUERY = `#graphql
+  query Home($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    products(first: 8, sortKey: CREATED_AT, reverse: true) {
+      nodes {
+        ...HomeProductCard
+      }
     }
   }
 
-  return {url, external: true};
-}
+  fragment HomeMoney on MoneyV2 {
+    amount
+    currencyCode
+  }
 
-function buildHomeSectionsQuery(sections) {
-  return `#graphql
-    ${PRODUCT_ITEM_FRAGMENT}
-    query HomeSections($country: CountryCode, $language: LanguageCode)
-      @inContext(country: $country, language: $language) {
-      ${sections
-        .map(
-          (section) => `
-        ${section.key}: collection(handle: ${JSON.stringify(section.handle)}) {
-          id
-          title
-          handle
-          products(first: 10, sortKey: CREATED, reverse: true) {
-            nodes {
-              ...ProductItem
-            }
-          }
-        }`,
-        )
-        .join('\n')}
+  fragment HomeProductCard on Product {
+    id
+    handle
+    title
+    vendor
+    featuredImage {
+      id
+      altText
+      url
+      width
+      height
     }
-  `;
-}
+    priceRange {
+      minVariantPrice {
+        ...HomeMoney
+      }
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+      selectedOptions {
+        name
+        value
+      }
+      price {
+        ...HomeMoney
+      }
+      compareAtPrice {
+        ...HomeMoney
+      }
+    }
+  }
+`;
 
-function buildShopByCollectionsQuery(handles) {
-  return `#graphql
-    query ShopByCollections($country: CountryCode, $language: LanguageCode)
-      @inContext(country: $country, language: $language) {
-      ${handles
-        .map(
-          (handle, index) => `
-        collection_${index}: collection(handle: ${JSON.stringify(handle)}) {
-          id
-          title
-          handle
-          image {
-            id
+const HOME_MENU_QUERY = `#graphql
+  query HomeMenu(
+    $country: CountryCode
+    $language: LanguageCode
+    $menuHandle: String!
+  ) @inContext(country: $country, language: $language) {
+    menu(handle: $menuHandle) {
+      id
+      items {
+        id
+        title
+        type
+        resourceId
+        url
+      }
+    }
+  }
+`;
+
+const MENU_COLLECTION_ROWS_QUERY = `#graphql
+  query HomeMenuCollections(
+    $country: CountryCode
+    $language: LanguageCode
+    $ids: [ID!]!
+  ) @inContext(country: $country, language: $language) {
+    nodes(ids: $ids) {
+      __typename
+      ...HomeMenuCollectionNode
+    }
+  }
+
+  fragment HomeMenuCollectionNode on Collection {
+    id
+    title
+    handle
+    image {
+      url
+      altText
+      width
+      height
+    }
+    latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+      nodes {
+        featuredImage {
+          url
+          altText
+          width
+          height
+        }
+      }
+    }
+    products(first: 10, sortKey: BEST_SELLING) {
+      nodes {
+        ...HomeCollectionProductCard
+      }
+    }
+  }
+
+  fragment HomeCollectionMoney on MoneyV2 {
+    amount
+    currencyCode
+  }
+
+  fragment HomeCollectionProductCard on Product {
+    id
+    handle
+    title
+    vendor
+    featuredImage {
+      id
+      altText
+      url
+      width
+      height
+    }
+    priceRange {
+      minVariantPrice {
+        ...HomeCollectionMoney
+      }
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+      selectedOptions {
+        name
+        value
+      }
+      price {
+        ...HomeCollectionMoney
+      }
+      compareAtPrice {
+        ...HomeCollectionMoney
+      }
+    }
+  }
+`;
+
+const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
+  query HomeCollectionRowByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      __typename
+      id
+      title
+      handle
+      image {
+        url
+        altText
+        width
+        height
+      }
+      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+        nodes {
+          featuredImage {
             url
             altText
             width
             height
           }
-          products(first: 1, sortKey: CREATED, reverse: true) {
-            nodes {
-              featuredImage {
-                id
-                url
-                altText
-                width
-                height
-              }
+        }
+      }
+      products(first: 10, sortKey: BEST_SELLING) {
+        nodes {
+          id
+          handle
+          title
+          vendor
+          featuredImage {
+            id
+            altText
+            url
+            width
+            height
+          }
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
             }
           }
-        }`,
-        )
-        .join('\n')}
-    }
-  `;
-}
-
-const MENU_QUERY = `#graphql
-  query Menu($handle: String!, $country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    menu(handle: $handle) {
-      items {
-        id
-        title
-        url
-        items {
-          id
-          title
-          url
-          items {
+          selectedOrFirstAvailableVariant {
             id
-            title
-            url
+            availableForSale
+            selectedOptions {
+              name
+              value
+            }
+            price {
+              amount
+              currencyCode
+            }
+            compareAtPrice {
+              amount
+              currencyCode
+            }
           }
         }
       }
@@ -430,108 +592,30 @@ const MENU_QUERY = `#graphql
   }
 `;
 
-const FEATURED_COLLECTION_QUERY = `#graphql
-  fragment FeaturedCollection on Collection {
-    id
-    title
-    image {
-      id
-      url
-      altText
-      width
-      height
-    }
-    handle
-  }
-  query FeaturedCollection($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collections(first: 1, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...FeaturedCollection
-      }
-    }
-  }
-`;
-
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    featuredImage {
-      id
-      url
-      altText
-      width
-      height
-    }
-    selectedOrFirstAvailableVariant(
-      selectedOptions: []
-      ignoreUnknownOptions: true
-      caseInsensitiveMatch: true
-    ) {
-      id
-      availableForSale
-      price {
-        amount
-        currencyCode
-      }
-      product {
-        title
-        handle
-      }
-      selectedOptions {
-        name
-        value
-      }
-    }
-    priceRange {
-      minVariantPrice {
-        amount
-        currencyCode
-      }
-    }
-  }
-`;
+const BRANDS = [
+  {name: 'Apple', handle: 'apple', logo: appleLogo},
+  {name: 'HP', handle: 'hp', logo: hpLogo},
+  {name: 'Lenovo', handle: 'lenovo', logo: lenovoLogo},
+  {name: 'MSI', handle: 'msi', logo: msiLogo},
+  {name: 'Samsung', handle: 'samsung', logo: samsungLogo},
+  {name: 'Asus', handle: 'asus', logo: asusLogo},
+  {name: 'Beats', handle: 'beats', logo: beatsLogo},
+  {name: 'Anker', handle: 'anker', logo: ankerLogo},
+];
 
 /** @typedef {import('./+types/_index').Route} Route */
-/** @typedef {import('storefrontapi.generated').FeaturedCollectionFragment} FeaturedCollectionFragment */
-/** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
-/** @typedef {import('storefrontapi.generated').MenuItem} MenuItem */
-/** @typedef {import('storefrontapi.generated').Collection} Collection */
-/** @typedef {import('storefrontapi.generated').ProductItemFragment} ProductItemFragment */
-
+/** @typedef {import('storefrontapi.generated').HomeProductCardFragment} HomeProduct */
 /**
  * @typedef {{
- *  id: string;
- *  title: string;
- *  handle: string;
- *  products: {nodes: ProductItemFragment[]};
- * }} SectionCollection
- */
-
-/**
- * @typedef {{
- *  id: string;
- *  title: string;
- *  handle: string;
- *  image?: {
- *    id: string;
- *    url: string;
- *    altText?: string | null;
- *    width?: number | null;
- *    height?: number | null;
- *  } | null;
- *  products?: {
- *    nodes: {
- *      featuredImage?: {
- *        id: string;
- *        url: string;
- *        altText?: string | null;
- *        width?: number | null;
- *        height?: number | null;
- *      } | null;
- *    }[];
- *  };
- * }} CollectionCard
+ *   id: string;
+ *   title: string;
+ *   handle: string;
+ *   image: {
+ *     url?: string;
+ *     altText?: string | null;
+ *     width?: number | null;
+ *     height?: number | null;
+ *   } | null;
+ *   products: HomeProduct[];
+ * }} HomeCollectionRow
  */

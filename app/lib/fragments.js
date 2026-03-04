@@ -164,7 +164,7 @@ export const CART_QUERY_FRAGMENT = `#graphql
 `;
 
 const MENU_FRAGMENT = `#graphql
-  fragment MenuItem on MenuItem {
+  fragment MenuItemFields on MenuItem {
     id
     resourceId
     tags
@@ -172,25 +172,31 @@ const MENU_FRAGMENT = `#graphql
     type
     url
   }
-  fragment GrandchildMenuItem on MenuItem {
-    ...MenuItem
+  fragment MenuItemLevel4 on MenuItem {
+    ...MenuItemFields
   }
-  fragment ChildMenuItem on MenuItem {
-    ...MenuItem
+  fragment MenuItemLevel3 on MenuItem {
+    ...MenuItemFields
     items {
-      ...GrandchildMenuItem
+      ...MenuItemLevel4
     }
   }
-  fragment ParentMenuItem on MenuItem {
-    ...MenuItem
+  fragment MenuItemLevel2 on MenuItem {
+    ...MenuItemFields
     items {
-      ...ChildMenuItem
+      ...MenuItemLevel3
+    }
+  }
+  fragment MenuItemLevel1 on MenuItem {
+    ...MenuItemFields
+    items {
+      ...MenuItemLevel2
     }
   }
   fragment Menu on Menu {
     id
     items {
-      ...ParentMenuItem
+      ...MenuItemLevel1
     }
   }
 `;

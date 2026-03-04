@@ -5,61 +5,92 @@ import {CartLineItem} from '~/components/CartLineItem';
 import {CartSummary} from './CartSummary';
 
 /**
- * The main cart component that displays the cart items and summary.
- * It is used by both the /cart route and the cart aside dialog.
  * @param {CartMainProps}
  */
 export function CartMain({layout, cart: originalCart}) {
-  // The useOptimisticCart hook applies pending actions to the cart
-  // so the user immediately sees feedback when they modify the cart.
   const cart = useOptimisticCart(originalCart);
+  const lines = cart?.lines?.nodes ?? [];
 
-  const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
-  const withDiscount =
-    cart &&
-    Boolean(cart?.discountCodes?.filter((code) => code.applicable)?.length);
-  const className = `cart-main ${withDiscount ? 'with-discount' : ''}`;
-  const cartHasItems = cart?.totalQuantity ? cart.totalQuantity > 0 : false;
+  if (!lines.length) {
+    return <CartEmpty layout={layout} />;
+  }
+
+  if (layout === 'aside') {
+    return (
+      <div className="pz-cart-main pz-cart-main-aside">
+        <ul className="pz-cart-lines">
+          {lines.map((line) => (
+            <CartLineItem key={line.id} line={line} layout={layout} />
+          ))}
+        </ul>
+        <CartSummary cart={cart} layout={layout} />
+      </div>
+    );
+  }
 
   return (
-    <div className={className}>
-      <CartEmpty hidden={linesCount} layout={layout} />
-      <div className="cart-details">
-        <div aria-labelledby="cart-lines">
-          <ul>
-            {(cart?.lines?.nodes ?? []).map((line) => (
+    <div className="pz-cart-main pz-cart-main-page">
+      <div className="pz-cart-main-left">
+        <div className="pz-cart-lines-card">
+          <ul className="pz-cart-lines">
+            {lines.map((line) => (
               <CartLineItem key={line.id} line={line} layout={layout} />
             ))}
           </ul>
         </div>
-        {cartHasItems && <CartSummary cart={cart} layout={layout} />}
+
+        <section className="pz-cart-suggestions">
+          <h2>You May Also Like</h2>
+          <div className="pz-suggestion-grid">
+            {SUGGESTIONS.map((item) => (
+              <article key={item.id} className="pz-suggestion-card">
+                <div className="pz-image-placeholder" aria-hidden="true" />
+                <h3>{item.name}</h3>
+                <p>{item.price}</p>
+                <button type="button">Add to Cart</button>
+              </article>
+            ))}
+          </div>
+        </section>
       </div>
+
+      <CartSummary cart={cart} layout={layout} />
     </div>
   );
 }
 
 /**
  * @param {{
- *   hidden: boolean;
  *   layout?: CartMainProps['layout'];
  * }}
  */
-function CartEmpty({hidden = false}) {
+function CartEmpty({layout}) {
   const {close} = useAside();
+
   return (
-    <div hidden={hidden}>
-      <br />
-      <p>
-        Looks like you haven&rsquo;t added anything yet, let&rsquo;s get you
-        started!
-      </p>
-      <br />
-      <Link to="/collections" onClick={close} prefetch="viewport">
-        Continue shopping →
+    <div className="pz-cart-empty">
+      <h2>Your cart is empty</h2>
+      <p>Add something from the shop and it will appear here.</p>
+      <Link
+        className="pz-btn pz-btn-primary"
+        to="/shop"
+        onClick={() => {
+          if (layout === 'aside') close();
+        }}
+        prefetch="viewport"
+      >
+        Continue Shopping
       </Link>
     </div>
   );
 }
+
+const SUGGESTIONS = [
+  {id: 's1', name: 'Wireless Keyboard', price: '$129.00'},
+  {id: 's2', name: 'Ergo Mouse Pro', price: '$89.00'},
+  {id: 's3', name: 'Noise Canceling Headphones', price: '$249.00'},
+  {id: 's4', name: 'Docking Station', price: '$199.00'},
+];
 
 /** @typedef {'page' | 'aside'} CartLayout */
 /**

@@ -1,30 +1,52 @@
 import {CartForm, Money} from '@shopify/hydrogen';
-import {useEffect, useRef} from 'react';
-import {useFetcher} from 'react-router';
 
 /**
  * @param {CartSummaryProps}
  */
 export function CartSummary({cart, layout}) {
   const className =
-    layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
+    layout === 'page'
+      ? 'pz-cart-summary pz-cart-summary-page'
+      : 'pz-cart-summary pz-cart-summary-aside';
 
   return (
-    <div aria-labelledby="cart-summary" className={className}>
-      <h4>Totals</h4>
-      <dl className="cart-subtotal">
-        <dt>Subtotal</dt>
-        <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} />
-          ) : (
-            '-'
-          )}
-        </dd>
-      </dl>
-      <CartDiscounts discountCodes={cart?.discountCodes} />
-      <CartGiftCard giftCardCodes={cart?.appliedGiftCards} />
+    <section aria-labelledby="cart-summary" className={className}>
+      <h2 id="cart-summary">Order Summary</h2>
+
+      <div className="pz-summary-rows">
+        <SummaryRow label="Subtotal" amount={cart?.cost?.subtotalAmount} />
+        <div className="pz-summary-row">
+          <span>Shipping (Estimated)</span>
+          <strong>Calculated at checkout</strong>
+        </div>
+        <SummaryRow label="Tax" amount={cart?.cost?.totalTaxAmount} fallback="$0.00" />
+      </div>
+
+      <div className="pz-summary-total">
+        <span>Total</span>
+        <strong>
+          {cart?.cost?.totalAmount ? <Money data={cart.cost.totalAmount} /> : '$0.00'}
+        </strong>
+      </div>
+
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      <CartDiscounts discountCodes={cart?.discountCodes} />
+
+      {layout === 'page' ? (
+        <div className="pz-summary-benefits">
+          <p>Free shipping on orders over $500</p>
+          <p>2-year protection included</p>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function SummaryRow({label, amount, fallback = '-'}) {
+  return (
+    <div className="pz-summary-row">
+      <span>{label}</span>
+      <strong>{amount ? <Money data={amount} /> : fallback}</strong>
     </div>
   );
 }
@@ -36,12 +58,9 @@ function CartCheckoutActions({checkoutUrl}) {
   if (!checkoutUrl) return null;
 
   return (
-    <div>
-      <a href={checkoutUrl} target="_self">
-        <p>Continue to Checkout &rarr;</p>
-      </a>
-      <br />
-    </div>
+    <a href={checkoutUrl} target="_self" className="pz-btn pz-btn-primary pz-summary-checkout">
+      Proceed to Checkout
+    </a>
   );
 }
 
@@ -57,26 +76,19 @@ function CartDiscounts({discountCodes}) {
       ?.map(({code}) => code) || [];
 
   return (
-    <div>
-      {/* Have existing discount, display it with a remove option */}
-      <dl hidden={!codes.length}>
-        <div>
-          <dt>Discount(s)</dt>
-          <UpdateDiscountForm>
-            <div className="cart-discount">
-              <code>{codes?.join(', ')}</code>
-              &nbsp;
-              <button>Remove</button>
-            </div>
-          </UpdateDiscountForm>
-        </div>
-      </dl>
+    <div className="pz-discount-box">
+      {codes.length ? (
+        <UpdateDiscountForm>
+          <div className="pz-discount-active">
+            <code>{codes.join(', ')}</code>
+            <button type="submit">Remove</button>
+          </div>
+        </UpdateDiscountForm>
+      ) : null}
 
-      {/* Show an input to apply a discount */}
       <UpdateDiscountForm discountCodes={codes}>
-        <div>
+        <div className="pz-discount-form">
           <input type="text" name="discountCode" placeholder="Discount code" />
-          &nbsp;
           <button type="submit">Apply</button>
         </div>
       </UpdateDiscountForm>
@@ -105,127 +117,6 @@ function UpdateDiscountForm({discountCodes, children}) {
 }
 
 /**
- * @param {{
- *   giftCardCodes: CartApiQueryFragment['appliedGiftCards'] | undefined;
- * }}
- */
-function CartGiftCard({giftCardCodes}) {
-  const appliedGiftCardCodes = useRef([]);
-  const giftCardCodeInput = useRef(null);
-  const giftCardAddFetcher = useFetcher({key: 'gift-card-add'});
-
-  // Clear the gift card code input after the gift card is added
-  useEffect(() => {
-    if (giftCardAddFetcher.data) {
-      giftCardCodeInput.current.value = '';
-    }
-  }, [giftCardAddFetcher.data]);
-
-  function saveAppliedCode(code) {
-    const formattedCode = code.replace(/\s/g, ''); // Remove spaces
-    if (!appliedGiftCardCodes.current.includes(formattedCode)) {
-      appliedGiftCardCodes.current.push(formattedCode);
-    }
-  }
-
-  return (
-    <div>
-      {/* Display applied gift cards with individual remove buttons */}
-      {giftCardCodes && giftCardCodes.length > 0 && (
-        <dl>
-          <dt>Applied Gift Card(s)</dt>
-          {giftCardCodes.map((giftCard) => (
-            <RemoveGiftCardForm key={giftCard.id} giftCardId={giftCard.id}>
-              <div className="cart-discount">
-                <code>***{giftCard.lastCharacters}</code>
-                &nbsp;
-                <Money data={giftCard.amountUsed} />
-                &nbsp;
-                <button type="submit">Remove</button>
-              </div>
-            </RemoveGiftCardForm>
-          ))}
-        </dl>
-      )}
-
-      {/* Show an input to apply a gift card */}
-      <UpdateGiftCardForm
-        giftCardCodes={appliedGiftCardCodes.current}
-        saveAppliedCode={saveAppliedCode}
-        fetcherKey="gift-card-add"
-      >
-        <div>
-          <input
-            type="text"
-            name="giftCardCode"
-            placeholder="Gift card code"
-            ref={giftCardCodeInput}
-          />
-          &nbsp;
-          <button type="submit" disabled={giftCardAddFetcher.state !== 'idle'}>
-            Apply
-          </button>
-        </div>
-      </UpdateGiftCardForm>
-    </div>
-  );
-}
-
-/**
- * @param {{
- *   giftCardCodes?: string[];
- *   saveAppliedCode?: (code: string) => void;
- *   fetcherKey?: string;
- *   children: React.ReactNode;
- * }}
- */
-function UpdateGiftCardForm({
-  giftCardCodes,
-  saveAppliedCode,
-  fetcherKey,
-  children,
-}) {
-  return (
-    <CartForm
-      fetcherKey={fetcherKey}
-      route="/cart"
-      action={CartForm.ACTIONS.GiftCardCodesUpdate}
-      inputs={{
-        giftCardCodes: giftCardCodes || [],
-      }}
-    >
-      {(fetcher) => {
-        const code = fetcher.formData?.get('giftCardCode');
-        if (code && saveAppliedCode) {
-          saveAppliedCode(code);
-        }
-        return children;
-      }}
-    </CartForm>
-  );
-}
-
-/**
- * @param {{
- *   giftCardId: string;
- *   children: React.ReactNode;
- * }}
- */
-function RemoveGiftCardForm({giftCardId, children}) {
-  return (
-    <CartForm
-      route="/cart"
-      action={CartForm.ACTIONS.GiftCardCodesRemove}
-      inputs={{
-        giftCardCodes: [giftCardId],
-      }}
-    >
-      {children}
-    </CartForm>
-  );
-}
-
-/**
  * @typedef {{
  *   cart: OptimisticCart<CartApiQueryFragment | null>;
  *   layout: CartLayout;
@@ -235,4 +126,3 @@ function RemoveGiftCardForm({giftCardId, children}) {
 /** @typedef {import('storefrontapi.generated').CartApiQueryFragment} CartApiQueryFragment */
 /** @typedef {import('~/components/CartMain').CartLayout} CartLayout */
 /** @typedef {import('@shopify/hydrogen').OptimisticCart} OptimisticCart */
-/** @typedef {import('react-router').FetcherWithComponents} FetcherWithComponents */

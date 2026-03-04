@@ -9,7 +9,8 @@ import {useAside} from '~/components/Aside';
  *   product:
  *     | CollectionItemFragment
  *     | ProductItemFragment
- *     | RecommendedProductFragment;
+ *     | RecommendedProductFragment
+ *     | HomeProduct;
  *   loading?: 'eager' | 'lazy';
  *   showAddToCart?: boolean;
  * }}
@@ -17,27 +18,47 @@ import {useAside} from '~/components/Aside';
 export function ProductItem({product, loading, showAddToCart = false}) {
   const variantUrl = useVariantUrl(product.handle);
   const image = product.featuredImage;
+  const imageUrl = image?.url ? withImageWidth(image.url, 200) : null;
   const selectedVariant = product.selectedOrFirstAvailableVariant;
   const {open} = useAside();
-  const imageUrl = image?.url ? withImageWidth(image.url, 300) : null;
+
   return (
-    <div className="product-item" key={product.id}>
-      <Link className="product-item-link" prefetch="intent" to={variantUrl}>
-        {imageUrl && (
-          <img
-            alt={image.altText || product.title}
-            className="product-item-image"
-            loading={loading}
-            src={imageUrl}
-            width={300}
-            height={300}
-          />
-        )}
-        <h5 className="product-item-title">{product.title}</h5>
-        <small>
-          <Money data={product.priceRange.minVariantPrice} />
-        </small>
+    <article className="pz-product-card" key={product.id}>
+      <Link className="pz-product-card-link" prefetch="intent" to={variantUrl}>
+        <div className="pz-product-media">
+          {imageUrl ? (
+            <img
+              alt={image.altText || product.title}
+              className="pz-product-image"
+              loading={loading}
+              src={imageUrl}
+              width={500}
+              height={500}
+            />
+          ) : (
+            <div className="pz-image-placeholder" aria-hidden="true" />
+          )}
+        </div>
+
+        <div className="pz-product-meta">
+          <div className="pz-product-topline">
+            <span>{(product.vendor || 'TECH').toUpperCase()}</span>
+          </div>
+          <h3>{product.title}</h3>
+          <div className="pz-product-price-row">
+            <strong>
+              {product.priceRange?.minVariantPrice ? (
+                <Money data={product.priceRange.minVariantPrice} />
+              ) : selectedVariant?.price ? (
+                <Money data={selectedVariant.price} />
+              ) : (
+                'N/A'
+              )}
+            </strong>
+          </div>
+        </div>
       </Link>
+
       {showAddToCart && selectedVariant?.id ? (
         <AddToCartButton
           disabled={!selectedVariant.availableForSale}
@@ -49,12 +70,12 @@ export function ProductItem({product, loading, showAddToCart = false}) {
               selectedVariant,
             },
           ]}
-          className="product-add-button"
+          className="pz-card-cart-btn"
         >
-          {selectedVariant.availableForSale ? 'Add to cart' : 'Sold out'}
+          {selectedVariant.availableForSale ? '+' : '×'}
         </AddToCartButton>
       ) : null}
-    </div>
+    </article>
   );
 }
 
@@ -66,3 +87,4 @@ function withImageWidth(url, width) {
 /** @typedef {import('storefrontapi.generated').ProductItemFragment} ProductItemFragment */
 /** @typedef {import('storefrontapi.generated').CollectionItemFragment} CollectionItemFragment */
 /** @typedef {import('storefrontapi.generated').RecommendedProductFragment} RecommendedProductFragment */
+/** @typedef {import('storefrontapi.generated').HomeProductCardFragment} HomeProduct */

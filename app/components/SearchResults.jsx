@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
-import {Image, Money, Pagination} from '@shopify/hydrogen';
+import {Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams} from '~/lib/search';
+import {ProductItem} from '~/components/ProductItem';
 
 /**
  * @param {Omit<SearchResultsProps, 'error' | 'type'>}
@@ -14,7 +15,6 @@ export function SearchResults({term, result, children}) {
 }
 
 SearchResults.Articles = SearchResultsArticles;
-SearchResults.Pages = SearchResultsPages;
 SearchResults.Products = SearchResultsProducts;
 SearchResults.Empty = SearchResultsEmpty;
 
@@ -27,10 +27,13 @@ function SearchResultsArticles({term, articles}) {
   }
 
   return (
-    <div className="search-result">
-      <h2>Articles</h2>
-      <div>
-        {articles?.nodes?.map((article) => {
+    <section className="pz-search-group">
+      <div className="pz-search-group-head">
+        <p className="pz-kicker">Content</p>
+        <h2>Articles</h2>
+      </div>
+      <div className="pz-search-list">
+        {articles.nodes.map((article) => {
           const articleUrl = urlWithTrackingParams({
             baseUrl: `/blogs/${article.handle}`,
             trackingParams: article.trackingParameters,
@@ -38,117 +41,92 @@ function SearchResultsArticles({term, articles}) {
           });
 
           return (
-            <div className="search-results-item" key={article.id}>
+            <article className="pz-search-item pz-search-item--simple" key={article.id}>
               <Link prefetch="intent" to={articleUrl}>
                 {article.title}
               </Link>
-            </div>
+            </article>
           );
         })}
       </div>
-      <br />
-    </div>
-  );
-}
-
-/**
- * @param {PartialSearchResult<'pages'>}
- */
-function SearchResultsPages({term, pages}) {
-  if (!pages?.nodes.length) {
-    return null;
-  }
-
-  return (
-    <div className="search-result">
-      <h2>Pages</h2>
-      <div>
-        {pages?.nodes?.map((page) => {
-          const pageUrl = urlWithTrackingParams({
-            baseUrl: `/pages/${page.handle}`,
-            trackingParams: page.trackingParameters,
-            term,
-          });
-
-          return (
-            <div className="search-results-item" key={page.id}>
-              <Link prefetch="intent" to={pageUrl}>
-                {page.title}
-              </Link>
-            </div>
-          );
-        })}
-      </div>
-      <br />
-    </div>
+    </section>
   );
 }
 
 /**
  * @param {PartialSearchResult<'products'>}
  */
-function SearchResultsProducts({term, products}) {
+function SearchResultsProducts({products}) {
   if (!products?.nodes.length) {
     return null;
   }
 
   return (
-    <div className="search-result">
-      <h2>Products</h2>
+    <section className="pz-search-group">
+      <div className="pz-search-group-head">
+        <p className="pz-kicker">Catalog</p>
+        <h2>Products</h2>
+      </div>
       <Pagination connection={products}>
         {({nodes, isLoading, NextLink, PreviousLink}) => {
-          const ItemsMarkup = nodes.map((product) => {
-            const productUrl = urlWithTrackingParams({
-              baseUrl: `/products/${product.handle}`,
-              trackingParams: product.trackingParameters,
-              term,
-            });
-
-            const price = product?.selectedOrFirstAvailableVariant?.price;
-            const image = product?.selectedOrFirstAvailableVariant?.image;
-
-            return (
-              <div className="search-results-item" key={product.id}>
-                <Link prefetch="intent" to={productUrl}>
-                  {image && (
-                    <Image data={image} alt={product.title} width={50} />
-                  )}
-                  <div>
-                    <p>{product.title}</p>
-                    <small>{price && <Money data={price} />}</small>
-                  </div>
-                </Link>
-              </div>
-            );
-          });
-
           return (
-            <div>
+            <section className="pz-shop-products pz-search-products">
               <div>
                 <PreviousLink>
-                  {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
+                  {isLoading ? 'Loading...' : <span>Load previous</span>}
                 </PreviousLink>
               </div>
-              <div>
-                {ItemsMarkup}
-                <br />
+
+              <div className="pz-shop-grid">
+                {nodes.map((product) => (
+                  <ProductItem
+                    key={product.id}
+                    product={toProductCard(product)}
+                    loading="lazy"
+                  />
+                ))}
               </div>
+
               <div>
                 <NextLink>
-                  {isLoading ? 'Loading...' : <span>Load more ↓</span>}
+                  {isLoading ? 'Loading...' : <span>Load more</span>}
                 </NextLink>
               </div>
-            </div>
+            </section>
           );
         }}
       </Pagination>
-      <br />
-    </div>
+    </section>
   );
 }
 
+function toProductCard(product) {
+  const variant = product.selectedOrFirstAvailableVariant || null;
+  const variantPrice = variant?.price || null;
+
+  return {
+    ...product,
+    handle: product.handle,
+    featuredImage: variant?.image || null,
+    priceRange: variantPrice
+      ? {
+          minVariantPrice: variantPrice,
+          maxVariantPrice: variantPrice,
+        }
+      : product.priceRange,
+    selectedOrFirstAvailableVariant: variant
+      ? {
+          ...variant,
+          availableForSale: variant.availableForSale ?? true,
+        }
+      : null,
+  };
+}
+
 function SearchResultsEmpty() {
-  return <p>No results, try a different search.</p>;
+  return (
+    <p className="pz-search-empty">No results yet. Try a different keyword.</p>
+  );
 }
 
 /** @typedef {RegularSearchReturn['result']['items']} SearchItems */

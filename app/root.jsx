@@ -15,6 +15,8 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 
+const MAIN_MENU_HANDLE = 'new-main-menu';
+
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
  * @type {ShouldRevalidateFunction}
@@ -101,13 +103,16 @@ async function loadCriticalData({context}) {
     storefront.query(HEADER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        headerMenuHandle: 'new-main-menu', // Adjust to your header menu handle
+        headerMenuHandle: MAIN_MENU_HANDLE,
       },
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  const collectionIds = getMenuCollectionIds(header?.menu?.items || []);
+  const {
+    collectionIds,
+    collectionHandles,
+  } = getMenuCollectionReferences(header?.menu?.items || []);
   let menuCollectionAvailability = {};
 
   if (collectionIds.length) {
@@ -118,9 +123,32 @@ async function loadCriticalData({context}) {
     menuCollectionAvailability = (nodes || []).reduce((acc, node) => {
       if (node?.__typename === 'Collection') {
         acc[node.id] = Boolean(node.products?.nodes?.length);
+        acc[`id:${node.id}`] = Boolean(node.products?.nodes?.length);
       }
       return acc;
     }, {});
+  }
+
+  if (collectionHandles.length) {
+    const handleResults = await Promise.all(
+      collectionHandles.map((handle) =>
+        storefront
+          .query(MENU_COLLECTION_BY_HANDLE_QUERY, {
+            variables: {handle},
+          })
+          .catch(() => null),
+      ),
+    );
+
+    handleResults.forEach((result, index) => {
+      const requestedHandle = collectionHandles[index];
+      const collection = result?.collection;
+      const resolvedHandle = (collection?.handle || requestedHandle || '').toLowerCase();
+      if (!resolvedHandle) return;
+      menuCollectionAvailability[`handle:${resolvedHandle}`] = Boolean(
+        collection?.products?.nodes?.length,
+      );
+    });
   }
 
   return {header, menuCollectionAvailability};
@@ -140,7 +168,7 @@ function loadDeferredData({context}) {
     .query(FOOTER_QUERY, {
       cache: storefront.CacheLong(),
       variables: {
-        footerMenuHandle: 'footer', // Adjust to your footer menu handle
+        footerMenuHandle: MAIN_MENU_HANDLE,
       },
     })
     .catch((error) => {
@@ -180,8 +208,9 @@ export function Layout({children}) {
   );
 }
 
-function getMenuCollectionIds(items) {
+function getMenuCollectionReferences(items) {
   const ids = new Set();
+  const handles = new Set();
   const stack = [...(items || [])];
 
   while (stack.length) {
@@ -190,12 +219,34 @@ function getMenuCollectionIds(items) {
     if (item.type === 'COLLECTION' && item.resourceId) {
       ids.add(item.resourceId);
     }
+    const handle = getCollectionHandleFromMenuUrl(item.url);
+    if (handle) {
+      handles.add(handle.toLowerCase());
+    }
     if (item.items?.length) {
       stack.push(...item.items);
     }
   }
 
-  return Array.from(ids);
+  return {
+    collectionIds: Array.from(ids),
+    collectionHandles: Array.from(handles),
+  };
+}
+
+function getCollectionHandleFromMenuUrl(url) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url, 'https://example.com');
+    const match = parsed.pathname.match(/\/collections\/([^/]+)/i);
+    if (!match?.[1]) return null;
+    const handle = decodeURIComponent(match[1]);
+    if (!handle || handle.toLowerCase() === 'all') return null;
+    return handle;
+  } catch {
+    return null;
+  }
 }
 
 const MENU_COLLECTIONS_QUERY = `#graphql
@@ -209,6 +260,23 @@ const MENU_COLLECTIONS_QUERY = `#graphql
           nodes {
             id
           }
+        }
+      }
+    }
+  }
+`;
+
+const MENU_COLLECTION_BY_HANDLE_QUERY = `#graphql
+  query MenuCollectionByHandle(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      handle
+      products(first: 1) {
+        nodes {
+          id
         }
       }
     }

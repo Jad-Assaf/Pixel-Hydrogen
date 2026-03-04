@@ -1,188 +1,183 @@
-import {Link, redirect, useLoaderData, useLocation} from 'react-router';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {Form, Link, redirect, useLoaderData, useLocation} from 'react-router';
+import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
+import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
+import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
+  return [{title: `Pixel Zones | ${data?.collection?.title ?? 'Collection'}`}];
 };
 
-const PAGE_SIZE = 50;
-const PAGES_PER_CHUNK = 4;
+const SORT_OPTIONS = [
+  {value: 'new-to-old', label: 'New to Old', sortKey: 'CREATED', reverse: true},
+  {value: 'old-to-new', label: 'Old to New', sortKey: 'CREATED', reverse: false},
+  {value: 'price-asc', label: 'Price: Low to High', sortKey: 'PRICE', reverse: false},
+  {value: 'price-desc', label: 'Price: High to Low', sortKey: 'PRICE', reverse: true},
+];
 
 /**
- * @param {Route.LoaderArgs} args
- */
-export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
-  const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
-  const criticalData = await loadCriticalData(args);
-
-  return {...deferredData, ...criticalData};
-}
-
-/**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  * @param {Route.LoaderArgs}
  */
-async function loadCriticalData({context, params, request}) {
+export async function loader({context, params, request}) {
   const {handle} = params;
   const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: PAGE_SIZE * PAGES_PER_CHUNK,
-  });
+  const url = new URL(request.url);
+  const parsedFilterEntries = url.searchParams
+    .getAll('filter')
+    .map(normalizeFilterParam)
+    .filter(Boolean);
+  const selectedFilterValues = parsedFilterEntries.map(
+    ({serialized}) => serialized,
+  );
+  const selectedFilters = parsedFilterEntries.map(({input}) => input);
+
+  const sortParam = url.searchParams.get('sort') || 'new-to-old';
+  const selectedSort =
+    SORT_OPTIONS.find((option) => option.value === sortParam) || SORT_OPTIONS[0];
+  const paginationVariables = getPaginationVariables(request, {pageBy: 16});
 
   if (!handle) {
     throw redirect('/collections');
   }
 
-  const [{collection}] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
-      // Add other queries here, so that they are loaded in parallel
-    }),
-  ]);
+  const {collection} = await storefront.query(COLLECTION_QUERY, {
+    variables: {
+      handle,
+      ...paginationVariables,
+      filters: selectedFilters,
+      sortKey: selectedSort.sortKey,
+      reverse: selectedSort.reverse,
+    },
+  });
 
   if (!collection) {
-    throw new Response(`Collection ${handle} not found`, {
-      status: 404,
-    });
+    throw new Response(`Collection ${handle} not found`, {status: 404});
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
   return {
     collection,
+    selectedFilterValues,
+    selectedSortValue: selectedSort.value,
   };
 }
 
-/**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
- * @param {Route.LoaderArgs}
- */
-function loadDeferredData({context}) {
-  return {};
-}
-
-export default function Collection() {
+export default function CollectionRoute() {
   /** @type {LoaderReturnData} */
-  const {collection} = useLoaderData();
+  const {collection, selectedFilterValues, selectedSortValue} = useLoaderData();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const requestedPage = Number(searchParams.get('page') || '1') || 1;
-  const chunkCursor = searchParams.get('cursor');
-  const chunkDirection = searchParams.get('direction');
-  const nodes = collection.products?.nodes ?? [];
-  const totalPages = Math.max(1, Math.ceil(nodes.length / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const endIndex = startIndex + PAGE_SIZE;
-  const visibleNodes = nodes.slice(startIndex, endIndex);
-  const {hasNextPage, hasPreviousPage, endCursor, startCursor} =
-    collection.products.pageInfo;
-
-  const hasNextPageInChunk = currentPage < totalPages;
-  const hasPreviousPageInChunk = currentPage > 1;
-
-  function buildPageUrl(nextPage, cursor = chunkCursor, direction = chunkDirection) {
-    const nextParams = new URLSearchParams(location.search);
-    nextParams.set('page', String(nextPage));
-    if (cursor && direction) {
-      nextParams.set('cursor', cursor);
-      nextParams.set('direction', direction);
-    } else {
-      nextParams.delete('cursor');
-      nextParams.delete('direction');
-    }
-    return `${location.pathname}?${nextParams.toString()}`;
-  }
-
-  const nextUrl = hasNextPageInChunk
-    ? buildPageUrl(currentPage + 1)
-    : hasNextPage && endCursor
-      ? buildPageUrl(1, endCursor, 'next')
-      : null;
-
-  const prevUrl = hasPreviousPageInChunk
-    ? buildPageUrl(currentPage - 1)
-    : hasPreviousPage && startCursor
-      ? buildPageUrl(PAGES_PER_CHUNK, startCursor, 'previous')
-      : null;
+  const visibleFilters = (collection.products?.filters || []).filter(
+    (filter) => !/availability/i.test(filter.label || filter.id || ''),
+  );
 
   return (
-    <div className="collection">
-      <div className="collection-header">
+    <div className="pz-shop-page">
+      <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/" prefetch="intent">
+          Home
+        </Link>
+        <span>/</span>
+        <Link to="/collections" prefetch="intent">
+          Collections
+        </Link>
+        <span>/</span>
+        <span>{collection.title}</span>
+      </nav>
+
+      <div className="pz-shop-head">
         <div>
-          <p className="collection-eyebrow">Collection</p>
           <h1>{collection.title}</h1>
           {collection.description ? (
             <p className="collection-description">{collection.description}</p>
           ) : null}
         </div>
-        <span className="collection-count">
-          {collection.products?.nodes?.length ?? 0} items
-        </span>
       </div>
-      <div className="collection-products-grid">
-        {visibleNodes.map((product, index) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 10 ? 'eager' : undefined}
-          />
-        ))}
-      </div>
-      <div className="pagination">
-        {prevUrl ? (
-          <Link className="pagination-link" to={prevUrl} prefetch="intent">
-            Previous page
-          </Link>
-        ) : (
-          <span className="pagination-link is-disabled">Previous page</span>
-        )}
-        <div className="pagination-pages" role="navigation" aria-label="Pages">
-          {Array.from({length: totalPages}, (_, index) => {
-            const pageNumber = index + 1;
-            const isActive = pageNumber === currentPage;
-            const pageUrl = buildPageUrl(pageNumber);
 
-            return isActive ? (
-              <span
-                key={pageNumber}
-                className="pagination-link is-active"
-                aria-current="page"
-              >
-                {pageNumber}
-              </span>
-            ) : (
-              <Link
-                key={pageNumber}
-                className="pagination-link"
-                to={pageUrl}
-                prefetch="intent"
-              >
-                {pageNumber}
-              </Link>
-            );
-          })}
-        </div>
-        {nextUrl ? (
-          <Link className="pagination-link" to={nextUrl} prefetch="intent">
-            Next page
+      <section
+        className="pz-collection-controls"
+        aria-label="Collection filters and sorting"
+      >
+        <Form method="get" className="pz-collection-sort-form pz-collection-sort-form--inline">
+          {selectedFilterValues.map((value) => (
+            <input key={value} type="hidden" name="filter" value={value} />
+          ))}
+          <label htmlFor="pz-collection-sort">Sort</label>
+          <select
+            id="pz-collection-sort"
+            name="sort"
+            defaultValue={selectedSortValue}
+            onChange={(event) => event.currentTarget.form?.requestSubmit()}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </Form>
+
+        {visibleFilters.map((filter) => (
+          <section key={filter.id} className="pz-inline-filter">
+            <h3>{filter.label}</h3>
+            <div className="pz-filter-group">
+              {(filter.values || []).slice(0, 24).map((value) => {
+                const valueInput = serializeFilterInput(value.input);
+                const isActive = selectedFilterValues.includes(valueInput);
+                const target = buildFilterUrl({
+                  location,
+                  sort: selectedSortValue,
+                  selectedFilterValues,
+                  valueInput,
+                  isActive,
+                });
+
+                return (
+                  <Link
+                    key={value.id}
+                    to={target}
+                    prefetch="intent"
+                    className={`pz-filter-value${isActive ? ' is-active' : ''}`}
+                  >
+                    <span>{value.label}</span>
+                    <small>{value.count}</small>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+
+        {selectedFilterValues.length ? (
+          <Link
+            to={`${location.pathname}?sort=${selectedSortValue}`}
+            className="pz-reset-filters pz-reset-filters--inline"
+            prefetch="intent"
+          >
+            Clear Filters
           </Link>
-        ) : (
-          <span className="pagination-link is-disabled">Next page</span>
-        )}
-      </div>
+        ) : null}
+      </section>
+
+      <section className="pz-shop-products">
+        <PaginatedResourceSection
+          connection={collection.products}
+          resourcesClassName="pz-shop-grid"
+        >
+          {({node: product, index}) => (
+            <ProductItem
+              key={product.id}
+              product={product}
+              loading={index < 6 ? 'eager' : 'lazy'}
+              showAddToCart
+            />
+          )}
+        </PaginatedResourceSection>
+      </section>
+
       <Analytics.CollectionView
         data={{
           collection: {
@@ -195,15 +190,72 @@ export default function Collection() {
   );
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
+function buildFilterUrl({
+  location,
+  sort,
+  selectedFilterValues,
+  valueInput,
+  isActive,
+}) {
+  const params = new URLSearchParams(location.search);
+  const nextValues = isActive
+    ? selectedFilterValues.filter((value) => value !== valueInput)
+    : [...selectedFilterValues, valueInput];
+
+  params.delete('filter');
+  nextValues.forEach((value) => {
+    params.append('filter', value);
+  });
+  params.set('sort', sort);
+  params.delete('cursor');
+  params.delete('direction');
+
+  return `${location.pathname}?${params.toString()}`;
+}
+
+function parseJsonMaybe(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeFilterParam(rawValue) {
+  const firstPass = parseJsonMaybe(rawValue);
+  const candidate =
+    typeof firstPass === 'string' ? parseJsonMaybe(firstPass) : firstPass;
+
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    return null;
+  }
+
+  return {
+    input: candidate,
+    serialized: JSON.stringify(candidate),
+  };
+}
+
+function serializeFilterInput(input) {
+  if (typeof input === 'string') {
+    const normalized = normalizeFilterParam(input);
+    return normalized ? normalized.serialized : input;
+  }
+
+  return JSON.stringify(input);
+}
+
+const COLLECTION_QUERY = `#graphql
+  fragment MoneyCollectionProduct on MoneyV2 {
     amount
     currencyCode
   }
-  fragment ProductItem on Product {
+
+  fragment CollectionProduct on Product {
     id
     handle
     title
+    vendor
     featuredImage {
       id
       altText
@@ -213,26 +265,39 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     }
     priceRange {
       minVariantPrice {
-        ...MoneyProductItem
+        ...MoneyCollectionProduct
       }
       maxVariantPrice {
-        ...MoneyProductItem
+        ...MoneyCollectionProduct
+      }
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+      selectedOptions {
+        name
+        value
+      }
+      price {
+        ...MoneyCollectionProduct
+      }
+      compareAtPrice {
+        ...MoneyCollectionProduct
       }
     }
   }
-`;
 
-// NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
-const COLLECTION_QUERY = `#graphql
-  ${PRODUCT_ITEM_FRAGMENT}
   query Collection(
-    $handle: String!
     $country: CountryCode
     $language: LanguageCode
+    $handle: String!
     $first: Int
     $last: Int
     $startCursor: String
     $endCursor: String
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -240,19 +305,33 @@ const COLLECTION_QUERY = `#graphql
       title
       description
       products(
-        first: $first,
-        last: $last,
-        before: $startCursor,
+        first: $first
+        last: $last
+        before: $startCursor
         after: $endCursor
+        filters: $filters
+        sortKey: $sortKey
+        reverse: $reverse
       ) {
         nodes {
-          ...ProductItem
+          ...CollectionProduct
+        }
+        filters {
+          id
+          label
+          type
+          values {
+            id
+            label
+            count
+            input
+          }
         }
         pageInfo {
           hasPreviousPage
           hasNextPage
-          endCursor
           startCursor
+          endCursor
         }
       }
     }
@@ -260,5 +339,4 @@ const COLLECTION_QUERY = `#graphql
 `;
 
 /** @typedef {import('./+types/collections.$handle').Route} Route */
-/** @typedef {import('storefrontapi.generated').ProductItemFragment} ProductItemFragment */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */

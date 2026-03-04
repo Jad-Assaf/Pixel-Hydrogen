@@ -1,5 +1,5 @@
 import {Await, Link, useLoaderData} from 'react-router';
-import {Suspense, useEffect, useMemo, useState} from 'react';
+import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {
   getSelectedProductOptions,
   Analytics,
@@ -18,7 +18,7 @@ import {ProductItem} from '~/components/ProductItem';
  */
 export const meta = ({data}) => {
   return [
-    {title: `Hydrogen | ${data?.product.title ?? ''}`},
+    {title: `Pixel Zones | ${data?.product.title ?? ''}`},
     {
       rel: 'canonical',
       href: `/products/${data?.product.handle}`,
@@ -26,25 +26,17 @@ export const meta = ({data}) => {
   ];
 };
 
-const RECENTLY_VIEWED_KEY = 'recently_viewed_products';
-const RECENTLY_VIEWED_MAX = 12;
-
 /**
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
-
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args, criticalData);
 
   return {...criticalData, ...deferredData};
 }
 
 /**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  * @param {Route.LoaderArgs}
  */
 async function loadCriticalData({context, params, request}) {
@@ -59,14 +51,12 @@ async function loadCriticalData({context, params, request}) {
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
 
   if (!product?.id) {
     throw new Response(null, {status: 404});
   }
 
-  // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
   return {
@@ -75,9 +65,6 @@ async function loadCriticalData({context, params, request}) {
 }
 
 /**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
 function loadDeferredData({context}, {product}) {
@@ -103,237 +90,229 @@ export default function Product() {
   /** @type {LoaderReturnData} */
   const {product, recommendedProducts} = useLoaderData();
 
-  // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
     getAdjacentAndFirstAvailableVariants(product),
   );
 
-  // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
 
-  // Get the product options array
   const productOptions = getProductOptions({
     ...product,
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
-  const baseImages = product.images?.nodes ?? [];
   const variantImage = selectedVariant?.image ?? null;
+  const variantImageId = variantImage?.id || null;
+
   const images = useMemo(() => {
+    const baseImages = product.images?.nodes ?? [];
     if (!variantImage) return baseImages;
     const exists = baseImages.some((image) => image.id === variantImage.id);
     return exists ? baseImages : [variantImage, ...baseImages];
-  }, [baseImages, variantImage?.id]);
+  }, [product.images, variantImage]);
+  const mainImageUrls = useMemo(
+    () => images.map((image) => withImageWidth(image.url, 900)),
+    [images],
+  );
+  const lightboxImageUrls = useMemo(
+    () => images.map((image) => withImageWidth(image.url, 1600)),
+    [images],
+  );
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [displayIndex, setDisplayIndex] = useState(0);
-  const [pendingIndex, setPendingIndex] = useState(null);
-  const [phase, setPhase] = useState('idle');
-  const [loadThumbnails, setLoadThumbnails] = useState(false);
-  const [loadedImages, setLoadedImages] = useState(() => new Set());
-  const activeImage = images[displayIndex] || null;
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const relatedCarouselRef = useRef(null);
 
   useEffect(() => {
-    if (variantImage) {
-      const matchIndex = images.findIndex((image) => image.id === variantImage.id);
-      if (matchIndex >= 0) {
-        setActiveIndex(matchIndex);
-        setDisplayIndex(matchIndex);
-        setPendingIndex(null);
-        setPhase('idle');
+    if (!variantImageId) return;
+
+    const matchIndex = images.findIndex((image) => image.id === variantImageId);
+    if (matchIndex >= 0) {
+      setActiveIndex((current) => (current === matchIndex ? current : matchIndex));
+    }
+  }, [variantImageId, images]);
+
+  useEffect(() => {
+    if (activeIndex >= images.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, images.length]);
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsLightboxOpen(false);
         return;
       }
-    }
-    if (images.length && displayIndex >= images.length) {
-      setActiveIndex(0);
-      setDisplayIndex(0);
-    }
-  }, [variantImage?.id, images]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoadThumbnails(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+      if (event.key === 'ArrowRight' && images.length > 1) {
+        setActiveIndex((prev) => (prev + 1) % images.length);
+      }
 
-  useEffect(() => {
-    if (!images.length) return;
-    const targetUrls = images
-      .map((image) => (image?.url ? withImageWidth(image.url, 800) : null))
-      .filter(Boolean);
-    const allLoaded = targetUrls.every((url) => loadedImages.has(url));
-    if (allLoaded) return;
-    const timer = setTimeout(() => {
-      images.forEach((image) => {
-        if (!image?.url) return;
-        const url = withImageWidth(image.url, 800);
-        if (loadedImages.has(url)) return;
-        preloadImage(url);
-      });
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [images, loadedImages]);
+      if (event.key === 'ArrowLeft' && images.length > 1) {
+        setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    };
 
-  useEffect(() => {
-    if (pendingIndex === null) return;
-    if (pendingIndex === displayIndex) {
-      setPendingIndex(null);
-      return;
-    }
-    const target = images[pendingIndex];
-    if (!target) return;
-    const url = withImageWidth(target.url, 800);
-    if (!loadedImages.has(url)) return;
-    setPhase('fade-out');
-    const fadeOutTimer = setTimeout(() => {
-      setDisplayIndex(pendingIndex);
-      setPhase('fade-in');
-      const fadeInTimer = setTimeout(() => {
-        setPhase('idle');
-        setPendingIndex(null);
-      }, 200);
-      return () => clearTimeout(fadeInTimer);
-    }, 200);
-    return () => clearTimeout(fadeOutTimer);
-  }, [pendingIndex, displayIndex, loadedImages, images]);
+    document.body.classList.add('no-scroll');
+    document.addEventListener('keydown', onKeyDown);
 
-  function markLoaded(url) {
-    if (!url) return;
-    setLoadedImages((prev) => {
-      if (prev.has(url)) return prev;
-      const next = new Set(prev);
-      next.add(url);
-      return next;
-    });
-  }
-
-  function preloadImage(url) {
-    if (!url) return;
-    const preloader = new Image();
-    preloader.onload = () => markLoaded(url);
-    preloader.src = url;
-  }
-
-  function switchTo(index) {
-    if (!images.length || index === activeIndex) return;
-    const target = images[index];
-    const targetUrl = target?.url ? withImageWidth(target.url, 800) : null;
-    if (targetUrl && !loadedImages.has(targetUrl)) {
-      preloadImage(targetUrl);
-    }
-    setActiveIndex(index);
-    setPendingIndex(index);
-  }
+    return () => {
+      document.body.classList.remove('no-scroll');
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isLightboxOpen, images.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const imageForCache = variantImage || images[0] || null;
-    const entry = {
-      handle: product.handle,
-      title: product.title,
-      imageUrl: imageForCache?.url || null,
-      imageAlt: imageForCache?.altText || product.title,
-      price: selectedVariant?.price?.amount || null,
-      currencyCode: selectedVariant?.price?.currencyCode || null,
-    };
 
-    try {
-      const raw = window.localStorage.getItem(RECENTLY_VIEWED_KEY) || '[]';
-      const stored = JSON.parse(raw);
-      const filtered = Array.isArray(stored)
-        ? stored.filter((item) => item?.handle !== product.handle)
-        : [];
-      const next = [entry, ...filtered].slice(0, RECENTLY_VIEWED_MAX);
-      window.localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
-      setRecentlyViewed(next.filter((item) => item.handle !== product.handle));
-    } catch (error) {
-      console.error(error);
-    }
-  }, [product.handle, product.title, selectedVariant?.id, variantImage?.id, images]);
+    const preloaded = mainImageUrls.map((src) => {
+      const image = new window.Image();
+      image.decoding = 'async';
+      image.src = src;
+      return image;
+    });
+
+    return () => {
+      preloaded.forEach((image) => {
+        image.src = '';
+      });
+    };
+  }, [mainImageUrls]);
+
+  function scrollRelated(direction) {
+    if (!relatedCarouselRef.current) return;
+
+    const amount = relatedCarouselRef.current.clientWidth * 0.85;
+    relatedCarouselRef.current.scrollBy({
+      left: direction === 'next' ? amount : -amount,
+      behavior: 'smooth',
+    });
+  }
+
+  const hasImages = images.length > 0;
+  const hasMultipleImages = images.length > 1;
+  const showPreviousImage = () =>
+    setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+  const showNextImage = () =>
+    setActiveIndex((prev) => (prev + 1) % images.length);
 
   return (
-    <div className="product-page">
-      <div className="product">
-        <div className="product-media">
-          {activeImage ? (
-            <div className={`product-main-image is-${phase}`}>
+    <div className="pz-product-page">
+      <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/shop" prefetch="intent">
+          Shop
+        </Link>
+        <span>/</span>
+        <Link to="/collections" prefetch="intent">
+          Collections
+        </Link>
+        <span>/</span>
+        <span>{product.title}</span>
+      </nav>
+
+      <div className="pz-product-layout">
+        <section className="pz-product-gallery">
+          <div className="pz-product-main-media">
+            {hasImages ? (
               <button
                 type="button"
-                className="product-image-nav product-image-prev"
-                onClick={() =>
-                  switchTo(images.length ? (activeIndex - 1 + images.length) % images.length : 0)
-                }
-                aria-label="Previous image"
+                className="pz-product-main-media-stack pz-product-main-media-trigger"
+                onClick={() => setIsLightboxOpen(true)}
+                aria-label="Open product image gallery"
               >
-                ‹
+                {images.map((image, index) => (
+                  <img
+                    key={image.id || image.url}
+                    className={`pz-product-main-image${index === activeIndex ? ' is-active' : ''}`}
+                    src={mainImageUrls[index]}
+                    alt={image.altText || product.title}
+                    width={900}
+                    height={700}
+                    loading={index < 2 ? 'eager' : 'lazy'}
+                    fetchPriority={index === activeIndex ? 'high' : 'auto'}
+                  />
+                ))}
               </button>
-              <img
-                src={withImageWidth(activeImage.url, 800)}
-                alt={activeImage.altText || product.title}
-                width={800}
-                onLoad={(event) => markLoaded(event.currentTarget.src)}
-              />
-              <button
-                type="button"
-                className="product-image-nav product-image-next"
-                onClick={() =>
-                  switchTo(images.length ? (activeIndex + 1) % images.length : 0)
-                }
-                aria-label="Next image"
-              >
-                ›
-              </button>
-            </div>
-          ) : null}
-          {images.length > 1 && loadThumbnails ? (
-            <div className="product-thumbnails">
-              {images.map((image, index) => {
-                const isActive = activeIndex === index;
-                return (
+            ) : (
+              <div className="pz-image-placeholder" aria-hidden="true" />
+            )}
+
+            {hasMultipleImages ? (
+              <>
+                <button
+                  type="button"
+                  className="pz-product-gallery-arrow is-prev"
+                  onClick={showPreviousImage}
+                  aria-label="Previous image"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="pz-product-gallery-arrow is-next"
+                  onClick={showNextImage}
+                  aria-label="Next image"
+                >
+                  ›
+                </button>
+              </>
+            ) : null}
+          </div>
+
+          {hasMultipleImages ? (
+            <div className="pz-product-thumbs">
+              <div className="pz-product-thumbs-track">
+                {images.map((image, index) => (
                   <button
                     type="button"
-                    key={image.id}
-                    className={`product-thumb${
-                      isActive ? ' is-active' : ''
-                    }`}
-                    onClick={() => switchTo(index)}
-                    aria-label={`View ${product.title}`}
+                    key={image.id || `${image.url}-${index}`}
+                    className={index === activeIndex ? 'is-active' : ''}
+                    onClick={() => setActiveIndex(index)}
+                    aria-label={`View image ${index + 1}`}
                   >
                     <img
-                      src={withImageWidth(image.url, 160)}
+                      src={withImageWidth(image.url, 180)}
                       alt={image.altText || product.title}
-                      width={80}
-                      height={80}
+                      width={120}
+                      height={120}
                     />
                   </button>
-                );
-              })}
+                ))}
+              </div>
             </div>
           ) : null}
-        </div>
-        <div className="product-main">
-          <h1>{title}</h1>
-          <ProductPrice
-            price={selectedVariant?.price}
-            compareAtPrice={selectedVariant?.compareAtPrice}
-          />
-          <br />
+        </section>
+
+        <section className="pz-product-info">
+          <h1>{product.title}</h1>
+
+          <div className="pz-product-price">
+            <ProductPrice
+              price={selectedVariant?.price}
+              compareAtPrice={selectedVariant?.compareAtPrice}
+            />
+          </div>
+
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
           />
-          <br />
-          <br />
-          <p>
-            <strong>Description</strong>
-          </p>
-          <br />
-          <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-          <br />
-        </div>
+
+          <div className="pz-product-description-box">
+            {product.descriptionHtml ? (
+              <div
+                className="pz-product-description"
+                dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
+              />
+            ) : (
+              <p className="pz-product-description">{product.description}</p>
+            )}
+          </div>
+        </section>
       </div>
 
       <Suspense fallback={null}>
@@ -341,12 +320,39 @@ export default function Product() {
           {(data) => {
             const products = data?.productRecommendations || [];
             if (!products.length) return null;
+
             return (
-              <section className="product-section">
-                <h2>Related products</h2>
-                <div className="section-row">
+              <section className="pz-product-section">
+                <div className="pz-section-head">
+                  <div>
+                    <p className="pz-kicker">You may also like</p>
+                    <h2>Related Products</h2>
+                  </div>
+                  <div className="pz-carousel-controls">
+                    <button
+                      type="button"
+                      className="pz-carousel-btn"
+                      onClick={() => scrollRelated('prev')}
+                      aria-label="Previous related products"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="pz-carousel-btn"
+                      onClick={() => scrollRelated('next')}
+                      aria-label="Next related products"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pz-product-carousel pz-related-carousel" ref={relatedCarouselRef}>
                   {products.map((item) => (
-                    <ProductItem key={item.id} product={item} />
+                    <div key={item.id} className="pz-product-carousel-item pz-related-carousel-item">
+                      <ProductItem product={item} />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -355,35 +361,60 @@ export default function Product() {
         </Await>
       </Suspense>
 
-      {recentlyViewed.length ? (
-        <section className="product-section">
-          <h2>Recently viewed</h2>
-          <div className="section-row">
-            {recentlyViewed.map((item) => (
-              <Link
-                key={item.handle}
-                className="recently-viewed-card"
-                to={`/products/${item.handle}`}
-                prefetch="intent"
-              >
-                {item.imageUrl ? (
-                  <img
-                    src={withImageWidth(item.imageUrl, 300)}
-                    alt={item.imageAlt || item.title}
-                    width={300}
-                    height={300}
-                  />
-                ) : null}
-                <h5>{item.title}</h5>
-                {item.price && item.currencyCode ? (
-                  <small>
-                    {item.price} {item.currencyCode}
-                  </small>
-                ) : null}
-              </Link>
-            ))}
+      {isLightboxOpen && hasImages ? (
+        <div
+          className="pz-image-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Product image gallery"
+        >
+          <button
+            type="button"
+            className="pz-image-lightbox-backdrop"
+            onClick={() => setIsLightboxOpen(false)}
+            aria-label="Close gallery"
+          />
+          <div className="pz-image-lightbox-panel">
+            <button
+              type="button"
+              className="pz-image-lightbox-close"
+              onClick={() => setIsLightboxOpen(false)}
+              aria-label="Close gallery"
+            >
+              ×
+            </button>
+
+            <div className="pz-image-lightbox-media">
+              <img
+                src={lightboxImageUrls[activeIndex]}
+                alt={images[activeIndex]?.altText || product.title}
+                width={1600}
+                height={1300}
+              />
+            </div>
+
+            {hasMultipleImages ? (
+              <>
+                <button
+                  type="button"
+                  className="pz-image-lightbox-arrow is-prev"
+                  onClick={showPreviousImage}
+                  aria-label="Previous image"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="pz-image-lightbox-arrow is-next"
+                  onClick={showNextImage}
+                  aria-label="Next image"
+                >
+                  ›
+                </button>
+              </>
+            ) : null}
           </div>
-        </section>
+        </div>
       ) : null}
 
       <Analytics.ProductView
@@ -392,7 +423,7 @@ export default function Product() {
             {
               id: product.id,
               title: product.title,
-              price: selectedVariant?.price.amount || '0',
+              price: selectedVariant?.price?.amount || '0',
               vendor: product.vendor,
               variantId: selectedVariant?.id || '',
               variantTitle: selectedVariant?.title || '',
@@ -518,6 +549,7 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       id
       handle
       title
+      vendor
       featuredImage {
         id
         altText

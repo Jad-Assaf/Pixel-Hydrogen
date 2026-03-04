@@ -41,19 +41,22 @@ async function loadCriticalData({context, request}) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
 export default function Collections() {
   /** @type {LoaderReturnData} */
   const {collections} = useLoaderData();
+  const nonEmptyCollections =
+    collections?.nodes?.filter((collection) => collection.products?.nodes?.length) || [];
+  const filteredConnection = {...collections, nodes: nonEmptyCollections};
 
   return (
     <div className="collections">
       <h1>Collections</h1>
       <PaginatedResourceSection
-        connection={collections}
+        connection={filteredConnection}
         resourcesClassName="collections-grid"
       >
         {({node: collection, index}) => (
@@ -107,6 +110,11 @@ const COLLECTIONS_QUERY = `#graphql
       altText
       width
       height
+    }
+    products(first: 1) {
+      nodes {
+        id
+      }
     }
   }
   query StoreCollections(

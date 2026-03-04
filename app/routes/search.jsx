@@ -1,4 +1,4 @@
-import {useLoaderData} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
@@ -8,7 +8,7 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Hydrogen | Search`}];
+  return [{title: 'Pixel Zones | Search'}];
 };
 
 /**
@@ -38,32 +38,44 @@ export default function SearchPage() {
   if (type === 'predictive') return null;
 
   return (
-    <div className="search">
-      <h1>Search</h1>
-      <SearchForm>
+    <div className="pz-search-page">
+      <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
+        <Link to="/" prefetch="intent">
+          Home
+        </Link>
+        <span>/</span>
+        <span>Search</span>
+      </nav>
+
+      <div className="pz-search-head">
+        <h1>Search</h1>
+        <p>Find products and articles across Pixel Zones.</p>
+      </div>
+
+      <SearchForm className="pz-search-form">
         {({inputRef}) => (
           <>
             <input
               defaultValue={term}
               name="q"
-              placeholder="Search…"
+              placeholder="Search products, brands, and more..."
               ref={inputRef}
               type="search"
             />
-            &nbsp;
             <button type="submit">Search</button>
           </>
         )}
       </SearchForm>
-      {error && <p style={{color: 'red'}}>{error}</p>}
+
+      {error ? <p className="pz-search-error">{error}</p> : null}
+
       {!term || !result?.total ? (
         <SearchResults.Empty />
       ) : (
         <SearchResults result={result} term={term}>
-          {({articles, pages, products, term}) => (
+          {({articles, products, term}) => (
             <div>
               <SearchResults.Products products={products} term={term} />
-              <SearchResults.Pages pages={pages} term={term} />
               <SearchResults.Articles articles={articles} term={term} />
             </div>
           )}
@@ -119,16 +131,6 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
   }
 `;
 
-const SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment SearchPage on Page {
-     __typename
-     handle
-    id
-    title
-    trackingParameters
-  }
-`;
-
 const SEARCH_ARTICLE_FRAGMENT = `#graphql
   fragment SearchArticle on Article {
     __typename
@@ -170,17 +172,6 @@ export const SEARCH_QUERY = `#graphql
         }
       }
     }
-    pages: search(
-      query: $term,
-      types: [PAGE],
-      first: $first,
-    ) {
-      nodes {
-        ...on Page {
-          ...SearchPage
-        }
-      }
-    }
     products: search(
       after: $endCursor,
       before: $startCursor,
@@ -202,7 +193,6 @@ export const SEARCH_QUERY = `#graphql
     }
   }
   ${SEARCH_PRODUCT_FRAGMENT}
-  ${SEARCH_PAGE_FRAGMENT}
   ${SEARCH_ARTICLE_FRAGMENT}
   ${PAGE_INFO_FRAGMENT}
 `;
@@ -221,7 +211,7 @@ async function regularSearch({request, context}) {
   const variables = getPaginationVariables(request, {pageBy: 8});
   const term = String(url.searchParams.get('q') || '');
 
-  // Search articles, pages, and products for the `q` term
+  // Search articles and products for the `q` term
   const {errors, ...items} = await storefront.query(SEARCH_QUERY, {
     variables: {...variables, term},
   });
@@ -261,42 +251,6 @@ const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
       width
       height
     }
-    trackingParameters
-  }
-`;
-
-const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
-  fragment PredictiveCollection on Collection {
-    __typename
-    id
-    title
-    handle
-    image {
-      url
-      altText
-      width
-      height
-    }
-    products(first: 1, sortKey: CREATED, reverse: true) {
-      nodes {
-        featuredImage {
-          url
-          altText
-          width
-          height
-        }
-      }
-    }
-    trackingParameters
-  }
-`;
-
-const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment PredictivePage on Page {
-    __typename
-    id
-    title
-    handle
     trackingParameters
   }
 `;
@@ -356,12 +310,6 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
       articles {
         ...PredictiveArticle
       }
-      collections {
-        ...PredictiveCollection
-      }
-      pages {
-        ...PredictivePage
-      }
       products {
         ...PredictiveProduct
       }
@@ -371,8 +319,6 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
     }
   }
   ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
@@ -394,7 +340,7 @@ async function predictiveSearch({request, context}) {
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
 
-  // Predictively search articles, collections, pages, products, and queries (suggestions)
+  // Predictively search articles, products, and query suggestions
   const {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
@@ -403,6 +349,7 @@ async function predictiveSearch({request, context}) {
         limit,
         limitScope: 'EACH',
         term,
+        types: ['ARTICLE', 'PRODUCT', 'QUERY'],
       },
     },
   );

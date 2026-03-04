@@ -7,71 +7,123 @@ import {ProductItem} from '~/components/ProductItem';
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Hydrogen | Products`}];
+  return [{title: 'Pixel Zones | Shop'}];
 };
 
 /**
  * @param {Route.LoaderArgs} args
  */
 export async function loader(args) {
-  // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
-
-  // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
   return {...deferredData, ...criticalData};
 }
 
 /**
- * Load data necessary for rendering content above the fold. This is the critical data
- * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  * @param {Route.LoaderArgs}
  */
 async function loadCriticalData({context, request}) {
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 9,
   });
 
   const [{products}] = await Promise.all([
     storefront.query(CATALOG_QUERY, {
       variables: {...paginationVariables},
     }),
-    // Add other queries here, so that they are loaded in parallel
   ]);
+
   return {products};
 }
 
 /**
- * Load data for rendering content below the fold. This data is deferred and will be
- * fetched after the initial page load. If it's unavailable, the page should still 200.
- * Make sure to not throw any errors here, as it will cause the page to 500.
  * @param {Route.LoaderArgs}
  */
-function loadDeferredData({context}) {
+function loadDeferredData() {
   return {};
 }
 
-export default function Collection() {
+export default function ShopRoute() {
   /** @type {LoaderReturnData} */
   const {products} = useLoaderData();
 
   return (
-    <div className="collection">
-      <h1>Products</h1>
-      <PaginatedResourceSection
-        connection={products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
-          />
-        )}
-      </PaginatedResourceSection>
+    <div className="pz-shop-page">
+      <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
+        <span>Home</span>
+        <span>/</span>
+        <span>Shop</span>
+        <span>/</span>
+        <span>Laptops &amp; Computers</span>
+      </nav>
+
+      <div className="pz-shop-head">
+        <h1>Laptops &amp; Computers</h1>
+        <button type="button" className="pz-sort-btn">
+          Best Selling
+        </button>
+      </div>
+
+      <div className="pz-shop-layout">
+        <aside className="pz-shop-filters" aria-label="Shop filters">
+          <section>
+            <h3>Price Range</h3>
+            <div className="pz-filter-price">
+              <input type="number" placeholder="Min" aria-label="Minimum price" />
+              <input type="number" placeholder="Max" aria-label="Maximum price" />
+            </div>
+          </section>
+
+          <section>
+            <h3>Brand</h3>
+            <label>
+              <input type="checkbox" defaultChecked /> Quantum
+            </label>
+            <label>
+              <input type="checkbox" /> Visionary
+            </label>
+            <label>
+              <input type="checkbox" /> SyncChip
+            </label>
+            <label>
+              <input type="checkbox" /> TypePro
+            </label>
+          </section>
+
+          <section>
+            <h3>Memory</h3>
+            <div className="pz-chip-row">
+              <button type="button" className="is-active">
+                32GB
+              </button>
+              <button type="button">64GB</button>
+              <button type="button">128GB</button>
+            </div>
+          </section>
+
+          <button type="button" className="pz-reset-filters">
+            Reset All Filters
+          </button>
+        </aside>
+
+        <section className="pz-shop-products">
+          <PaginatedResourceSection
+            connection={products}
+            resourcesClassName="pz-shop-grid"
+          >
+            {({node: product, index}) => (
+              <ProductItem
+                key={product.id}
+                product={product}
+                loading={index < 6 ? 'eager' : 'lazy'}
+                showAddToCart
+              />
+            )}
+          </PaginatedResourceSection>
+        </section>
+      </div>
     </div>
   );
 }
@@ -81,10 +133,12 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
     amount
     currencyCode
   }
+
   fragment CollectionItem on Product {
     id
     handle
     title
+    vendor
     featuredImage {
       id
       altText
@@ -100,10 +154,23 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
         ...MoneyCollectionItem
       }
     }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+      selectedOptions {
+        name
+        value
+      }
+      price {
+        ...MoneyCollectionItem
+      }
+      compareAtPrice {
+        ...MoneyCollectionItem
+      }
+    }
   }
 `;
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/objects/product
 const CATALOG_QUERY = `#graphql
   query Catalog(
     $country: CountryCode
@@ -129,5 +196,4 @@ const CATALOG_QUERY = `#graphql
 `;
 
 /** @typedef {import('./+types/collections.all').Route} Route */
-/** @typedef {import('storefrontapi.generated').CollectionItemFragment} CollectionItemFragment */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */

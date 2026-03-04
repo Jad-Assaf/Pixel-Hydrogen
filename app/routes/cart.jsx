@@ -6,7 +6,7 @@ import {CartMain} from '~/components/CartMain';
  * @type {Route.MetaFunction}
  */
 export const meta = () => {
-  return [{title: `Hydrogen | Cart`}];
+  return [{title: `Pixel Zones | Cart`}];
 };
 
 /**
@@ -19,9 +19,7 @@ export const headers = ({actionHeaders}) => actionHeaders;
  */
 export async function action({request, context}) {
   const {cart} = context;
-
   const formData = await request.formData();
-
   const {action, inputs} = CartForm.getFormInput(formData);
 
   if (!action) {
@@ -33,7 +31,7 @@ export async function action({request, context}) {
 
   switch (action) {
     case CartForm.ACTIONS.LinesAdd:
-      result = await cart.addLines(inputs.lines);
+      result = await cart.addLines(sanitizeLineInputs(inputs.lines));
       break;
     case CartForm.ACTIONS.LinesUpdate:
       result = await cart.updateLines(inputs.lines);
@@ -43,25 +41,15 @@ export async function action({request, context}) {
       break;
     case CartForm.ACTIONS.DiscountCodesUpdate: {
       const formDiscountCode = inputs.discountCode;
-
-      // User inputted discount code
       const discountCodes = formDiscountCode ? [formDiscountCode] : [];
-
-      // Combine discount codes already applied on cart
       discountCodes.push(...inputs.discountCodes);
-
       result = await cart.updateDiscountCodes(discountCodes);
       break;
     }
     case CartForm.ACTIONS.GiftCardCodesUpdate: {
       const formGiftCardCode = inputs.giftCardCode;
-
-      // User inputted gift card code
       const giftCardCodes = formGiftCardCode ? [formGiftCardCode] : [];
-
-      // Combine gift card codes already applied on cart
       giftCardCodes.push(...inputs.giftCardCodes);
-
       result = await cart.updateGiftCardCodes(giftCardCodes);
       break;
     }
@@ -70,24 +58,21 @@ export async function action({request, context}) {
       result = await cart.removeGiftCardCodes(appliedGiftCardIds);
       break;
     }
-    case CartForm.ACTIONS.BuyerIdentityUpdate: {
-      result = await cart.updateBuyerIdentity({
-        ...inputs.buyerIdentity,
-      });
+    case CartForm.ACTIONS.BuyerIdentityUpdate:
+      result = await cart.updateBuyerIdentity({...inputs.buyerIdentity});
       break;
-    }
     default:
       throw new Error(`${action} cart action is not defined`);
   }
 
   const cartId = result?.cart?.id;
-  const headers = cartId ? cart.setCartId(result.cart.id) : new Headers();
+  const responseHeaders = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string') {
     status = 303;
-    headers.set('Location', redirectTo);
+    responseHeaders.set('Location', redirectTo);
   }
 
   return data(
@@ -99,8 +84,21 @@ export async function action({request, context}) {
         cartId,
       },
     },
-    {status, headers},
+    {status, headers: responseHeaders},
   );
+}
+
+function sanitizeLineInputs(lines) {
+  if (!Array.isArray(lines)) return [];
+
+  return lines
+    .filter((line) => line?.merchandiseId)
+    .map((line) => ({
+      merchandiseId: line.merchandiseId,
+      quantity: Number(line.quantity ?? 1),
+      ...(line.attributes ? {attributes: line.attributes} : {}),
+      ...(line.sellingPlanId ? {sellingPlanId: line.sellingPlanId} : {}),
+    }));
 }
 
 /**
@@ -111,13 +109,13 @@ export async function loader({context}) {
   return await cart.get();
 }
 
-export default function Cart() {
+export default function CartRoute() {
   /** @type {LoaderReturnData} */
   const cart = useLoaderData();
 
   return (
-    <div className="cart">
-      <h1>Cart</h1>
+    <div className="pz-cart-page">
+      <h1>Your Shopping Cart</h1>
       <CartMain layout="page" cart={cart} />
     </div>
   );
@@ -125,6 +123,4 @@ export default function Cart() {
 
 /** @typedef {import('react-router').HeadersFunction} HeadersFunction */
 /** @typedef {import('./+types/cart').Route} Route */
-/** @typedef {import('@shopify/hydrogen').CartQueryDataReturn} CartQueryDataReturn */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
-/** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof action>} ActionReturnData */
