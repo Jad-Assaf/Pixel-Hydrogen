@@ -1,5 +1,5 @@
 import {useFetcher, useNavigate} from 'react-router';
-import React, {useRef, useEffect} from 'react';
+import {useRef, useEffect} from 'react';
 
 export const SEARCH_ENDPOINT = '/search';
 
@@ -11,31 +11,26 @@ export function SearchFormPredictive({
   children,
   className = 'predictive-search-form',
   onClose,
+  limit = 5,
   ...props
 }) {
   const fetcher = useFetcher({key: 'search'});
   const inputRef = useRef(null);
   const navigate = useNavigate();
-  /** Reset the input value and blur the input */
-  function resetInput(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (inputRef?.current?.value) {
-      inputRef.current.blur();
-    }
-  }
 
   /** Navigate to the search page with the current input value */
-  function goToSearch() {
-    const term = inputRef?.current?.value;
-    void navigate(SEARCH_ENDPOINT + (term ? `?q=${term}` : ''));
+  function goToSearch(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    const term = inputRef?.current?.value?.trim();
+    void navigate(SEARCH_ENDPOINT + (term ? `?q=${encodeURIComponent(term)}` : ''));
     onClose?.();
   }
 
   /** Fetch search results based on the input value */
   function fetchResults(event) {
     void fetcher.submit(
-      {q: event.target.value || '', limit: 5, predictive: true},
+      {q: event.target.value || '', limit, predictive: true},
       {method: 'GET', action: SEARCH_ENDPOINT},
     );
   }
@@ -51,7 +46,7 @@ export function SearchFormPredictive({
   }
 
   return (
-    <fetcher.Form {...props} className={className} onSubmit={resetInput}>
+    <fetcher.Form {...props} className={className} onSubmit={goToSearch}>
       {children({inputRef, fetcher, fetchResults, goToSearch})}
     </fetcher.Form>
   );
@@ -69,6 +64,7 @@ export function SearchFormPredictive({
  * @typedef {Omit<FormProps, 'children'> & {
  *   children: SearchFormPredictiveChildren | null;
  *   onClose?: () => void;
+ *   limit?: number;
  * }} SearchFormPredictiveProps
  */
 

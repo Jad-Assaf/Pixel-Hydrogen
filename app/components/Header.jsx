@@ -2,6 +2,7 @@ import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {Await, NavLink, useLocation} from 'react-router';
 import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {SearchFormPredictive} from '~/components/SearchFormPredictive';
 import fullLogo from '~/assets/full-logo.avif';
 import miniLogo from '~/assets/mini-logo.webp';
 
@@ -17,12 +18,15 @@ export function Header({
 }) {
   const {shop, menu} = header;
   const [isBrowseOpen, setIsBrowseOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCondensed, setIsCondensed] = useState(false);
+  const [isCondensePop, setIsCondensePop] = useState(false);
   const headerRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
     setIsBrowseOpen(false);
+    setIsSearchOpen(false);
   }, [location.pathname, location.search]);
 
   useEffect(() => {
@@ -47,11 +51,23 @@ export function Header({
   }, []);
 
   useEffect(() => {
-    if (!isBrowseOpen) return;
+    if (!isCondensed) return;
+    setIsCondensePop(true);
+    const timeoutId = setTimeout(() => {
+      setIsCondensePop(false);
+    }, 430);
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [isCondensed]);
+
+  useEffect(() => {
+    if (!isBrowseOpen && !isSearchOpen) return;
 
     const onPointerDown = (event) => {
       if (!headerRef.current?.contains(event.target)) {
         setIsBrowseOpen(false);
+        setIsSearchOpen(false);
       }
     };
 
@@ -59,14 +75,15 @@ export function Header({
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
     };
-  }, [isBrowseOpen]);
+  }, [isBrowseOpen, isSearchOpen]);
 
   useEffect(() => {
-    if (!isBrowseOpen) return;
+    if (!isBrowseOpen && !isSearchOpen) return;
 
     const onEscape = (event) => {
       if (event.key === 'Escape') {
         setIsBrowseOpen(false);
+        setIsSearchOpen(false);
       }
     };
 
@@ -74,12 +91,26 @@ export function Header({
     return () => {
       document.removeEventListener('keydown', onEscape);
     };
-  }, [isBrowseOpen]);
+  }, [isBrowseOpen, isSearchOpen]);
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      document.body.classList.remove('no-scroll');
+      return;
+    }
+
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, [isSearchOpen]);
 
   return (
     <header
       ref={headerRef}
-      className={`pz-header${isCondensed ? ' is-condensed' : ''}`}
+      className={`pz-header${isCondensed ? ' is-condensed' : ''}${
+        isSearchOpen ? ' is-search-open' : ''
+      }${isCondensePop ? ' is-condense-pop' : ''}`}
     >
       <div className="pz-shell pz-header-bar">
         <div className="pz-header-left">
@@ -111,23 +142,20 @@ export function Header({
         </div>
 
         <div className="pz-header-right">
-          <NavLink
-            to="/search"
-            prefetch="intent"
-            className="pz-header-link"
-            aria-label="Search"
-          >
-            <span className="pz-header-link-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="M16.1 16.1 21 21" />
-              </svg>
-            </span>
-            <span className="pz-header-link-text">Search</span>
-          </NavLink>
+          <SearchToggle
+            isOpen={isSearchOpen}
+            onToggle={() => {
+              setIsBrowseOpen(false);
+              setIsSearchOpen((open) => !open);
+            }}
+          />
           <AccountLink isLoggedIn={isLoggedIn} />
           <CartToggle cart={cart} />
         </div>
+
+        {isSearchOpen ? (
+          <HeaderSearchPanel onClose={() => setIsSearchOpen(false)} />
+        ) : null}
       </div>
 
       <div
@@ -145,6 +173,143 @@ export function Header({
         />
       </div>
     </header>
+  );
+}
+
+function SearchToggle({isOpen, onToggle}) {
+  return (
+    <button
+      type="button"
+      className={`pz-header-link pz-header-search-toggle${isOpen ? ' is-open' : ''}`}
+      aria-expanded={isOpen}
+      aria-controls="pz-header-search-panel"
+      aria-label="Search"
+      onClick={onToggle}
+    >
+      <span className="pz-header-link-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="M16.1 16.1 21 21" />
+        </svg>
+      </span>
+      <span className="pz-header-link-text">Search</span>
+    </button>
+  );
+}
+
+function HeaderSearchPanel({onClose}) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  return (
+    <div
+      id="pz-header-search-panel"
+      className="pz-header-search-panel"
+      role="dialog"
+      aria-label="Search products"
+    >
+      <SearchFormPredictive
+        className="pz-header-search-form"
+        onClose={onClose}
+        limit={20}
+      >
+        {({fetchResults, inputRef, fetcher, goToSearch}) => {
+          const term = searchTerm.trim();
+          const products = fetcher?.data?.result?.items?.products || [];
+          const isLoading = fetcher?.state === 'loading' || fetcher?.state === 'submitting';
+          const viewAllHref = `/search?q=${encodeURIComponent(term)}`;
+
+          return (
+          <>
+            <div className="pz-header-search-input-wrap">
+              <input
+                name="q"
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  fetchResults(event);
+                }}
+                onFocus={(event) => {
+                  if (event.target.value) {
+                    fetchResults(event);
+                  }
+                }}
+                placeholder="Search products..."
+                ref={inputRef}
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="Search products"
+              />
+              <button
+                type="button"
+                className="pz-header-search-icon-btn"
+                aria-label="Go to search page"
+                onClick={goToSearch}
+              >
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="M16.1 16.1 21 21" />
+                </svg>
+              </button>
+            </div>
+
+            {term ? (
+              isLoading ? (
+                <p className="pz-header-search-state">Searching...</p>
+              ) : products.length ? (
+                <div className="pz-header-search-results" role="list">
+                  {products.slice(0, 20).map((product) => {
+                    const image = product?.selectedOrFirstAvailableVariant?.image || null;
+                    return (
+                      <NavLink
+                        key={product.id}
+                        to={`/products/${product.handle}`}
+                        prefetch="intent"
+                        className="pz-header-search-item"
+                        onClick={onClose}
+                        role="listitem"
+                      >
+                        {image?.url ? (
+                          <img
+                            src={image.url}
+                            alt={image.altText || product.title}
+                            loading="lazy"
+                            width={52}
+                            height={52}
+                          />
+                        ) : (
+                          <span
+                            className="pz-header-search-thumb-placeholder"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span className="pz-header-search-item-copy">
+                          <strong>{product.title}</strong>
+                        </span>
+                      </NavLink>
+                    );
+                  })}
+                  <NavLink
+                    to={viewAllHref}
+                    prefetch="intent"
+                    className="pz-header-search-view-all"
+                    onClick={onClose}
+                    role="listitem"
+                  >
+                    View all results
+                  </NavLink>
+                </div>
+              ) : (
+                <p className="pz-header-search-state">
+                  No products found for <q>{term}</q>.
+                </p>
+              )
+            ) : null}
+          </>
+          );
+        }}
+      </SearchFormPredictive>
+    </div>
   );
 }
 

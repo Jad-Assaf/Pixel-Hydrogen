@@ -323,6 +323,30 @@ const PREDICTIVE_SEARCH_QUERY = `#graphql
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 `;
 
+const PREDICTIVE_PRODUCTS_ONLY_QUERY = `#graphql
+  query PredictiveProductsOnly(
+    $country: CountryCode
+    $language: LanguageCode
+    $limit: Int!
+    $term: String!
+  ) @inContext(country: $country, language: $language) {
+    products: search(
+      query: $term,
+      first: $limit,
+      sortKey: RELEVANCE,
+      types: [PRODUCT],
+      unavailableProducts: HIDE
+    ) {
+      nodes {
+        ...on Product {
+          ...PredictiveProduct
+        }
+      }
+    }
+  }
+  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
+`;
+
 /**
  * Predictive search fetcher
  * @param {Pick<
@@ -335,10 +359,38 @@ async function predictiveSearch({request, context}) {
   const {storefront} = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10);
+  const requestedLimit = Number(url.searchParams.get('limit') || 10);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.max(1, Math.min(requestedLimit, 20))
+    : 10;
   const type = 'predictive';
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
+
+  if (limit > 10) {
+    const {products, errors} = await storefront.query(
+      PREDICTIVE_PRODUCTS_ONLY_QUERY,
+      {
+        variables: {term, limit},
+      },
+    );
+
+    if (errors) {
+      throw new Error(
+        `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+      );
+    }
+
+    const items = {
+      articles: [],
+      collections: [],
+      pages: [],
+      products: products?.nodes || [],
+      queries: [],
+    };
+
+    return {type, term, result: {items, total: items.products.length}};
+  }
 
   // Predictively search articles, products, and query suggestions
   const {predictiveSearch: items, errors} = await storefront.query(
@@ -364,12 +416,20 @@ async function predictiveSearch({request, context}) {
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
+  const normalizedItems = {
+    articles: items?.articles || [],
+    collections: [],
+    pages: [],
+    products: items?.products || [],
+    queries: items?.queries || [],
+  };
+
+  const total = Object.values(normalizedItems).reduce(
     (acc, item) => acc + item.length,
     0,
   );
 
-  return {type, term, result: {items, total}};
+  return {type, term, result: {items: normalizedItems, total}};
 }
 
 /** @typedef {import('./+types/search').Route} Route */
