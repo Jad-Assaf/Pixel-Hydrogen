@@ -274,6 +274,13 @@ const COLLECTION_QUERY = `#graphql
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      image {
+        id
+        altText
+        url
+        width
+        height
+      }
       selectedOptions {
         name
         value
@@ -283,6 +290,27 @@ const COLLECTION_QUERY = `#graphql
       }
       compareAtPrice {
         ...MoneyCollectionProduct
+      }
+    }
+    variants(first: 12) {
+      nodes {
+        id
+        title
+        availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...MoneyCollectionProduct
+        }
       }
     }
   }

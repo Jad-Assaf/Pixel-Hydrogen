@@ -30,11 +30,14 @@ export function Header({
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    const collapseThreshold = 34;
-    const expandThreshold = 12;
+    const collapseThreshold = 52;
+    const expandThreshold = 8;
+    let frameId = 0;
+    let ticking = false;
 
-    const onScroll = () => {
-      const top = window.scrollY;
+    const updateCondensedState = () => {
+      ticking = false;
+      const top = window.scrollY || window.pageYOffset || 0;
       setIsCondensed((prev) => {
         if (prev) {
           return top > expandThreshold;
@@ -43,10 +46,19 @@ export function Header({
       });
     };
 
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      frameId = window.requestAnimationFrame(updateCondensedState);
+    };
+
     onScroll();
     window.addEventListener('scroll', onScroll, {passive: true});
     return () => {
       window.removeEventListener('scroll', onScroll);
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
     };
   }, []);
 
@@ -55,7 +67,7 @@ export function Header({
     setIsCondensePop(true);
     const timeoutId = setTimeout(() => {
       setIsCondensePop(false);
-    }, 430);
+    }, 460);
     return () => {
       clearTimeout(timeoutId);
     };
@@ -661,17 +673,18 @@ function MobileMenuItem({
         <span aria-hidden="true">{isOpen ? '-' : '+'}</span>
       </button>
 
-      {normalized ? (
-        <MobileMenuViewAllLink
-          item={item}
-          normalized={normalized}
-          close={close}
-          onNavigate={onNavigate}
-        />
-      ) : null}
-
       {isOpen ? (
         <ul className="pz-nav-sublist">
+          {normalized ? (
+            <li>
+              <MobileMenuViewAllLink
+                item={item}
+                normalized={normalized}
+                close={close}
+                onNavigate={onNavigate}
+              />
+            </li>
+          ) : null}
           {children.map((child) => (
             <MobileMenuItem
               key={child.id}

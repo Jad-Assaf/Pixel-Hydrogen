@@ -413,6 +413,13 @@ const HOME_QUERY = `#graphql
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      image {
+        id
+        altText
+        url
+        width
+        height
+      }
       selectedOptions {
         name
         value
@@ -422,6 +429,27 @@ const HOME_QUERY = `#graphql
       }
       compareAtPrice {
         ...HomeMoney
+      }
+    }
+    variants(first: 12) {
+      nodes {
+        id
+        title
+        availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...HomeMoney
+        }
       }
     }
   }
@@ -510,6 +538,13 @@ const MENU_COLLECTION_ROWS_QUERY = `#graphql
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      image {
+        id
+        altText
+        url
+        width
+        height
+      }
       selectedOptions {
         name
         value
@@ -519,6 +554,27 @@ const MENU_COLLECTION_ROWS_QUERY = `#graphql
       }
       compareAtPrice {
         ...HomeCollectionMoney
+      }
+    }
+    variants(first: 12) {
+      nodes {
+        id
+        title
+        availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...HomeCollectionMoney
+        }
       }
     }
   }
@@ -573,6 +629,13 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
           selectedOrFirstAvailableVariant {
             id
             availableForSale
+            image {
+              id
+              altText
+              url
+              width
+              height
+            }
             selectedOptions {
               name
               value
@@ -584,6 +647,28 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
             compareAtPrice {
               amount
               currencyCode
+            }
+          }
+          variants(first: 12) {
+            nodes {
+              id
+              title
+              availableForSale
+              image {
+                id
+                altText
+                url
+                width
+                height
+              }
+              selectedOptions {
+                name
+                value
+              }
+              price {
+                amount
+                currencyCode
+              }
             }
           }
         }

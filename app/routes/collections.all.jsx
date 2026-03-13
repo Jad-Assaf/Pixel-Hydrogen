@@ -157,6 +157,13 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      image {
+        id
+        altText
+        url
+        width
+        height
+      }
       selectedOptions {
         name
         value
@@ -166,6 +173,27 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
       }
       compareAtPrice {
         ...MoneyCollectionItem
+      }
+    }
+    variants(first: 12) {
+      nodes {
+        id
+        title
+        availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...MoneyCollectionItem
+        }
       }
     }
   }

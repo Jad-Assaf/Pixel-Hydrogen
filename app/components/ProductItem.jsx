@@ -1,3 +1,4 @@
+import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router';
 import {Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
@@ -17,9 +18,51 @@ import {useAside} from '~/components/Aside';
  */
 export function ProductItem({product, loading, showAddToCart = false}) {
   const variantUrl = useVariantUrl(product.handle);
-  const image = product.featuredImage;
-  const imageUrl = image?.url ? withImageWidth(image.url, 200) : null;
-  const selectedVariant = product.selectedOrFirstAvailableVariant;
+  const selectedVariant = product.selectedOrFirstAvailableVariant || null;
+  const variantSwatches = useMemo(() => {
+    const variants = product?.variants?.nodes || [];
+    const seen = new Set();
+    const unique = [];
+
+    variants.forEach((variant) => {
+      const imageUrl = variant?.image?.url;
+      if (!variant?.id || !imageUrl) return;
+
+      const imageKey = variant.image.id || imageUrl;
+      if (seen.has(imageKey)) return;
+      seen.add(imageKey);
+      unique.push(variant);
+    });
+
+    return unique;
+  }, [product?.variants?.nodes]);
+  const initialVariantId = useMemo(() => {
+    if (selectedVariant?.id && variantSwatches.some((variant) => variant.id === selectedVariant.id)) {
+      return selectedVariant.id;
+    }
+
+    return variantSwatches[0]?.id || selectedVariant?.id || null;
+  }, [selectedVariant?.id, variantSwatches]);
+  const [activeVariantId, setActiveVariantId] = useState(initialVariantId);
+
+  useEffect(() => {
+    setActiveVariantId(initialVariantId);
+  }, [initialVariantId, product.id]);
+
+  const activeVariant = useMemo(() => {
+    if (!activeVariantId) return selectedVariant;
+
+    return (
+      variantSwatches.find((variant) => variant.id === activeVariantId) ||
+      selectedVariant
+    );
+  }, [activeVariantId, selectedVariant, variantSwatches]);
+  const displayVariant = activeVariant || selectedVariant;
+  const displayImage = displayVariant?.image || product.featuredImage;
+  const imageUrl = displayImage?.url ? withImageWidth(displayImage.url, 300) : null;
+  const displayPrice =
+    displayVariant?.price || product.priceRange?.minVariantPrice || null;
+  const cartVariant = displayVariant || selectedVariant;
   const {open} = useAside();
 
   return (
@@ -28,7 +71,7 @@ export function ProductItem({product, loading, showAddToCart = false}) {
         <div className="pz-product-media">
           {imageUrl ? (
             <img
-              alt={image.altText || product.title}
+              alt={displayImage.altText || product.title}
               className="pz-product-image"
               loading={loading}
               src={imageUrl}
@@ -47,10 +90,8 @@ export function ProductItem({product, loading, showAddToCart = false}) {
           <h3>{product.title}</h3>
           <div className="pz-product-price-row">
             <strong>
-              {product.priceRange?.minVariantPrice ? (
-                <Money data={product.priceRange.minVariantPrice} />
-              ) : selectedVariant?.price ? (
-                <Money data={selectedVariant.price} />
+              {displayPrice ? (
+                <Money data={displayPrice} />
               ) : (
                 'N/A'
               )}
@@ -59,20 +100,54 @@ export function ProductItem({product, loading, showAddToCart = false}) {
         </div>
       </Link>
 
-      {showAddToCart && selectedVariant?.id ? (
+      {variantSwatches.length > 1 ? (
+        <div className="pz-product-variant-swatches" aria-label="Variant images">
+          {variantSwatches.map((variant) => {
+            const swatchImage = variant.image;
+            if (!swatchImage?.url) return null;
+
+            return (
+              <button
+                type="button"
+                key={variant.id}
+                className={`pz-product-variant-swatch${
+                  variant.id === displayVariant?.id ? ' is-active' : ''
+                }`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setActiveVariantId(variant.id);
+                }}
+                aria-label={variant.title || product.title}
+                title={variant.title || product.title}
+              >
+                <img
+                  src={withImageWidth(swatchImage.url, 80)}
+                  alt={swatchImage.altText || variant.title || product.title}
+                  loading="lazy"
+                  width={24}
+                  height={24}
+                />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {showAddToCart && cartVariant?.id ? (
         <AddToCartButton
-          disabled={!selectedVariant.availableForSale}
+          disabled={!cartVariant.availableForSale}
           onClick={() => open('cart')}
           lines={[
             {
-              merchandiseId: selectedVariant.id,
+              merchandiseId: cartVariant.id,
               quantity: 1,
-              selectedVariant,
+              selectedVariant: cartVariant,
             },
           ]}
           className="pz-card-cart-btn"
         >
-          {selectedVariant.availableForSale ? '+' : '×'}
+          {cartVariant.availableForSale ? '+' : '×'}
         </AddToCartButton>
       ) : null}
     </article>

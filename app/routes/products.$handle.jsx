@@ -563,6 +563,47 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
           currencyCode
         }
       }
+      selectedOrFirstAvailableVariant {
+        id
+        availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          amount
+          currencyCode
+        }
+      }
+      variants(first: 12) {
+        nodes {
+          id
+          title
+          availableForSale
+          image {
+            id
+            altText
+            url
+            width
+            height
+          }
+          selectedOptions {
+            name
+            value
+          }
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
     }
   }
 `;

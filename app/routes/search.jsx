@@ -128,6 +128,27 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
         title
       }
     }
+    variants(first: 12) {
+      nodes {
+        id
+        title
+        availableForSale
+        image {
+          url
+          altText
+          width
+          height
+        }
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          amount
+          currencyCode
+        }
+      }
+    }
   }
 `;
 

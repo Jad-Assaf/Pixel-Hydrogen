@@ -1,4 +1,4 @@
-import {CartForm, Money} from '@shopify/hydrogen';
+import {Money} from '@shopify/hydrogen';
 
 /**
  * @param {CartSummaryProps}
@@ -30,7 +30,6 @@ export function CartSummary({cart, layout}) {
       </div>
 
       <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
-      <CartDiscounts discountCodes={cart?.discountCodes} />
 
       {layout === 'page' ? (
         <div className="pz-summary-benefits">
@@ -61,58 +60,6 @@ function CartCheckoutActions({checkoutUrl}) {
     <a href={checkoutUrl} target="_self" className="pz-btn pz-btn-primary pz-summary-checkout">
       Proceed to Checkout
     </a>
-  );
-}
-
-/**
- * @param {{
- *   discountCodes?: CartApiQueryFragment['discountCodes'];
- * }}
- */
-function CartDiscounts({discountCodes}) {
-  const codes =
-    discountCodes
-      ?.filter((discount) => discount.applicable)
-      ?.map(({code}) => code) || [];
-
-  return (
-    <div className="pz-discount-box">
-      {codes.length ? (
-        <UpdateDiscountForm>
-          <div className="pz-discount-active">
-            <code>{codes.join(', ')}</code>
-            <button type="submit">Remove</button>
-          </div>
-        </UpdateDiscountForm>
-      ) : null}
-
-      <UpdateDiscountForm discountCodes={codes}>
-        <div className="pz-discount-form">
-          <input type="text" name="discountCode" placeholder="Discount code" />
-          <button type="submit">Apply</button>
-        </div>
-      </UpdateDiscountForm>
-    </div>
-  );
-}
-
-/**
- * @param {{
- *   discountCodes?: string[];
- *   children: React.ReactNode;
- * }}
- */
-function UpdateDiscountForm({discountCodes, children}) {
-  return (
-    <CartForm
-      route="/cart"
-      action={CartForm.ACTIONS.DiscountCodesUpdate}
-      inputs={{
-        discountCodes: discountCodes || [],
-      }}
-    >
-      {children}
-    </CartForm>
   );
 }
 
