@@ -2115,8 +2115,8 @@ body > main {
   position: absolute;
   left: 0;
   top: 50%;
-  width: 2rem;
-  height: 2rem;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   opacity: 0;
   transform: translateY(-50%) scale(0.88);
@@ -2133,7 +2133,7 @@ body > main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.35rem;
+  min-height: 40px;
   border-radius: var(--pz-header-radius);
   border: 1px solid var(--pz-orange);
   padding: 0 0.9rem;
@@ -2171,7 +2171,8 @@ body > main {
 }
 
 .pz-header.is-condensed .pz-logo {
-  width: 2rem;
+  width: 40px;
+  height: 40px;
 }
 
 .pz-header.is-condensed .pz-logo-full {
@@ -2446,7 +2447,7 @@ body > main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.35rem;
+  min-height: 40px;
   gap: 0.5rem;
   border-radius: var(--pz-header-radius);
   border: 1px solid #0f172a;
@@ -4669,6 +4670,7 @@ body > main {
     position: relative;
     width: 35px;
     height: 35px;
+    min-height: 35px;
     justify-content: center;
     border-color: #000;
     background: #000;
