@@ -120,8 +120,9 @@ export default function Homepage() {
             <span>Redefined.</span>
           </h1>
           <p>
-            Experience high-performance devices curated for modern professionals.
-            Powerful hardware, clean design, and everyday reliability.
+            Experience high-performance devices curated for modern
+            professionals. Powerful hardware, clean design, and everyday
+            reliability.
           </p>
           <div className="pz-hero-actions">
             <Link
@@ -181,7 +182,11 @@ export default function Homepage() {
               >
                 ›
               </button>
-              <Link to="/shop" prefetch="intent" className="pz-inline-link">
+              <Link
+                to="/collections/new-arrivals"
+                prefetch="intent"
+                className="pz-inline-link"
+              >
                 View All
               </Link>
             </div>
@@ -200,7 +205,9 @@ export default function Homepage() {
               ))}
             </div>
           ) : (
-            <p className="pz-empty">Add products to your store to populate this section.</p>
+            <p className="pz-empty">
+              Add products to your store to populate this section.
+            </p>
           )}
         </div>
       </section>
@@ -212,9 +219,9 @@ export default function Homepage() {
               <p className="pz-kicker">Shop by Collection</p>
               <h2>Main Collections</h2>
             </div>
-            <Link to="/collections" prefetch="intent" className="pz-inline-link">
+            {/* <Link to="/collections" prefetch="intent" className="pz-inline-link">
               View All Collections
-            </Link>
+            </Link> */}
           </div>
 
           {visibleMenuCollections.length ? (
@@ -236,21 +243,35 @@ export default function Homepage() {
                         height={collection.image.height || 600}
                       />
                     ) : (
-                      <div className="pz-image-placeholder" aria-hidden="true" />
+                      <div
+                        className="pz-image-placeholder"
+                        aria-hidden="true"
+                      />
                     )}
                   </div>
-                  <p>{collection.title}</p>
+                  <div className="pz-collection-card-copy">
+                    <p>{collection.title}</p>
+                    <small>
+                      {collection.products.length} product
+                      {collection.products.length === 1 ? '' : 's'}
+                    </small>
+                  </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="pz-empty">Add collections to your main menu to populate this row.</p>
+            <p className="pz-empty">
+              Add collections to your main menu to populate this row.
+            </p>
           )}
         </div>
       </section>
 
       {visibleMenuCollections.map((collection) => (
-        <section className="pz-home-section pz-home-collection-products" key={`row-${collection.id}`}>
+        <section
+          className="pz-home-section pz-home-collection-products"
+          key={`row-${collection.id}`}
+        >
           <div className="pz-shell">
             <div className="pz-section-head">
               <div>
@@ -269,7 +290,10 @@ export default function Homepage() {
             {collection.products.length ? (
               <div className="pz-product-carousel pz-collection-product-carousel">
                 {collection.products.map((product, index) => (
-                  <div className="pz-product-carousel-item" key={`${collection.id}-${product.id}`}>
+                  <div
+                    className="pz-product-carousel-item"
+                    key={`${collection.id}-${product.id}`}
+                  >
                     <ProductItem
                       product={product}
                       loading={index < 3 ? 'eager' : 'lazy'}
@@ -280,7 +304,8 @@ export default function Homepage() {
               </div>
             ) : (
               <p className="pz-empty">
-                Add products to <strong>{collection.title}</strong> to fill this row.
+                Add products to <strong>{collection.title}</strong> to fill this
+                row.
               </p>
             )}
           </div>

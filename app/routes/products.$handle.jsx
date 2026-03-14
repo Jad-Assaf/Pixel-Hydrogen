@@ -203,7 +203,7 @@ export default function Product() {
   return (
     <div className="pz-product-page">
       <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
-        <Link to="/shop" prefetch="intent">
+        <Link to="/collections/new-arrivals" prefetch="intent">
           Shop
         </Link>
         <span>/</span>
@@ -348,9 +348,15 @@ export default function Product() {
                   </div>
                 </div>
 
-                <div className="pz-product-carousel pz-related-carousel" ref={relatedCarouselRef}>
+                <div
+                  className="pz-product-carousel pz-related-carousel"
+                  ref={relatedCarouselRef}
+                >
                   {products.map((item) => (
-                    <div key={item.id} className="pz-product-carousel-item pz-related-carousel-item">
+                    <div
+                      key={item.id}
+                      className="pz-product-carousel-item pz-related-carousel-item"
+                    >
                       <ProductItem product={item} />
                     </div>
                   ))}

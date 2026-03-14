@@ -73,7 +73,7 @@ function CartEmpty({layout}) {
       <p>Add something from the shop and it will appear here.</p>
       <Link
         className="pz-btn pz-btn-primary"
-        to="/shop"
+        to="/collections/new-arrivals"
         onClick={() => {
           if (layout === 'aside') close();
         }}

@@ -88,51 +88,55 @@ export function ProductItem({product, loading, showAddToCart = false}) {
             <span>{(product.vendor || 'TECH').toUpperCase()}</span>
           </div>
           <h3>{product.title}</h3>
-          <div className="pz-product-price-row">
-            <strong>
-              {displayPrice ? (
-                <Money data={displayPrice} />
-              ) : (
-                'N/A'
-              )}
-            </strong>
-          </div>
         </div>
       </Link>
 
-      {variantSwatches.length > 1 ? (
-        <div className="pz-product-variant-swatches" aria-label="Variant images">
-          {variantSwatches.map((variant) => {
-            const swatchImage = variant.image;
-            if (!swatchImage?.url) return null;
+      <div className="pz-product-card-footer">
+        <div className="pz-product-variant-slot">
+          {variantSwatches.length > 1 ? (
+            <div className="pz-product-variant-swatches" aria-label="Variant images">
+              {variantSwatches.map((variant) => {
+                const swatchImage = variant.image;
+                if (!swatchImage?.url) return null;
 
-            return (
-              <button
-                type="button"
-                key={variant.id}
-                className={`pz-product-variant-swatch${
-                  variant.id === displayVariant?.id ? ' is-active' : ''
-                }`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setActiveVariantId(variant.id);
-                }}
-                aria-label={variant.title || product.title}
-                title={variant.title || product.title}
-              >
-                <img
-                  src={withImageWidth(swatchImage.url, 80)}
-                  alt={swatchImage.altText || variant.title || product.title}
-                  loading="lazy"
-                  width={24}
-                  height={24}
-                />
-              </button>
-            );
-          })}
+                return (
+                  <button
+                    type="button"
+                    key={variant.id}
+                    className={`pz-product-variant-swatch${
+                      variant.id === displayVariant?.id ? ' is-active' : ''
+                    }`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setActiveVariantId(variant.id);
+                    }}
+                    aria-label={variant.title || product.title}
+                    title={variant.title || product.title}
+                  >
+                    <img
+                      src={withImageWidth(swatchImage.url, 80)}
+                      alt={swatchImage.altText || variant.title || product.title}
+                      loading="lazy"
+                      width={24}
+                      height={24}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
-      ) : null}
+        <div className="pz-product-price-row">
+          <strong>
+            {displayPrice ? (
+              <Money data={displayPrice} />
+            ) : (
+              'N/A'
+            )}
+          </strong>
+        </div>
+      </div>
 
       {showAddToCart && cartVariant?.id ? (
         <AddToCartButton
