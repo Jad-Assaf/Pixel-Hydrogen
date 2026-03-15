@@ -2022,10 +2022,7 @@ body > main {
   overflow: visible;
   background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid var(--pz-border);
-  transition:
-    background-color 380ms ease,
-    box-shadow 380ms ease,
-    border-color 380ms ease;
+  transition: background-color 180ms ease;
 }
 
 .pz-header.is-condensed {
@@ -2050,15 +2047,8 @@ body > main {
   transform: translateZ(0);
   contain: paint;
   transition:
-    min-height 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    width 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 380ms ease,
-    border-color 380ms ease,
-    box-shadow 380ms ease;
-  will-change: transform;
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease;
 }
 
 .pz-header.is-condensed .pz-header-bar {
@@ -2078,7 +2068,7 @@ body > main {
 
 .pz-header.is-condense-pop .pz-header-bar {
   transform-origin: top center;
-  animation: pz-header-condense-pop 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pz-header-condense-pop 160ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pz-header.is-search-open .pz-header-bar {
@@ -2107,7 +2097,7 @@ body > main {
   overflow: hidden;
   position: relative;
   text-decoration: none;
-  transition: width 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pz-logo-full {
@@ -2115,7 +2105,7 @@ body > main {
   height: 100%;
   object-fit: contain;
   object-position: left center;
-  transition: opacity 420ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: none;
 }
 
 .pz-logo-mini {
@@ -2127,7 +2117,7 @@ body > main {
   object-fit: contain;
   opacity: 0;
   transform: translateY(-50%) scale(0.88);
-  transition: opacity 420ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: none;
 }
 
 .pz-logo-text {

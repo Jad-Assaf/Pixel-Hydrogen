@@ -30,49 +30,120 @@ export function Header({
   }, [location.pathname, location.search]);
 
   useEffect(() => {
-    const collapseThreshold = 52;
-    const expandThreshold = 8;
-    let frameId = 0;
-    let ticking = false;
+    const collapseThreshold = 64;
+    const expandThreshold = 12;
+    const scrollThrottleMs = 24;
+    const popAnimationMs = 560;
+    const popSettleDelayMs = 120;
+    const minTransitionGapMs = 160;
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false;
+    const needsDeferredPop = isIOSWebKitBrowser();
+
     let condensedState = false;
+    let latestTop = 0;
+    let lastTransitionAt = 0;
+    let throttleTimeoutId = 0;
+    let settleTimeoutId = 0;
+    let popTimeoutId = 0;
+
+    const clearPopAnimation = () => {
+      if (popTimeoutId) {
+        window.clearTimeout(popTimeoutId);
+        popTimeoutId = 0;
+      }
+      setIsCondensePop(false);
+    };
+
+    const triggerPopAnimation = () => {
+      clearPopAnimation();
+      setIsCondensePop(true);
+      popTimeoutId = window.setTimeout(() => {
+        setIsCondensePop(false);
+        popTimeoutId = 0;
+      }, popAnimationMs);
+    };
+
+    const queuePopAfterScrollSettles = () => {
+      if (prefersReducedMotion) return;
+
+      if (!needsDeferredPop) {
+        triggerPopAnimation();
+        return;
+      }
+
+      if (settleTimeoutId) {
+        window.clearTimeout(settleTimeoutId);
+      }
+
+      settleTimeoutId = window.setTimeout(() => {
+        settleTimeoutId = 0;
+        if (condensedState) {
+          triggerPopAnimation();
+        }
+      }, popSettleDelayMs);
+    };
+
+    const getScrollTop = () =>
+      Math.max(0, window.scrollY || window.pageYOffset || 0);
 
     const updateCondensedState = () => {
-      ticking = false;
-      const top = window.scrollY || window.pageYOffset || 0;
+      throttleTimeoutId = 0;
+      const top = latestTop;
       const nextState = condensedState
         ? top > expandThreshold
         : top > collapseThreshold;
       if (nextState === condensedState) return;
+      const now = Date.now();
+      if (now - lastTransitionAt < minTransitionGapMs) return;
+      lastTransitionAt = now;
       condensedState = nextState;
       setIsCondensed(nextState);
+
+      if (!nextState) {
+        if (settleTimeoutId) {
+          window.clearTimeout(settleTimeoutId);
+          settleTimeoutId = 0;
+        }
+        clearPopAnimation();
+        return;
+      }
+
+      queuePopAfterScrollSettles();
     };
 
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      frameId = window.requestAnimationFrame(updateCondensedState);
+      latestTop = getScrollTop();
+
+      if (!throttleTimeoutId) {
+        throttleTimeoutId = window.setTimeout(
+          updateCondensedState,
+          scrollThrottleMs,
+        );
+      }
     };
 
-    onScroll();
+    latestTop = getScrollTop();
+    condensedState = latestTop > collapseThreshold;
+    setIsCondensed(condensedState);
+    setIsCondensePop(false);
+
     window.addEventListener('scroll', onScroll, {passive: true});
     return () => {
       window.removeEventListener('scroll', onScroll);
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
+      if (throttleTimeoutId) {
+        window.clearTimeout(throttleTimeoutId);
+      }
+      if (settleTimeoutId) {
+        window.clearTimeout(settleTimeoutId);
+      }
+      if (popTimeoutId) {
+        window.clearTimeout(popTimeoutId);
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!isCondensed) return;
-    setIsCondensePop(true);
-    const timeoutId = setTimeout(() => {
-      setIsCondensePop(false);
-    }, 560);
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [isCondensed]);
 
   useEffect(() => {
     if (!isBrowseOpen && !isSearchOpen) return;
@@ -189,6 +260,20 @@ export function Header({
       </div>
     </header>
   );
+}
+
+function isIOSWebKitBrowser() {
+  if (typeof navigator === 'undefined') return false;
+
+  const ua = navigator.userAgent || '';
+  const isIOSDevice =
+    /iPad|iPhone|iPod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafariDesktop =
+    /Safari/i.test(ua) &&
+    !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(ua);
+
+  return isIOSDevice || isSafariDesktop;
 }
 
 function SearchToggle({isOpen, onToggle}) {
