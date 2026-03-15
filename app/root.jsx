@@ -114,6 +114,7 @@ async function loadCriticalData({context}) {
     collectionHandles,
   } = getMenuCollectionReferences(header?.menu?.items || []);
   let menuCollectionAvailability = {};
+  let menuCollectionMedia = {};
 
   if (collectionIds.length) {
     const {nodes} = await storefront.query(MENU_COLLECTIONS_QUERY, {
@@ -122,9 +123,30 @@ async function loadCriticalData({context}) {
 
     menuCollectionAvailability = (nodes || []).reduce((acc, node) => {
       if (node?.__typename === 'Collection') {
-        acc[node.id] = Boolean(node.products?.nodes?.length);
-        acc[`id:${node.id}`] = Boolean(node.products?.nodes?.length);
+        const hasProducts = Boolean(node.products?.nodes?.length);
+        acc[node.id] = hasProducts;
+        acc[`id:${node.id}`] = hasProducts;
+        if (node.handle) {
+          acc[`handle:${node.handle.toLowerCase()}`] = hasProducts;
+        }
       }
+      return acc;
+    }, {});
+
+    menuCollectionMedia = (nodes || []).reduce((acc, node) => {
+      if (node?.__typename !== 'Collection') return acc;
+
+      const image = pickCollectionMenuImage(node);
+      if (!image?.url) return acc;
+
+      if (node.id) {
+        acc[node.id] = image;
+        acc[`id:${node.id}`] = image;
+      }
+      if (node.handle) {
+        acc[`handle:${node.handle.toLowerCase()}`] = image;
+      }
+
       return acc;
     }, {});
   }
@@ -145,13 +167,25 @@ async function loadCriticalData({context}) {
       const collection = result?.collection;
       const resolvedHandle = (collection?.handle || requestedHandle || '').toLowerCase();
       if (!resolvedHandle) return;
-      menuCollectionAvailability[`handle:${resolvedHandle}`] = Boolean(
-        collection?.products?.nodes?.length,
-      );
+      const hasProducts = Boolean(collection?.products?.nodes?.length);
+      menuCollectionAvailability[`handle:${resolvedHandle}`] = hasProducts;
+      if (collection?.id) {
+        menuCollectionAvailability[collection.id] = hasProducts;
+        menuCollectionAvailability[`id:${collection.id}`] = hasProducts;
+      }
+
+      const image = pickCollectionMenuImage(collection);
+      if (image?.url) {
+        menuCollectionMedia[`handle:${resolvedHandle}`] = image;
+        if (collection?.id) {
+          menuCollectionMedia[collection.id] = image;
+          menuCollectionMedia[`id:${collection.id}`] = image;
+        }
+      }
     });
   }
 
-  return {header, menuCollectionAvailability};
+  return {header, menuCollectionAvailability, menuCollectionMedia};
 }
 
 /**
@@ -249,6 +283,15 @@ function getCollectionHandleFromMenuUrl(url) {
   }
 }
 
+function pickCollectionMenuImage(collection) {
+  const candidates = [
+    collection?.image,
+    collection?.latestProduct?.nodes?.[0]?.featuredImage,
+  ];
+
+  return candidates.find((image) => image?.url) || null;
+}
+
 const MENU_COLLECTIONS_QUERY = `#graphql
   query MenuCollections($ids: [ID!]!, $country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
@@ -256,6 +299,23 @@ const MENU_COLLECTIONS_QUERY = `#graphql
       __typename
       ... on Collection {
         id
+        handle
+        image {
+          url
+          altText
+          width
+          height
+        }
+        latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+          nodes {
+            featuredImage {
+              url
+              altText
+              width
+              height
+            }
+          }
+        }
         products(first: 1) {
           nodes {
             id
@@ -273,7 +333,24 @@ const MENU_COLLECTION_BY_HANDLE_QUERY = `#graphql
     $language: LanguageCode
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
+      id
       handle
+      image {
+        url
+        altText
+        width
+        height
+      }
+      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+        nodes {
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
+        }
+      }
       products(first: 1) {
         nodes {
           id

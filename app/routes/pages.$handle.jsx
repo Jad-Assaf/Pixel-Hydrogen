@@ -64,13 +64,27 @@ function loadDeferredData({context}) {
 export default function Page() {
   /** @type {LoaderReturnData} */
   const {page} = useLoaderData();
+  const isContactPage = page?.handle?.toLowerCase() === 'contact';
 
   return (
-    <div className="page">
+    <div className={`page${isContactPage ? ' pz-contact-page' : ''}`}>
       <header>
         <h1>{page.title}</h1>
       </header>
       <main dangerouslySetInnerHTML={{__html: page.body}} />
+      {isContactPage ? (
+        <section className="pz-contact-map-block" aria-label="Store location">
+          <h2>Visit Us</h2>
+          <iframe
+            className="pz-map-embed"
+            src={PIXEL_ZONES_MAP_EMBED_URL}
+            title="Pixel Zones location map"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -94,6 +108,9 @@ const PAGE_QUERY = `#graphql
     }
   }
 `;
+
+const PIXEL_ZONES_MAP_EMBED_URL =
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3312.4893739188915!2d35.51732977606102!3d33.87704827322348!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151f170dd933444d%3A0xad92da460ee50e1d!2sPixel%20Zones!5e0!3m2!1sen!2slb!4v1773604137545!5m2!1sen!2slb';
 
 /** @typedef {import('./+types/pages.$handle').Route} Route */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */

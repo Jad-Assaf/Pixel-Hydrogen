@@ -34,16 +34,17 @@ export function Header({
     const expandThreshold = 8;
     let frameId = 0;
     let ticking = false;
+    let condensedState = false;
 
     const updateCondensedState = () => {
       ticking = false;
       const top = window.scrollY || window.pageYOffset || 0;
-      setIsCondensed((prev) => {
-        if (prev) {
-          return top > expandThreshold;
-        }
-        return top > collapseThreshold;
-      });
+      const nextState = condensedState
+        ? top > expandThreshold
+        : top > collapseThreshold;
+      if (nextState === condensedState) return;
+      condensedState = nextState;
+      setIsCondensed(nextState);
     };
 
     const onScroll = () => {
@@ -67,7 +68,7 @@ export function Header({
     setIsCondensePop(true);
     const timeoutId = setTimeout(() => {
       setIsCondensePop(false);
-    }, 460);
+    }, 560);
     return () => {
       clearTimeout(timeoutId);
     };
@@ -164,11 +165,13 @@ export function Header({
           <AccountLink isLoggedIn={isLoggedIn} />
           <CartToggle cart={cart} />
         </div>
-
-        {isSearchOpen ? (
-          <HeaderSearchPanel onClose={() => setIsSearchOpen(false)} />
-        ) : null}
       </div>
+
+      {isSearchOpen ? (
+        <div className="pz-shell pz-header-search-shell">
+          <HeaderSearchPanel onClose={() => setIsSearchOpen(false)} />
+        </div>
+      ) : null}
 
       <div
         id="pz-desktop-menu"
@@ -504,6 +507,7 @@ function DesktopBrowseMenu({
  *   viewport: Viewport;
  *   publicStoreDomain: HeaderProps['publicStoreDomain'];
  *   menuCollectionAvailability?: HeaderProps['menuCollectionAvailability'];
+ *   menuCollectionMedia?: HeaderProps['menuCollectionMedia'];
  *   onNavigate?: () => void;
  * }}
  */
@@ -513,6 +517,7 @@ export function HeaderMenu({
   viewport,
   publicStoreDomain,
   menuCollectionAvailability,
+  menuCollectionMedia,
   onNavigate,
 }) {
   const className = `pz-header-menu pz-header-menu-${viewport}`;
@@ -550,6 +555,7 @@ export function HeaderMenu({
               close={close}
               primaryDomainUrl={primaryDomainUrl}
               publicStoreDomain={publicStoreDomain}
+              menuCollectionMedia={menuCollectionMedia}
               onNavigate={onNavigate}
             />
           ) : (
@@ -574,6 +580,8 @@ export function HeaderMenu({
  *   close: () => void;
  *   primaryDomainUrl: string;
  *   publicStoreDomain: string;
+ *   menuCollectionMedia?: HeaderProps['menuCollectionMedia'];
+ *   isMobile?: boolean;
  *   onNavigate?: () => void;
  * }}
  */
@@ -582,9 +590,14 @@ function HeaderMenuItem({
   close,
   primaryDomainUrl,
   publicStoreDomain,
+  menuCollectionMedia,
+  isMobile = false,
   onNavigate,
 }) {
   const normalized = normalizeMenuUrl(item.url, primaryDomainUrl, publicStoreDomain);
+  const media = isMobile ? getMenuCollectionMedia(item, menuCollectionMedia) : null;
+  const mediaUrl = media?.url ? withImageWidth(media.url, 100) : null;
+  const mediaAlt = media?.altText || item.title;
 
   if (!normalized) {
     return null;
@@ -603,7 +616,17 @@ function HeaderMenuItem({
           target="_blank"
           className="pz-nav-link"
         >
-          {item.title}
+          {mediaUrl ? (
+            <img
+              src={mediaUrl}
+              alt={mediaAlt}
+              loading="lazy"
+              width={100}
+              height={100}
+              className="pz-nav-item-media"
+            />
+          ) : null}
+          <span className="pz-nav-link-text">{item.title}</span>
         </a>
       </li>
     );
@@ -623,7 +646,17 @@ function HeaderMenuItem({
         prefetch="intent"
         to={normalized.url}
       >
-        {item.title}
+        {mediaUrl ? (
+          <img
+            src={mediaUrl}
+            alt={mediaAlt}
+            loading="lazy"
+            width={100}
+            height={100}
+            className="pz-nav-item-media"
+          />
+        ) : null}
+        <span className="pz-nav-link-text">{item.title}</span>
       </NavLink>
     </li>
   );
@@ -635,6 +668,7 @@ function HeaderMenuItem({
  *   close: () => void;
  *   primaryDomainUrl: string;
  *   publicStoreDomain: string;
+ *   menuCollectionMedia?: HeaderProps['menuCollectionMedia'];
  *   onNavigate?: () => void;
  * }}
  */
@@ -643,11 +677,15 @@ function MobileMenuItem({
   close,
   primaryDomainUrl,
   publicStoreDomain,
+  menuCollectionMedia,
   onNavigate,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const normalized = normalizeMenuUrl(item.url, primaryDomainUrl, publicStoreDomain);
   const children = item.items || [];
+  const media = getMenuCollectionMedia(item, menuCollectionMedia);
+  const mediaUrl = media?.url ? withImageWidth(media.url, 100) : null;
+  const mediaAlt = media?.altText || item.title;
 
   if (!children.length) {
     return (
@@ -656,6 +694,8 @@ function MobileMenuItem({
         close={close}
         primaryDomainUrl={primaryDomainUrl}
         publicStoreDomain={publicStoreDomain}
+        menuCollectionMedia={menuCollectionMedia}
+        isMobile
         onNavigate={onNavigate}
       />
     );
@@ -669,7 +709,19 @@ function MobileMenuItem({
         aria-expanded={isOpen}
         onClick={() => setIsOpen((open) => !open)}
       >
-        <span>{item.title}</span>
+        <span className="pz-nav-toggle-main">
+          {mediaUrl ? (
+            <img
+              src={mediaUrl}
+              alt={mediaAlt}
+              loading="lazy"
+              width={100}
+              height={100}
+              className="pz-nav-item-media"
+            />
+          ) : null}
+          <span>{item.title}</span>
+        </span>
         <span aria-hidden="true">{isOpen ? '-' : '+'}</span>
       </button>
 
@@ -692,6 +744,7 @@ function MobileMenuItem({
               close={close}
               primaryDomainUrl={primaryDomainUrl}
               publicStoreDomain={publicStoreDomain}
+              menuCollectionMedia={menuCollectionMedia}
               onNavigate={onNavigate}
             />
           ))}
@@ -956,6 +1009,29 @@ function getCollectionHandleFromMenuUrl(url) {
   }
 }
 
+function getMenuCollectionMedia(item, mediaMap = {}) {
+  if (!item || !mediaMap) return null;
+
+  if (item.resourceId) {
+    const byId = mediaMap[`id:${item.resourceId}`] || mediaMap[item.resourceId];
+    if (byId?.url) return byId;
+  }
+
+  const handle = getCollectionHandleFromMenuUrl(item.url);
+  if (handle) {
+    const byHandle = mediaMap[`handle:${handle.toLowerCase()}`];
+    if (byHandle?.url) return byHandle;
+  }
+
+  return null;
+}
+
+function withImageWidth(url, width) {
+  if (!url || !width) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${width}`;
+}
+
 function normalizeMenuUrl(url, primaryDomainUrl, publicStoreDomain) {
   if (!url) return null;
 
@@ -1007,7 +1083,16 @@ const FALLBACK_HEADER_MENU = {
  * @property {Promise<CartApiQueryFragment | null>} cart
  * @property {string} publicStoreDomain
  * @property {Record<string, boolean>} [menuCollectionAvailability]
+ * @property {Record<string, CollectionMenuImage>} [menuCollectionMedia]
  */
 
 /** @typedef {import('storefrontapi.generated').HeaderQuery} HeaderQuery */
 /** @typedef {import('storefrontapi.generated').CartApiQueryFragment} CartApiQueryFragment */
+/**
+ * @typedef {{
+ *   url?: string;
+ *   altText?: string | null;
+ *   width?: number | null;
+ *   height?: number | null;
+ * }} CollectionMenuImage
+ */

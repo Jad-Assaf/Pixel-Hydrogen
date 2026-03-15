@@ -52,6 +52,49 @@ function FooterBody({header, publicStoreDomain, menuCollectionAvailability}) {
               Premium electronics curated for modern living. Built for people who
               care about performance and design.
             </p>
+            <div className="pz-footer-socials" aria-label="Social links">
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <svg
+                  fill="#000000"
+                  width="50"
+                  height="50"
+                  viewBox="0 0 32 32"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="M22.3,8.4c-0.8,0-1.4,0.6-1.4,1.4c0,0.8,0.6,1.4,1.4,1.4c0.8,0,1.4-0.6,1.4-1.4C23.7,9,23.1,8.4,22.3,8.4z" />
+                  <path d="M16,10.2c-3.3,0-5.9,2.7-5.9,5.9s2.7,5.9,5.9,5.9s5.9-2.7,5.9-5.9S19.3,10.2,16,10.2z M16,19.9c-2.1,0-3.8-1.7-3.8-3.8 c0-2.1,1.7-3.8,3.8-3.8c2.1,0,3.8,1.7,3.8,3.8C19.8,18.2,18.1,19.9,16,19.9z" />
+                  <path d="M20.8,4h-9.5C7.2,4,4,7.2,4,11.2v9.5c0,4,3.2,7.2,7.2,7.2h9.5c4,0,7.2-3.2,7.2-7.2v-9.5C28,7.2,24.8,4,20.8,4z M25.7,20.8 c0,2.7-2.2,5-5,5h-9.5c-2.7,0-5-2.2-5-5v-9.5c0-2.7,2.2-5,5-5h9.5c2.7,0,5,2.2,5,5V20.8z" />
+                </svg>
+              </a>
+              <a
+                href={FACEBOOK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M20 1C21.6569 1 23 2.34315 23 4V20C23 21.6569 21.6569 23 20 23H4C2.34315 23 1 21.6569 1 20V4C1 2.34315 2.34315 1 4 1H20ZM20 3C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H15V13.9999H17.0762C17.5066 13.9999 17.8887 13.7245 18.0249 13.3161L18.4679 11.9871C18.6298 11.5014 18.2683 10.9999 17.7564 10.9999H15V8.99992C15 8.49992 15.5 7.99992 16 7.99992H18C18.5523 7.99992 19 7.5522 19 6.99992V6.31393C19 5.99091 18.7937 5.7013 18.4813 5.61887C17.1705 5.27295 16 5.27295 16 5.27295C13.5 5.27295 12 6.99992 12 8.49992V10.9999H10C9.44772 10.9999 9 11.4476 9 11.9999V12.9999C9 13.5522 9.44771 13.9999 10 13.9999H12V21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20Z"
+                    fill="#0F0F0F"
+                  />
+                </svg>
+              </a>
+            </div>
           </div>
 
           <div>
@@ -80,6 +123,18 @@ function FooterBody({header, publicStoreDomain, menuCollectionAvailability}) {
             </ul>
           </div>
         </div>
+
+        <section className="pz-footer-map" aria-label="Store location">
+          <h4 className="pz-footer-heading">Visit Us</h4>
+          <iframe
+            className="pz-map-embed"
+            src={PIXEL_ZONES_MAP_EMBED_URL}
+            title="Pixel Zones location map"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </section>
 
         <div className="pz-footer-bottom">
           <p>
@@ -205,6 +260,11 @@ const COMPANY_LINKS = [
   {id: 'shipping-policy', title: 'Shipping', url: '/policies/shipping-policy'},
   {id: 'contact', title: 'Contact', url: '/pages/contact'},
 ];
+
+const INSTAGRAM_URL = 'https://www.instagram.com/pixel.zones/';
+const FACEBOOK_URL = 'https://www.facebook.com/people/Pixel-Zones/61556339013618/';
+const PIXEL_ZONES_MAP_EMBED_URL =
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3312.4893739188915!2d35.51732977606102!3d33.87704827322348!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151f170dd933444d%3A0xad92da460ee50e1d!2sPixel%20Zones!5e0!3m2!1sen!2slb!4v1773604137545!5m2!1sen!2slb';
 
 /**
  * @typedef {Object} FooterProps

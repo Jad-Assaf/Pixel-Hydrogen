@@ -15,6 +15,7 @@ export function PageLayout({
   header,
   isLoggedIn,
   menuCollectionAvailability,
+  menuCollectionMedia,
   publicStoreDomain,
 }) {
   return (
@@ -24,6 +25,7 @@ export function PageLayout({
         header={header}
         publicStoreDomain={publicStoreDomain}
         menuCollectionAvailability={menuCollectionAvailability}
+        menuCollectionMedia={menuCollectionMedia}
       />
       <div className="pz-site">
         {header ? (
@@ -32,6 +34,7 @@ export function PageLayout({
             cart={cart}
             isLoggedIn={isLoggedIn}
             menuCollectionAvailability={menuCollectionAvailability}
+            menuCollectionMedia={menuCollectionMedia}
             publicStoreDomain={publicStoreDomain}
           />
         ) : null}
@@ -69,12 +72,14 @@ function CartAside({cart}) {
  *   header: PageLayoutProps['header'];
  *   publicStoreDomain: PageLayoutProps['publicStoreDomain'];
  *   menuCollectionAvailability?: PageLayoutProps['menuCollectionAvailability'];
+ *   menuCollectionMedia?: PageLayoutProps['menuCollectionMedia'];
  * }}
  */
 function MobileMenuAside({
   header,
   publicStoreDomain,
   menuCollectionAvailability,
+  menuCollectionMedia,
 }) {
   return (
     header.menu &&
@@ -86,6 +91,7 @@ function MobileMenuAside({
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
           menuCollectionAvailability={menuCollectionAvailability}
+          menuCollectionMedia={menuCollectionMedia}
         />
       </Aside>
     )
@@ -99,6 +105,7 @@ function MobileMenuAside({
  * @property {HeaderQuery} header
  * @property {Promise<boolean>} isLoggedIn
  * @property {Record<string, boolean>} [menuCollectionAvailability]
+ * @property {Record<string, CollectionMenuImage>} [menuCollectionMedia]
  * @property {string} publicStoreDomain
  * @property {React.ReactNode} [children]
  */
@@ -106,3 +113,11 @@ function MobileMenuAside({
 /** @typedef {import('storefrontapi.generated').CartApiQueryFragment} CartApiQueryFragment */
 /** @typedef {import('storefrontapi.generated').FooterQuery} FooterQuery */
 /** @typedef {import('storefrontapi.generated').HeaderQuery} HeaderQuery */
+/**
+ * @typedef {{
+ *   url?: string;
+ *   altText?: string | null;
+ *   width?: number | null;
+ *   height?: number | null;
+ * }} CollectionMenuImage
+ */

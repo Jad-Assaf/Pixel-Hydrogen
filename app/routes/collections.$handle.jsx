@@ -1,4 +1,10 @@
-import {Form, Link, redirect, useLoaderData, useLocation} from 'react-router';
+import {
+  Form,
+  Link,
+  redirect,
+  useLoaderData,
+  useLocation,
+} from 'react-router';
 import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {ProductItem} from '~/components/ProductItem';
@@ -43,15 +49,81 @@ export async function loader({context, params, request}) {
     throw redirect('/collections');
   }
 
-  const {collection} = await storefront.query(COLLECTION_QUERY, {
-    variables: {
-      handle,
-      ...paginationVariables,
-      filters: selectedFilters,
-      sortKey: selectedSort.sortKey,
-      reverse: selectedSort.reverse,
-    },
-  });
+  const [collectionResult, menuResultPrimary] = await Promise.all([
+    storefront.query(COLLECTION_QUERY, {
+      variables: {
+        handle,
+        ...paginationVariables,
+        filters: selectedFilters,
+        sortKey: selectedSort.sortKey,
+        reverse: selectedSort.reverse,
+      },
+    }),
+    storefront
+      .query(COLLECTION_MENU_QUERY, {
+        cache: storefront.CacheLong(),
+        variables: {menuHandle: handle},
+      })
+      .catch(() => ({menu: null})),
+  ]);
+
+  const {collection} = collectionResult;
+
+  let menuResult = menuResultPrimary;
+  if (!menuResult?.menu && !handle.startsWith('/')) {
+    menuResult = await storefront
+      .query(COLLECTION_MENU_QUERY, {
+        cache: storefront.CacheLong(),
+        variables: {menuHandle: `/${handle}`},
+      })
+      .catch(() => ({menu: null}));
+  }
+
+  const menuCollectionItems = getMenuCollectionItems(menuResult?.menu?.items || []);
+  let menuCollectionCards = [];
+
+  if (menuCollectionItems.length) {
+    const ids = menuCollectionItems
+      .map((item) => item.resourceId)
+      .filter(Boolean);
+    const handles = menuCollectionItems
+      .map((item) => item.handle)
+      .filter(Boolean)
+      .map((value) => value.toLowerCase());
+
+    let collectionsById = [];
+    let collectionsByHandle = [];
+
+    if (ids.length) {
+      const {nodes} = await storefront.query(MENU_COLLECTIONS_QUERY, {
+        cache: storefront.CacheLong(),
+        variables: {ids},
+      });
+      collectionsById = nodes || [];
+    }
+
+    if (handles.length) {
+      const handleResults = await Promise.all(
+        handles.map((menuHandle) =>
+          storefront
+            .query(MENU_COLLECTION_BY_HANDLE_QUERY, {
+              cache: storefront.CacheLong(),
+              variables: {handle: menuHandle},
+            })
+            .catch(() => null),
+        ),
+      );
+
+      collectionsByHandle = handleResults
+        .map((result) => result?.collection)
+        .filter(Boolean);
+    }
+
+    menuCollectionCards = buildMenuCollectionCards(menuCollectionItems, [
+      ...collectionsById,
+      ...collectionsByHandle,
+    ]);
+  }
 
   if (!collection) {
     throw new Response(`Collection ${handle} not found`, {status: 404});
@@ -61,6 +133,7 @@ export async function loader({context, params, request}) {
 
   return {
     collection,
+    menuCollectionCards,
     selectedFilterValues,
     selectedSortValue: selectedSort.value,
   };
@@ -68,7 +141,8 @@ export async function loader({context, params, request}) {
 
 export default function CollectionRoute() {
   /** @type {LoaderReturnData} */
-  const {collection, selectedFilterValues, selectedSortValue} = useLoaderData();
+  const {collection, menuCollectionCards, selectedFilterValues, selectedSortValue} =
+    useLoaderData();
   const location = useLocation();
   const visibleFilters = (collection.products?.filters || []).filter(
     (filter) => !/availability/i.test(filter.label || filter.id || ''),
@@ -96,6 +170,42 @@ export default function CollectionRoute() {
           ) : null}
         </div>
       </div>
+
+      {menuCollectionCards.length ? (
+        <section className="pz-collection-menu-strip" aria-label="Browse collections">
+          <div className="pz-collection-menu-carousel">
+            {menuCollectionCards.map((menuCollection) => (
+              <Link
+                key={menuCollection.id}
+                to={`/collections/${menuCollection.handle}`}
+                prefetch="intent"
+                className={`pz-collection-card pz-collection-menu-card${
+                  menuCollection.handle.toLowerCase() === collection.handle.toLowerCase()
+                    ? ' is-active'
+                    : ''
+                }`}
+              >
+                <div className="pz-collection-card-image">
+                  {menuCollection.image?.url ? (
+                    <img
+                      src={withImageWidth(menuCollection.image.url, 600)}
+                      alt={menuCollection.image.altText || menuCollection.title}
+                      loading="lazy"
+                      width={menuCollection.image.width || 600}
+                      height={menuCollection.image.height || 600}
+                    />
+                  ) : (
+                    <div className="pz-image-placeholder" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="pz-collection-card-copy">
+                  <p>{menuCollection.title}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section
         className="pz-collection-controls"
@@ -245,6 +355,114 @@ function serializeFilterInput(input) {
   return JSON.stringify(input);
 }
 
+function getMenuCollectionItems(items) {
+  const results = [];
+
+  const visit = (item) => {
+    if (!item) return;
+
+    const handle = getCollectionHandleFromMenuUrl(item.url);
+    if (handle) {
+      results.push({
+        id: item.id,
+        title: item.title,
+        resourceId: item.resourceId || null,
+        handle: handle.toLowerCase(),
+      });
+    }
+
+    if (item.items?.length) {
+      item.items.forEach(visit);
+    }
+  };
+
+  (items || []).forEach(visit);
+
+  return dedupeMenuCollectionItems(results);
+}
+
+function dedupeMenuCollectionItems(items) {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    const key = item.resourceId || `handle:${item.handle}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function buildMenuCollectionCards(menuItems, nodes) {
+  const collectionNodes = (nodes || []).filter(
+    (node) => node?.__typename === 'Collection' || node?.handle,
+  );
+  const collectionById = new Map(
+    collectionNodes
+      .filter((node) => node?.id)
+      .map((collection) => [collection.id, collection]),
+  );
+  const collectionByHandle = new Map(
+    collectionNodes
+      .filter((collection) => collection?.handle)
+      .map((collection) => [collection.handle.toLowerCase(), collection]),
+  );
+
+  return menuItems
+    .map((item) => {
+      const collection =
+        (item.resourceId ? collectionById.get(item.resourceId) : null) ||
+        collectionByHandle.get(item.handle.toLowerCase());
+
+      if (!collection?.handle) return null;
+      if (!collectionHasProducts(collection)) return null;
+
+      return {
+        id: collection.id || item.id || collection.handle,
+        title: collection.title || item.title,
+        handle: collection.handle,
+        image: pickCollectionImage(collection),
+      };
+    })
+    .filter(Boolean);
+}
+
+function collectionHasProducts(collection) {
+  return Boolean(
+    collection?.products?.nodes?.length || collection?.latestProduct?.nodes?.length,
+  );
+}
+
+function pickCollectionImage(collection) {
+  const candidates = [
+    collection?.image,
+    collection?.latestProduct?.nodes?.[0]?.featuredImage,
+    collection?.products?.nodes?.[0]?.featuredImage,
+  ];
+
+  return candidates.find((image) => image?.url) || null;
+}
+
+function getCollectionHandleFromMenuUrl(url) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url, 'https://example.com');
+    const match = parsed.pathname.match(/\/collections\/([^/]+)/i);
+    if (!match?.[1]) return null;
+    const handle = decodeURIComponent(match[1]);
+    if (!handle || handle.toLowerCase() === 'all') return null;
+    return handle;
+  } catch {
+    return null;
+  }
+}
+
+function withImageWidth(url, width) {
+  if (!url || !width) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${width}`;
+}
+
 const COLLECTION_QUERY = `#graphql
   fragment MoneyCollectionProduct on MoneyV2 {
     amount
@@ -360,6 +578,140 @@ const COLLECTION_QUERY = `#graphql
           hasNextPage
           startCursor
           endCursor
+        }
+      }
+    }
+  }
+`;
+
+const COLLECTION_MENU_QUERY = `#graphql
+  fragment CollectionMenuItemFields on MenuItem {
+    id
+    resourceId
+    title
+    type
+    url
+  }
+
+  fragment CollectionMenuItemLevel4 on MenuItem {
+    ...CollectionMenuItemFields
+  }
+
+  fragment CollectionMenuItemLevel3 on MenuItem {
+    ...CollectionMenuItemFields
+    items {
+      ...CollectionMenuItemLevel4
+    }
+  }
+
+  fragment CollectionMenuItemLevel2 on MenuItem {
+    ...CollectionMenuItemFields
+    items {
+      ...CollectionMenuItemLevel3
+    }
+  }
+
+  fragment CollectionMenuItemLevel1 on MenuItem {
+    ...CollectionMenuItemFields
+    items {
+      ...CollectionMenuItemLevel2
+    }
+  }
+
+  query CollectionMenu(
+    $country: CountryCode
+    $language: LanguageCode
+    $menuHandle: String!
+  ) @inContext(country: $country, language: $language) {
+    menu(handle: $menuHandle) {
+      id
+      items {
+        ...CollectionMenuItemLevel1
+      }
+    }
+  }
+`;
+
+const MENU_COLLECTIONS_QUERY = `#graphql
+  query CollectionMenuCollections(
+    $country: CountryCode
+    $language: LanguageCode
+    $ids: [ID!]!
+  ) @inContext(country: $country, language: $language) {
+    nodes(ids: $ids) {
+      __typename
+      ...CollectionMenuCollectionNode
+    }
+  }
+
+  fragment CollectionMenuCollectionNode on Collection {
+    id
+    title
+    handle
+    image {
+      url
+      altText
+      width
+      height
+    }
+    latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+      nodes {
+        featuredImage {
+          url
+          altText
+          width
+          height
+        }
+      }
+    }
+    products(first: 1) {
+      nodes {
+        featuredImage {
+          url
+          altText
+          width
+          height
+        }
+      }
+    }
+  }
+`;
+
+const MENU_COLLECTION_BY_HANDLE_QUERY = `#graphql
+  query CollectionMenuCollectionByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      __typename
+      id
+      title
+      handle
+      image {
+        url
+        altText
+        width
+        height
+      }
+      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+        nodes {
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
+        }
+      }
+      products(first: 1) {
+        nodes {
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
         }
       }
     }

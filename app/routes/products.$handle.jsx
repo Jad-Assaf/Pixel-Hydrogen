@@ -12,6 +12,7 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+/* eslint-disable react/no-unknown-property */
 
 /**
  * @type {Route.MetaFunction}
@@ -121,8 +122,11 @@ export default function Product() {
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const relatedCarouselRef = useRef(null);
+  const mainTouchStartX = useRef(null);
+  const lightboxTouchStartX = useRef(null);
 
   useEffect(() => {
     if (!variantImageId) return;
@@ -140,6 +144,12 @@ export default function Product() {
   }, [activeIndex, images.length]);
 
   useEffect(() => {
+    if (lightboxIndex >= images.length) {
+      setLightboxIndex(0);
+    }
+  }, [lightboxIndex, images.length]);
+
+  useEffect(() => {
     if (!isLightboxOpen) return;
 
     const onKeyDown = (event) => {
@@ -149,11 +159,11 @@ export default function Product() {
       }
 
       if (event.key === 'ArrowRight' && images.length > 1) {
-        setActiveIndex((prev) => (prev + 1) % images.length);
+        setLightboxIndex((prev) => (prev + 1) % images.length);
       }
 
       if (event.key === 'ArrowLeft' && images.length > 1) {
-        setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+        setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
       }
     };
 
@@ -175,13 +185,22 @@ export default function Product() {
       image.src = src;
       return image;
     });
+    const preloadedLightbox = lightboxImageUrls.map((src) => {
+      const image = new window.Image();
+      image.decoding = 'async';
+      image.src = src;
+      return image;
+    });
 
     return () => {
       preloaded.forEach((image) => {
         image.src = '';
       });
+      preloadedLightbox.forEach((image) => {
+        image.src = '';
+      });
     };
-  }, [mainImageUrls]);
+  }, [lightboxImageUrls, mainImageUrls]);
 
   function scrollRelated(direction) {
     if (!relatedCarouselRef.current) return;
@@ -195,10 +214,53 @@ export default function Product() {
 
   const hasImages = images.length > 0;
   const hasMultipleImages = images.length > 1;
-  const showPreviousImage = () =>
+  const showPreviousMainImage = () =>
     setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
-  const showNextImage = () =>
+  const showNextMainImage = () =>
     setActiveIndex((prev) => (prev + 1) % images.length);
+  const showPreviousLightboxImage = () =>
+    setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
+  const showNextLightboxImage = () =>
+    setLightboxIndex((prev) => (prev + 1) % images.length);
+
+  const onMainTouchStart = (event) => {
+    mainTouchStartX.current = event.changedTouches?.[0]?.clientX ?? null;
+  };
+  const onMainTouchEnd = (event) => {
+    const startX = mainTouchStartX.current;
+    if (startX == null || !hasMultipleImages) return;
+    const endX = event.changedTouches?.[0]?.clientX ?? startX;
+    const delta = endX - startX;
+    mainTouchStartX.current = null;
+    if (Math.abs(delta) < 36) return;
+    if (delta > 0) {
+      showPreviousMainImage();
+      return;
+    }
+    showNextMainImage();
+  };
+
+  const onLightboxTouchStart = (event) => {
+    lightboxTouchStartX.current = event.changedTouches?.[0]?.clientX ?? null;
+  };
+  const onLightboxTouchEnd = (event) => {
+    const startX = lightboxTouchStartX.current;
+    if (startX == null || !hasMultipleImages) return;
+    const endX = event.changedTouches?.[0]?.clientX ?? startX;
+    const delta = endX - startX;
+    lightboxTouchStartX.current = null;
+    if (Math.abs(delta) < 36) return;
+    if (delta > 0) {
+      showPreviousLightboxImage();
+      return;
+    }
+    showNextLightboxImage();
+  };
+
+  const openLightbox = () => {
+    setLightboxIndex(activeIndex);
+    setIsLightboxOpen(true);
+  };
 
   return (
     <div className="pz-product-page">
@@ -221,7 +283,9 @@ export default function Product() {
               <button
                 type="button"
                 className="pz-product-main-media-stack pz-product-main-media-trigger"
-                onClick={() => setIsLightboxOpen(true)}
+                onClick={openLightbox}
+                onTouchStart={onMainTouchStart}
+                onTouchEnd={onMainTouchEnd}
                 aria-label="Open product image gallery"
               >
                 {images.map((image, index) => (
@@ -233,7 +297,7 @@ export default function Product() {
                     width={900}
                     height={700}
                     loading={index < 2 ? 'eager' : 'lazy'}
-                    fetchPriority={index === activeIndex ? 'high' : 'auto'}
+                    fetchpriority={index === activeIndex ? 'high' : 'auto'}
                   />
                 ))}
               </button>
@@ -246,18 +310,18 @@ export default function Product() {
                 <button
                   type="button"
                   className="pz-product-gallery-arrow is-prev"
-                  onClick={showPreviousImage}
+                  onClick={showPreviousMainImage}
                   aria-label="Previous image"
                 >
-                  ‹
+                  <ChevronIcon direction="left" />
                 </button>
                 <button
                   type="button"
                   className="pz-product-gallery-arrow is-next"
-                  onClick={showNextImage}
+                  onClick={showNextMainImage}
                   aria-label="Next image"
                 >
-                  ›
+                  <ChevronIcon direction="right" />
                 </button>
               </>
             ) : null}
@@ -390,13 +454,25 @@ export default function Product() {
               ×
             </button>
 
-            <div className="pz-image-lightbox-media">
-              <img
-                src={lightboxImageUrls[activeIndex]}
-                alt={images[activeIndex]?.altText || product.title}
-                width={1600}
-                height={1300}
-              />
+            <div
+              className="pz-image-lightbox-media"
+              onTouchStart={onLightboxTouchStart}
+              onTouchEnd={onLightboxTouchEnd}
+            >
+              {images.map((image, index) => (
+                <img
+                  key={`lightbox-${image.id || image.url}`}
+                  className={`pz-image-lightbox-main-image${
+                    index === lightboxIndex ? ' is-active' : ''
+                  }`}
+                  src={lightboxImageUrls[index]}
+                  alt={image.altText || product.title}
+                  width={1600}
+                  height={1300}
+                  loading={index === lightboxIndex ? 'eager' : 'lazy'}
+                  fetchpriority={index === lightboxIndex ? 'high' : 'auto'}
+                />
+              ))}
             </div>
 
             {hasMultipleImages ? (
@@ -404,20 +480,44 @@ export default function Product() {
                 <button
                   type="button"
                   className="pz-image-lightbox-arrow is-prev"
-                  onClick={showPreviousImage}
+                  onClick={showPreviousLightboxImage}
                   aria-label="Previous image"
                 >
-                  ‹
+                  <ChevronIcon direction="left" />
                 </button>
                 <button
                   type="button"
                   className="pz-image-lightbox-arrow is-next"
-                  onClick={showNextImage}
+                  onClick={showNextLightboxImage}
                   aria-label="Next image"
                 >
-                  ›
+                  <ChevronIcon direction="right" />
                 </button>
               </>
+            ) : null}
+
+            {hasMultipleImages ? (
+              <div className="pz-image-lightbox-thumbs">
+                <div className="pz-image-lightbox-thumbs-track">
+                  {images.map((image, index) => (
+                    <button
+                      type="button"
+                      key={`lightbox-thumb-${image.id || image.url}`}
+                      className={index === lightboxIndex ? 'is-active' : ''}
+                      onClick={() => setLightboxIndex(index)}
+                      aria-label={`View image ${index + 1}`}
+                    >
+                      <img
+                        src={withImageWidth(image.url, 180)}
+                        alt={image.altText || product.title}
+                        width={90}
+                        height={90}
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </div>
         </div>
@@ -439,6 +539,18 @@ export default function Product() {
         }}
       />
     </div>
+  );
+}
+
+function ChevronIcon({direction}) {
+  return (
+    <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
+      {direction === 'left' ? (
+        <path d="M12.5 4.5 7 10l5.5 5.5" />
+      ) : (
+        <path d="M7.5 4.5 13 10l-5.5 5.5" />
+      )}
+    </svg>
   );
 }
 
@@ -616,3 +728,4 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
 
 /** @typedef {import('./+types/products.$handle').Route} Route */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof loader>} LoaderReturnData */
+/* eslint-enable react/no-unknown-property */

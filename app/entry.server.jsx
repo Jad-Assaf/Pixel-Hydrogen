@@ -22,6 +22,7 @@ export default async function handleRequest(
     'https://youtube.com',
     'https://www.youtube-nocookie.com',
   ];
+  const googleFrameDomains = ['https://www.google.com/'];
   const commonSelf = ["'self'"];
   const imageSources = [
     ...commonSelf,
@@ -46,8 +47,8 @@ export default async function handleRequest(
     connectSrc: youtubeDomains,
     imgSrc: imageSources,
     mediaSrc: [...commonSelf, ...youtubeDomains],
-    frameSrc: [...commonSelf, ...youtubeDomains],
-    childSrc: [...commonSelf, ...youtubeDomains],
+    frameSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
+    childSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
   });
 
   const body = await renderToReadableStream(
