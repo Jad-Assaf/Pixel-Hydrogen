@@ -253,14 +253,7 @@ export default function Product() {
         return;
       }
 
-      const mainMedia = mainMediaRef.current;
-      if (!mainMedia) {
-        setShowMobileStickyCart(false);
-        return;
-      }
-
-      const rect = mainMedia.getBoundingClientRect();
-      setShowMobileStickyCart(rect.bottom <= 76);
+      setShowMobileStickyCart(window.scrollY >= 100);
     };
 
     updateStickyCartState();
