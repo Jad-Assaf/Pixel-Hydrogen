@@ -1,5 +1,5 @@
-import {Link, useLoaderData} from 'react-router';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
+import {Link, redirect, useLoaderData} from 'react-router';
+import {Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
@@ -10,6 +10,11 @@ import {getEmptyPredictiveSearchResult} from '~/lib/search';
 export const meta = () => {
   return [{title: 'Pixel Zones | Search'}];
 };
+
+const PRODUCTS_PER_PAGE = 30;
+const INITIAL_PREFETCH_PAGES = 4;
+const PREFETCH_PRODUCT_COUNT = PRODUCTS_PER_PAGE * INITIAL_PREFETCH_PAGES;
+const MAX_CONNECTION_FETCH = 250;
 
 /**
  * @param {Route.LoaderArgs}
@@ -175,17 +180,15 @@ const PAGE_INFO_FRAGMENT = `#graphql
 export const SEARCH_QUERY = `#graphql
   query RegularSearch(
     $country: CountryCode
-    $endCursor: String
-    $first: Int
     $language: LanguageCode
-    $last: Int
+    $productsFirst: Int!
+    $productsAfter: String
     $term: String!
-    $startCursor: String
   ) @inContext(country: $country, language: $language) {
     articles: search(
       query: $term,
       types: [ARTICLE],
-      first: $first,
+      first: 12,
     ) {
       nodes {
         ...on Article {
@@ -194,10 +197,8 @@ export const SEARCH_QUERY = `#graphql
       }
     }
     products: search(
-      after: $endCursor,
-      before: $startCursor,
-      first: $first,
-      last: $last,
+      first: $productsFirst,
+      after: $productsAfter,
       query: $term,
       sortKey: RELEVANCE,
       types: [PRODUCT],
@@ -218,6 +219,36 @@ export const SEARCH_QUERY = `#graphql
   ${PAGE_INFO_FRAGMENT}
 `;
 
+export const SEARCH_PRODUCTS_PAGE_QUERY = `#graphql
+  query SearchProductsPage(
+    $country: CountryCode
+    $language: LanguageCode
+    $productsFirst: Int!
+    $productsAfter: String
+    $term: String!
+  ) @inContext(country: $country, language: $language) {
+    products: search(
+      first: $productsFirst,
+      after: $productsAfter,
+      query: $term,
+      sortKey: RELEVANCE,
+      types: [PRODUCT],
+      unavailableProducts: HIDE,
+    ) {
+      nodes {
+        ...on Product {
+          ...SearchProduct
+        }
+      }
+      pageInfo {
+        ...PageInfoFragment
+      }
+    }
+  }
+  ${SEARCH_PRODUCT_FRAGMENT}
+  ${PAGE_INFO_FRAGMENT}
+`;
+
 /**
  * Regular search fetcher
  * @param {Pick<
@@ -229,20 +260,94 @@ export const SEARCH_QUERY = `#graphql
 async function regularSearch({request, context}) {
   const {storefront} = context;
   const url = new URL(request.url);
-  const variables = getPaginationVariables(request, {pageBy: 8});
   const term = String(url.searchParams.get('q') || '');
+  const requestedPage = getRequestedPage(url.searchParams.get('page'));
+  const requestedProductCount = Math.max(
+    PREFETCH_PRODUCT_COUNT,
+    requestedPage * PRODUCTS_PER_PAGE,
+  );
+  const initialBatchSize = Math.min(MAX_CONNECTION_FETCH, requestedProductCount);
 
   // Search articles and products for the `q` term
   const {errors, ...items} = await storefront.query(SEARCH_QUERY, {
-    variables: {...variables, term},
+    variables: {term, productsFirst: initialBatchSize, productsAfter: null},
   });
 
   if (!items) {
     throw new Error('No search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
-    (acc, {nodes}) => acc + nodes.length,
+  const fetchedProducts = [...(items.products?.nodes || [])];
+  let hasMorePages = Boolean(items.products?.pageInfo?.hasNextPage);
+  let productsCursor = items.products?.pageInfo?.endCursor || null;
+
+  while (hasMorePages && fetchedProducts.length < requestedProductCount) {
+    const remaining = requestedProductCount - fetchedProducts.length;
+    const nextBatchSize = Math.min(
+      MAX_CONNECTION_FETCH,
+      Math.max(PRODUCTS_PER_PAGE, remaining),
+    );
+
+    const {products: nextProductsPage} = await storefront.query(
+      SEARCH_PRODUCTS_PAGE_QUERY,
+      {
+        variables: {
+          term,
+          productsFirst: nextBatchSize,
+          productsAfter: productsCursor,
+        },
+      },
+    );
+
+    const nextNodes = nextProductsPage?.nodes || [];
+    if (!nextNodes.length) {
+      hasMorePages = false;
+      break;
+    }
+
+    fetchedProducts.push(...nextNodes);
+
+    const nextPageInfo = nextProductsPage?.pageInfo;
+    hasMorePages = Boolean(nextPageInfo?.hasNextPage);
+    productsCursor = nextPageInfo?.endCursor || productsCursor;
+  }
+
+  const loadedPageCount = Math.max(
+    1,
+    Math.ceil(fetchedProducts.length / PRODUCTS_PER_PAGE),
+  );
+  const totalPages = hasMorePages ? loadedPageCount + 1 : loadedPageCount;
+  const currentPage = Math.min(requestedPage, totalPages);
+  const hasNextPage = currentPage < totalPages;
+
+  if (currentPage !== requestedPage) {
+    const params = new URLSearchParams(url.searchParams);
+    if (currentPage > 1) {
+      params.set('page', String(currentPage));
+    } else {
+      params.delete('page');
+    }
+
+    throw redirect(buildPathWithParams(url.pathname, params));
+  }
+
+  const normalizedItems = {
+    ...items,
+    products: {
+      ...items.products,
+      nodes: fetchedProducts,
+      pagination: {
+        currentPage,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage: currentPage > 1,
+        hasMorePages,
+      },
+    },
+  };
+
+  const total = Object.values(normalizedItems).reduce(
+    (acc, item) => acc + (item?.nodes?.length || 0),
     0,
   );
 
@@ -250,7 +355,19 @@ async function regularSearch({request, context}) {
     ? errors.map(({message}) => message).join(', ')
     : undefined;
 
-  return {type: 'regular', term, error, result: {total, items}};
+  return {type: 'regular', term, error, result: {total, items: normalizedItems}};
+}
+
+function getRequestedPage(value) {
+  const parsed = Number(value || 1);
+  if (!Number.isInteger(parsed)) return 1;
+  if (parsed < 1) return 1;
+  return parsed;
+}
+
+function buildPathWithParams(pathname, params) {
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 /**

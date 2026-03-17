@@ -1,5 +1,5 @@
-import * as React from 'react';
 import {Pagination} from '@shopify/hydrogen';
+import {ArrowIcon} from '~/components/Icons';
 
 /**
  * <PaginatedResourceSection > is a component that encapsulate how the previous and next behaviors throughout your application.
@@ -20,7 +20,14 @@ export function PaginatedResourceSection({
         return (
           <div>
             <PreviousLink>
-              {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
+              {isLoading ? (
+                'Loading...'
+              ) : (
+                <span className="pz-pagination-direction">
+                  <ArrowIcon direction="left" />
+                  <span className="sr-only">Previous</span>
+                </span>
+              )}
             </PreviousLink>
             {resourcesClassName ? (
               <div className={resourcesClassName}>{resourcesMarkup}</div>
@@ -28,7 +35,14 @@ export function PaginatedResourceSection({
               resourcesMarkup
             )}
             <NextLink>
-              {isLoading ? 'Loading...' : <span>Load more ↓</span>}
+              {isLoading ? (
+                'Loading...'
+              ) : (
+                <span className="pz-pagination-direction">
+                  <ArrowIcon direction="right" />
+                  <span className="sr-only">Next</span>
+                </span>
+              )}
             </NextLink>
           </div>
         );

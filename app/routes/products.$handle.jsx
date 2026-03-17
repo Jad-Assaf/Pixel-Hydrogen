@@ -3,6 +3,7 @@ import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {
   getSelectedProductOptions,
   Analytics,
+  Money,
   useOptimisticVariant,
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
@@ -12,6 +13,9 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {ArrowIcon, PlusIcon} from '~/components/Icons';
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {useAside} from '~/components/Aside';
 /* eslint-disable react/no-unknown-property */
 
 /**
@@ -90,6 +94,7 @@ function loadDeferredData({context}, {product}) {
 export default function Product() {
   /** @type {LoaderReturnData} */
   const {product, recommendedProducts} = useLoaderData();
+  const {open} = useAside();
 
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
@@ -124,7 +129,13 @@ export default function Product() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
+  const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
+  const [isAvailabilityVisible, setIsAvailabilityVisible] = useState(false);
+  const [showMobileStickyCart, setShowMobileStickyCart] = useState(false);
+  const [isStoreOpenNow, setIsStoreOpenNow] = useState(() => getBeirutStoreStatus());
   const relatedCarouselRef = useRef(null);
+  const mainMediaRef = useRef(null);
   const mainTouchStartX = useRef(null);
   const lightboxTouchStartX = useRef(null);
 
@@ -202,6 +213,76 @@ export default function Product() {
     };
   }, [lightboxImageUrls, mainImageUrls]);
 
+  useEffect(() => {
+    const updateAvailability = () => {
+      setIsStoreOpenNow(getBeirutStoreStatus());
+    };
+
+    updateAvailability();
+    const interval = setInterval(updateAvailability, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!isAvailabilityOpen) return;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        closeAvailability();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isAvailabilityOpen]);
+
+  useEffect(() => {
+    if (!isAvailabilityVisible || isAvailabilityOpen) return;
+
+    const timeoutId = setTimeout(() => {
+      setIsAvailabilityVisible(false);
+    }, 180);
+
+    return () => clearTimeout(timeoutId);
+  }, [isAvailabilityOpen, isAvailabilityVisible]);
+
+  useEffect(() => {
+    const updateStickyCartState = () => {
+      if (typeof window === 'undefined' || window.innerWidth > 600) {
+        setShowMobileStickyCart(false);
+        return;
+      }
+
+      const mainMedia = mainMediaRef.current;
+      if (!mainMedia) {
+        setShowMobileStickyCart(false);
+        return;
+      }
+
+      const rect = mainMedia.getBoundingClientRect();
+      setShowMobileStickyCart(rect.bottom <= 76);
+    };
+
+    updateStickyCartState();
+    window.addEventListener('scroll', updateStickyCartState, {passive: true});
+    window.addEventListener('resize', updateStickyCartState);
+
+    return () => {
+      window.removeEventListener('scroll', updateStickyCartState);
+      window.removeEventListener('resize', updateStickyCartState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    document.body.classList.toggle('pz-mobile-cart-active', showMobileStickyCart);
+
+    return () => {
+      document.body.classList.remove('pz-mobile-cart-active');
+    };
+  }, [showMobileStickyCart]);
+
   function scrollRelated(direction) {
     if (!relatedCarouselRef.current) return;
 
@@ -261,6 +342,17 @@ export default function Product() {
     setLightboxIndex(activeIndex);
     setIsLightboxOpen(true);
   };
+  const openAvailability = () => {
+    setIsAvailabilityVisible(true);
+    if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+      window.requestAnimationFrame(() => setIsAvailabilityOpen(true));
+      return;
+    }
+    setIsAvailabilityOpen(true);
+  };
+  const closeAvailability = () => {
+    setIsAvailabilityOpen(false);
+  };
 
   return (
     <div className="pz-product-page">
@@ -278,7 +370,7 @@ export default function Product() {
 
       <div className="pz-product-layout">
         <section className="pz-product-gallery">
-          <div className="pz-product-main-media">
+          <div className="pz-product-main-media" ref={mainMediaRef}>
             {hasImages ? (
               <button
                 type="button"
@@ -313,7 +405,7 @@ export default function Product() {
                   onClick={showPreviousMainImage}
                   aria-label="Previous image"
                 >
-                  <ChevronIcon direction="left" />
+                  <ArrowIcon direction="left" />
                 </button>
                 <button
                   type="button"
@@ -321,7 +413,7 @@ export default function Product() {
                   onClick={showNextMainImage}
                   aria-label="Next image"
                 >
-                  <ChevronIcon direction="right" />
+                  <ArrowIcon direction="right" />
                 </button>
               </>
             ) : null}
@@ -354,6 +446,11 @@ export default function Product() {
         <section className="pz-product-info">
           <h1>{product.title}</h1>
 
+          <ProductForm
+            productOptions={productOptions}
+            selectedVariant={selectedVariant}
+          />
+
           <div className="pz-product-price">
             <ProductPrice
               price={selectedVariant?.price}
@@ -361,21 +458,56 @@ export default function Product() {
             />
           </div>
 
-          <ProductForm
-            productOptions={productOptions}
-            selectedVariant={selectedVariant}
-          />
-
-          <div className="pz-product-description-box">
-            {product.descriptionHtml ? (
-              <div
-                className="pz-product-description"
-                dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
-              />
-            ) : (
-              <p className="pz-product-description">{product.description}</p>
-            )}
+          <div className="pz-product-availability">
+            {selectedVariant?.sku ? (
+              <p>
+                <span>SKU:</span> {selectedVariant.sku}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="pz-product-availability-toggle"
+              onClick={openAvailability}
+              aria-haspopup="dialog"
+              aria-expanded={isAvailabilityOpen}
+            >
+              <span>Check availability</span>
+              <PlusIcon className="pz-product-availability-toggle-icon" />
+            </button>
           </div>
+
+          <section
+            className={`pz-product-description-accordion${
+              isDescriptionOpen ? ' is-open' : ''
+            }`}
+          >
+            <button
+              type="button"
+              className="pz-product-description-toggle"
+              onClick={() => setIsDescriptionOpen((current) => !current)}
+              aria-expanded={isDescriptionOpen}
+              aria-controls="pz-product-description-panel"
+            >
+              <span>Description</span>
+              <PlusIcon className="pz-product-description-toggle-icon" />
+            </button>
+            <div
+              className="pz-product-description-collapse"
+              id="pz-product-description-panel"
+              aria-hidden={!isDescriptionOpen}
+            >
+              <div className="pz-product-description-box">
+                {product.descriptionHtml ? (
+                  <div
+                    className="pz-product-description"
+                    dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
+                  />
+                ) : (
+                  <p className="pz-product-description">{product.description}</p>
+                )}
+              </div>
+            </div>
+          </section>
         </section>
       </div>
 
@@ -399,7 +531,8 @@ export default function Product() {
                       onClick={() => scrollRelated('prev')}
                       aria-label="Previous related products"
                     >
-                      ‹
+                      <ArrowIcon direction="left" />
+                      <span className="sr-only">Previous</span>
                     </button>
                     <button
                       type="button"
@@ -407,7 +540,8 @@ export default function Product() {
                       onClick={() => scrollRelated('next')}
                       aria-label="Next related products"
                     >
-                      ›
+                      <ArrowIcon direction="right" />
+                      <span className="sr-only">Next</span>
                     </button>
                   </div>
                 </div>
@@ -483,7 +617,7 @@ export default function Product() {
                   onClick={showPreviousLightboxImage}
                   aria-label="Previous image"
                 >
-                  <ChevronIcon direction="left" />
+                  <ArrowIcon direction="left" />
                 </button>
                 <button
                   type="button"
@@ -491,7 +625,7 @@ export default function Product() {
                   onClick={showNextLightboxImage}
                   aria-label="Next image"
                 >
-                  <ChevronIcon direction="right" />
+                  <ArrowIcon direction="right" />
                 </button>
               </>
             ) : null}
@@ -523,6 +657,74 @@ export default function Product() {
         </div>
       ) : null}
 
+      {isAvailabilityVisible ? (
+        <div
+          className={`pz-availability-overlay${isAvailabilityOpen ? ' is-open' : ''}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pz-availability-title"
+          aria-hidden={!isAvailabilityOpen}
+        >
+          <button
+            type="button"
+            className="pz-availability-overlay-backdrop"
+            onClick={closeAvailability}
+            aria-label="Close availability modal"
+          />
+          <div className="pz-availability-modal">
+            <button
+              type="button"
+              className="pz-availability-close"
+              onClick={closeAvailability}
+              aria-label="Close availability modal"
+            >
+              ×
+            </button>
+            <h3 id="pz-availability-title">Check availability</h3>
+            <p>Sami Solh Avenu</p>
+            <p>Beirut</p>
+            <p
+              className={`pz-availability-status${
+                isStoreOpenNow ? ' is-open' : ' is-closed'
+              }`}
+            >
+              {isStoreOpenNow ? 'Open' : 'Showroom Closed'}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      <div
+        className={`pz-product-mobile-cart-nav${showMobileStickyCart ? ' is-visible' : ''}`}
+        aria-label="Product mobile add to cart"
+      >
+        {selectedVariant?.id ? (
+          <AddToCartButton
+            disabled={!selectedVariant.availableForSale}
+            onClick={() => open('cart')}
+            lines={[
+              {
+                merchandiseId: selectedVariant.id,
+                quantity: 1,
+                selectedVariant,
+              },
+            ]}
+            className="pz-product-mobile-cart-btn"
+          >
+            <span className="pz-product-mobile-cart-label">
+              {selectedVariant.availableForSale ? 'Add to Cart' : 'Sold out'}
+            </span>
+            <span className="pz-product-mobile-cart-price">
+              {selectedVariant.price ? (
+                <Money data={selectedVariant.price} />
+              ) : (
+                ''
+              )}
+            </span>
+          </AddToCartButton>
+        ) : null}
+      </div>
+
       <Analytics.ProductView
         data={{
           products: [
@@ -542,21 +744,26 @@ export default function Product() {
   );
 }
 
-function ChevronIcon({direction}) {
-  return (
-    <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
-      {direction === 'left' ? (
-        <path d="M12.5 4.5 7 10l5.5 5.5" />
-      ) : (
-        <path d="M7.5 4.5 13 10l-5.5 5.5" />
-      )}
-    </svg>
-  );
-}
-
 function withImageWidth(url, width) {
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}width=${width}`;
+}
+
+function getBeirutStoreStatus(now = new Date()) {
+  const formatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Beirut',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(now);
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value || '0');
+  const minute = Number(
+    parts.find((part) => part.type === 'minute')?.value || '0',
+  );
+  const minutesSinceMidnight = hour * 60 + minute;
+
+  return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight < 20 * 60;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql

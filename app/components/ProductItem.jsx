@@ -4,6 +4,7 @@ import {Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
+import {PlusIcon} from '~/components/Icons';
 
 /**
  * @param {{
@@ -151,7 +152,11 @@ export function ProductItem({product, loading, showAddToCart = false}) {
           ]}
           className="pz-card-cart-btn"
         >
-          {cartVariant.availableForSale ? '+' : '×'}
+          {cartVariant.availableForSale ? (
+            <PlusIcon className="pz-card-cart-icon" />
+          ) : (
+            '×'
+          )}
         </AddToCartButton>
       ) : null}
     </article>

@@ -16,6 +16,7 @@ export function ProductForm({productOptions, selectedVariant}) {
     <div className="pz-product-form">
       {productOptions.map((option) => {
         if (option.optionValues.length === 1) return null;
+        const isColorOption = /color/i.test(option.name || '');
 
         return (
           <div className="pz-option-group" key={option.name}>
@@ -31,7 +32,15 @@ export function ProductForm({productOptions, selectedVariant}) {
                   exists,
                   isDifferentProduct,
                   swatch,
+                  firstSelectableVariant,
                 } = value;
+                const optionImage = isColorOption
+                  ? firstSelectableVariant?.image
+                  : null;
+                const optionImageUrl = optionImage?.url
+                  ? withImageWidth(optionImage.url, 90)
+                  : null;
+                const optionImageAlt = optionImage?.altText || name;
 
                 const className = `pz-option-button${
                   selected ? ' is-selected' : ''
@@ -47,7 +56,13 @@ export function ProductForm({productOptions, selectedVariant}) {
                       replace
                       to={`/products/${handle}?${variantUriQuery}`}
                     >
-                      <ProductOptionSwatch swatch={swatch} name={name} />
+                      <ProductOptionSwatch
+                        swatch={swatch}
+                        name={name}
+                        imageUrl={optionImageUrl}
+                        imageAlt={optionImageAlt}
+                        isColorOption={isColorOption}
+                      />
                     </Link>
                   );
                 }
@@ -67,7 +82,13 @@ export function ProductForm({productOptions, selectedVariant}) {
                       }
                     }}
                   >
-                    <ProductOptionSwatch swatch={swatch} name={name} />
+                    <ProductOptionSwatch
+                      swatch={swatch}
+                      name={name}
+                      imageUrl={optionImageUrl}
+                      imageAlt={optionImageAlt}
+                      isColorOption={isColorOption}
+                    />
                   </button>
                 );
               })}
@@ -104,28 +125,49 @@ export function ProductForm({productOptions, selectedVariant}) {
  * @param {{
  *   swatch?: Maybe<ProductOptionValueSwatch> | undefined;
  *   name: string;
+ *   imageUrl?: string | null;
+ *   imageAlt?: string;
+ *   isColorOption?: boolean;
  * }}
  */
-function ProductOptionSwatch({swatch, name}) {
-  const image = swatch?.image?.previewImage?.url;
-  const color = swatch?.color;
+function ProductOptionSwatch({
+  swatch,
+  name,
+  imageUrl,
+  imageAlt,
+  isColorOption = false,
+}) {
+  if (!isColorOption) return <span>{name}</span>;
 
-  if (!image && !color) return <span>{name}</span>;
+  const image = swatch?.image?.previewImage?.url || imageUrl;
+  const color = swatch?.color || '#f8fafc';
 
   return (
-    <span className="pz-option-swatch-wrap">
+    <span className="pz-option-swatch-wrap is-color">
       <span
         aria-label={name}
         className="pz-option-swatch"
         style={{
-          backgroundColor: color || 'transparent',
+          backgroundColor: image ? 'transparent' : color,
         }}
       >
-        {image ? <img src={image} alt={name} /> : null}
+        {image ? (
+          <img src={image} alt={imageAlt || name} />
+        ) : (
+          <span className="pz-option-swatch-fallback" aria-hidden="true">
+            {name.slice(0, 1)}
+          </span>
+        )}
       </span>
-      <span>{name}</span>
+      <span className="pz-option-swatch-name">{name}</span>
     </span>
   );
+}
+
+function withImageWidth(url, width) {
+  if (!url || !width) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}width=${width}`;
 }
 
 /** @typedef {import('@shopify/hydrogen').MappedProductOptions} MappedProductOptions */

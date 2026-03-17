@@ -4,10 +4,12 @@ import {
   redirect,
   useLoaderData,
   useLocation,
+  useNavigate,
 } from 'react-router';
-import {Analytics, getPaginationVariables} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import {useEffect, useMemo, useState} from 'react';
+import {Analytics} from '@shopify/hydrogen';
 import {ProductItem} from '~/components/ProductItem';
+import {ArrowIcon} from '~/components/Icons';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 /**
@@ -23,6 +25,11 @@ const SORT_OPTIONS = [
   {value: 'price-asc', label: 'Price: Low to High', sortKey: 'PRICE', reverse: false},
   {value: 'price-desc', label: 'Price: High to Low', sortKey: 'PRICE', reverse: true},
 ];
+const PRODUCTS_PER_PAGE = 30;
+const INITIAL_PREFETCH_PAGES = 4;
+const PREFETCH_PRODUCT_COUNT = PRODUCTS_PER_PAGE * INITIAL_PREFETCH_PAGES;
+const MAX_CONNECTION_FETCH = 250;
+const EMPTY_PRODUCTS = [];
 
 /**
  * @param {Route.LoaderArgs}
@@ -43,7 +50,12 @@ export async function loader({context, params, request}) {
   const sortParam = url.searchParams.get('sort') || 'new-to-old';
   const selectedSort =
     SORT_OPTIONS.find((option) => option.value === sortParam) || SORT_OPTIONS[0];
-  const paginationVariables = getPaginationVariables(request, {pageBy: 16});
+  const requestedPage = getRequestedPage(url.searchParams.get('page'));
+  const requestedProductCount = Math.max(
+    PREFETCH_PRODUCT_COUNT,
+    requestedPage * PRODUCTS_PER_PAGE,
+  );
+  const initialBatchSize = Math.min(MAX_CONNECTION_FETCH, requestedProductCount);
 
   if (!handle) {
     throw redirect('/collections');
@@ -53,7 +65,7 @@ export async function loader({context, params, request}) {
     storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
-        ...paginationVariables,
+        first: initialBatchSize,
         filters: selectedFilters,
         sortKey: selectedSort.sortKey,
         reverse: selectedSort.reverse,
@@ -129,11 +141,79 @@ export async function loader({context, params, request}) {
     throw new Response(`Collection ${handle} not found`, {status: 404});
   }
 
+  const fetchedProducts = [...(collection.products?.nodes || [])];
+  let hasMorePages = Boolean(collection.products?.pageInfo?.hasNextPage);
+  let endCursor = collection.products?.pageInfo?.endCursor || null;
+
+  while (hasMorePages && fetchedProducts.length < requestedProductCount) {
+    const remaining = requestedProductCount - fetchedProducts.length;
+    const nextBatchSize = Math.min(
+      MAX_CONNECTION_FETCH,
+      Math.max(PRODUCTS_PER_PAGE, remaining),
+    );
+
+    const {collection: nextCollectionPage} = await storefront.query(COLLECTION_QUERY, {
+      variables: {
+        handle,
+        first: nextBatchSize,
+        endCursor,
+        filters: selectedFilters,
+        sortKey: selectedSort.sortKey,
+        reverse: selectedSort.reverse,
+      },
+    });
+
+    const nextNodes = nextCollectionPage?.products?.nodes || [];
+    if (!nextNodes.length) {
+      hasMorePages = false;
+      break;
+    }
+
+    fetchedProducts.push(...nextNodes);
+
+    const nextPageInfo = nextCollectionPage?.products?.pageInfo;
+    hasMorePages = Boolean(nextPageInfo?.hasNextPage);
+    endCursor = nextPageInfo?.endCursor || endCursor;
+  }
+
+  const loadedPageCount = Math.max(
+    1,
+    Math.ceil(fetchedProducts.length / PRODUCTS_PER_PAGE),
+  );
+  const totalPages = hasMorePages ? loadedPageCount + 1 : loadedPageCount;
+  const currentPage = Math.min(requestedPage, totalPages);
+  const hasNextPage = currentPage < totalPages;
+  const paginatedCollection = {
+    ...collection,
+    products: {
+      ...collection.products,
+      nodes: fetchedProducts,
+    },
+  };
+
+  if (currentPage !== requestedPage) {
+    const params = new URLSearchParams(url.searchParams);
+    if (currentPage > 1) {
+      params.set('page', String(currentPage));
+    } else {
+      params.delete('page');
+    }
+
+    throw redirect(buildPathWithParams(url.pathname, params));
+  }
+
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
   return {
-    collection,
+    collection: paginatedCollection,
     menuCollectionCards,
+    pagination: {
+      currentPage,
+      totalPages,
+      hasNextPage,
+      hasPreviousPage: currentPage > 1,
+      hasMorePages,
+    },
     selectedFilterValues,
     selectedSortValue: selectedSort.value,
   };
@@ -141,12 +221,69 @@ export async function loader({context, params, request}) {
 
 export default function CollectionRoute() {
   /** @type {LoaderReturnData} */
-  const {collection, menuCollectionCards, selectedFilterValues, selectedSortValue} =
-    useLoaderData();
+  const {
+    collection,
+    menuCollectionCards,
+    pagination,
+    selectedFilterValues,
+    selectedSortValue,
+  } = useLoaderData();
   const location = useLocation();
+  const navigate = useNavigate();
+  const products = collection.products?.nodes || EMPTY_PRODUCTS;
+  const [currentPage, setCurrentPage] = useState(pagination.currentPage);
+  const paginationStateKey = `${collection.id}:${selectedSortValue}:${selectedFilterValues.join('|')}`;
+  const loadedPageCount = Math.max(
+    1,
+    Math.ceil(products.length / PRODUCTS_PER_PAGE),
+  );
+  const maxReachablePage = pagination.hasMorePages
+    ? loadedPageCount + 1
+    : loadedPageCount;
+  const visibleProducts = useMemo(() => {
+    const start = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    return products.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [products, currentPage]);
   const visibleFilters = (collection.products?.filters || []).filter(
     (filter) => !/availability/i.test(filter.label || filter.id || ''),
   );
+
+  useEffect(() => {
+    setCurrentPage(pagination.currentPage);
+  }, [pagination.currentPage, paginationStateKey]);
+
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < maxReachablePage;
+
+  const goToPage = (page) => {
+    const nextPage = Math.min(Math.max(page, 1), maxReachablePage);
+    if (nextPage === currentPage) return;
+
+    const params = new URLSearchParams(location.search);
+    if (nextPage > 1) {
+      params.set('page', String(nextPage));
+    } else {
+      params.delete('page');
+    }
+    params.delete('cursor');
+    params.delete('direction');
+    const target = buildPathWithParams(location.pathname, params);
+
+    if (nextPage > loadedPageCount && pagination.hasMorePages) {
+      if (typeof window !== 'undefined') {
+        window.scrollTo({top: 0, behavior: 'auto'});
+      }
+      navigate(target);
+      return;
+    }
+
+    setCurrentPage(nextPage);
+
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', target);
+      window.scrollTo({top: 0, behavior: 'auto'});
+    }
+  };
 
   return (
     <div className="pz-shop-page">
@@ -273,19 +410,70 @@ export default function CollectionRoute() {
       </section>
 
       <section className="pz-shop-products">
-        <PaginatedResourceSection
-          connection={collection.products}
-          resourcesClassName="pz-shop-grid"
-        >
-          {({node: product, index}) => (
+        <div className="pz-shop-grid">
+          {visibleProducts.map((product, index) => (
             <ProductItem
               key={product.id}
               product={product}
-              loading={index < 6 ? 'eager' : 'lazy'}
+              loading={index < 6 && currentPage === 1 ? 'eager' : 'lazy'}
               showAddToCart
             />
-          )}
-        </PaginatedResourceSection>
+          ))}
+        </div>
+
+        {pagination.totalPages > 1 ? (
+          <nav className="pagination pz-page-pagination" aria-label="Products pagination">
+            {hasPreviousPage ? (
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage - 1)}
+                className="pagination-link pz-pagination-direction"
+              >
+                <ArrowIcon direction="left" />
+                <span className="sr-only">Previous</span>
+              </button>
+            ) : (
+              <span className="pagination-link is-disabled pz-pagination-direction">
+                <ArrowIcon direction="left" />
+                <span className="sr-only">Previous</span>
+              </span>
+            )}
+
+            <div className="pagination-pages">
+              {Array.from({length: maxReachablePage}, (_, index) => {
+                const page = index + 1;
+                const isActive = page === currentPage;
+
+                return (
+                  <button
+                    type="button"
+                    key={page}
+                    className={`pagination-link${isActive ? ' is-active' : ''}`}
+                    onClick={() => goToPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+
+            {hasNextPage ? (
+              <button
+                type="button"
+                onClick={() => goToPage(currentPage + 1)}
+                className="pagination-link pz-pagination-direction"
+              >
+                <ArrowIcon direction="right" />
+                <span className="sr-only">Next</span>
+              </button>
+            ) : (
+              <span className="pagination-link is-disabled pz-pagination-direction">
+                <ArrowIcon direction="right" />
+                <span className="sr-only">Next</span>
+              </span>
+            )}
+          </nav>
+        ) : null}
       </section>
 
       <Analytics.CollectionView
@@ -317,10 +505,23 @@ function buildFilterUrl({
     params.append('filter', value);
   });
   params.set('sort', sort);
+  params.delete('page');
   params.delete('cursor');
   params.delete('direction');
 
-  return `${location.pathname}?${params.toString()}`;
+  return buildPathWithParams(location.pathname, params);
+}
+
+function getRequestedPage(value) {
+  const parsed = Number(value || 1);
+  if (!Number.isInteger(parsed)) return 1;
+  if (parsed < 1) return 1;
+  return parsed;
+}
+
+function buildPathWithParams(pathname, params) {
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
 }
 
 function parseJsonMaybe(value) {

@@ -1,6 +1,7 @@
 import {useRef} from 'react';
 import {Link, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
+import {ArrowIcon} from '~/components/Icons';
 import ankerLogo from '~/assets/anker-logo.webp';
 import appleLogo from '~/assets/apple-logo.webp';
 import asusLogo from '~/assets/asus-logo.webp';
@@ -172,7 +173,8 @@ export default function Homepage() {
                 onClick={() => scrollProducts('prev')}
                 aria-label="Previous products"
               >
-                ‹
+                <ArrowIcon direction="left" />
+                <span className="sr-only">Previous</span>
               </button>
               <button
                 type="button"
@@ -180,7 +182,8 @@ export default function Homepage() {
                 onClick={() => scrollProducts('next')}
                 aria-label="Next products"
               >
-                ›
+                <ArrowIcon direction="right" />
+                <span className="sr-only">Next</span>
               </button>
               <Link
                 to="/collections/new-arrivals"
