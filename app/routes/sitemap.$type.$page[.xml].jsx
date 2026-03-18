@@ -1,12 +1,14 @@
 import {getSitemap} from '@shopify/hydrogen';
+import {canonicalizeRequest} from '~/lib/canonical';
 
 /**
  * @param {Route.LoaderArgs}
  */
 export async function loader({request, params, context: {storefront}}) {
+  const canonicalRequest = canonicalizeRequest(request);
   const response = await getSitemap({
     storefront,
-    request,
+    request: canonicalRequest,
     params,
     locales: ['EN-US', 'EN-CA', 'FR-CA'],
     getLink: ({type, baseUrl, handle, locale}) => {

@@ -88,6 +88,13 @@ export async function loader(args) {
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },
+    metaPixelId:
+      env.PUBLIC_META_PIXEL_ID || env.PUBLIC_FACEBOOK_PIXEL_ID || '',
+    googlePixelId:
+      env.PUBLIC_GOOGLE_PIXEL_ID ||
+      env.PUBLIC_GA_MEASUREMENT_ID ||
+      env.PUBLIC_GOOGLE_TAG_ID ||
+      '',
   };
 }
 
@@ -222,6 +229,10 @@ function loadDeferredData({context}) {
  */
 export function Layout({children}) {
   const nonce = useNonce();
+  /** @type {RootLoader | undefined} */
+  const data = useRouteLoaderData('root');
+  const metaPixelId = data?.metaPixelId || '';
+  const googlePixelId = data?.googlePixelId || '';
 
   return (
     <html lang="en">
@@ -232,8 +243,41 @@ export function Layout({children}) {
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
+        {googlePixelId ? (
+          <>
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${googlePixelId}`}
+            />
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${googlePixelId}');`,
+              }}
+            />
+          </>
+        ) : null}
+        {metaPixelId ? (
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{
+              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init', '${metaPixelId}');fbq('track', 'PageView');`,
+            }}
+          />
+        ) : null}
       </head>
       <body>
+        {metaPixelId ? (
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{display: 'none'}}
+              src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
+              alt=""
+            />
+          </noscript>
+        ) : null}
         {children}
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />

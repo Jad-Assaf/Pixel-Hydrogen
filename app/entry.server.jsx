@@ -23,6 +23,15 @@ export default async function handleRequest(
     'https://www.youtube-nocookie.com',
   ];
   const googleFrameDomains = ['https://www.google.com/'];
+  const googleTrackingDomains = [
+    'https://www.googletagmanager.com',
+    'https://www.google-analytics.com',
+    'https://stats.g.doubleclick.net',
+  ];
+  const metaTrackingDomains = [
+    'https://connect.facebook.net',
+    'https://www.facebook.com',
+  ];
   const commonSelf = ["'self'"];
   const imageSources = [
     ...commonSelf,
@@ -30,11 +39,15 @@ export default async function handleRequest(
     'blob:',
     'https://cdn.shopify.com',
     ...youtubeDomains,
+    ...googleTrackingDomains,
+    ...metaTrackingDomains,
   ];
   const scriptSources = [
     ...commonSelf,
     'https://cdn.shopify.com',
     ...youtubeDomains,
+    ...googleTrackingDomains,
+    ...metaTrackingDomains,
   ];
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
@@ -44,7 +57,7 @@ export default async function handleRequest(
     styleSrc: ['https://fonts.googleapis.com'],
     fontSrc: ['https://fonts.gstatic.com'],
     scriptSrc: scriptSources,
-    connectSrc: youtubeDomains,
+    connectSrc: [...youtubeDomains, ...googleTrackingDomains, ...metaTrackingDomains],
     imgSrc: imageSources,
     mediaSrc: [...commonSelf, ...youtubeDomains],
     frameSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
