@@ -1,18 +1,15 @@
 import {getSitemapIndex} from '@shopify/hydrogen';
-import {canonicalizeRequest} from '~/lib/canonical';
 
 /**
  * @param {Route.LoaderArgs}
  */
 export async function loader({request, context: {storefront}}) {
-  const canonicalRequest = canonicalizeRequest(request);
   const response = await getSitemapIndex({
     storefront,
-    request: canonicalRequest,
+    request,
   });
-
   response.headers.set('Cache-Control', `max-age=${60 * 60 * 24}`);
-
+  response.headers.set('Content-Type', 'application/xml; charset=utf-8');
   return response;
 }
 

@@ -1,14 +1,14 @@
 import {parseGid} from '@shopify/hydrogen';
-import {CANONICAL_ORIGIN} from '~/lib/canonical';
 
 /**
  * @param {Route.LoaderArgs}
  */
-export async function loader({context}) {
+export async function loader({request, context}) {
+  const url = new URL(request.url);
   const {shop} = await context.storefront.query(ROBOTS_QUERY);
 
   const shopId = parseGid(shop.id).id;
-  const body = robotsTxtData({shopId});
+  const body = robotsTxtData({url: url.origin, shopId});
 
   return new Response(body, {
     status: 200,
@@ -21,10 +21,10 @@ export async function loader({context}) {
 }
 
 /**
- * @param {{shopId?: string}}
+ * @param {{shopId?: string; url?: string}}
  */
-function robotsTxtData({shopId}) {
-  const sitemapUrl = `${CANONICAL_ORIGIN}/sitemap.xml`;
+function robotsTxtData({url, shopId}) {
+  const sitemapUrl = url ? `${url}/sitemap.xml` : undefined;
 
   return `
 User-agent: *

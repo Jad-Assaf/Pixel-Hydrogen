@@ -95,6 +95,10 @@ export async function loader(args) {
       env.PUBLIC_GA_MEASUREMENT_ID ||
       env.PUBLIC_GOOGLE_TAG_ID ||
       '',
+    googleMerchantVerification:
+      env.PUBLIC_GOOGLE_MERCHANT_CENTER_VERIFICATION ||
+      env.PUBLIC_GOOGLE_SITE_VERIFICATION ||
+      '',
   };
 }
 
@@ -233,6 +237,7 @@ export function Layout({children}) {
   const data = useRouteLoaderData('root');
   const metaPixelId = data?.metaPixelId || '';
   const googlePixelId = data?.googlePixelId || '';
+  const googleMerchantVerification = data?.googleMerchantVerification || '';
 
   return (
     <html lang="en">
@@ -243,6 +248,12 @@ export function Layout({children}) {
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
+        {googleMerchantVerification ? (
+          <meta
+            name="google-site-verification"
+            content={googleMerchantVerification}
+          />
+        ) : null}
         {googlePixelId ? (
           <>
             <script
