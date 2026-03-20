@@ -27,11 +27,12 @@ export function ProductItem({product, loading, showAddToCart = false}) {
 
     variants.forEach((variant) => {
       const imageUrl = variant?.image?.url;
-      if (!variant?.id || !imageUrl) return;
+      const colorValue = getColorOptionValue(variant);
+      if (!variant?.id || !imageUrl || !colorValue) return;
 
-      const imageKey = variant.image.id || imageUrl;
-      if (seen.has(imageKey)) return;
-      seen.add(imageKey);
+      const colorKey = colorValue.toLowerCase();
+      if (seen.has(colorKey)) return;
+      seen.add(colorKey);
       unique.push(variant);
     });
 
@@ -98,6 +99,7 @@ export function ProductItem({product, loading, showAddToCart = false}) {
             <div className="pz-product-variant-swatches" aria-label="Variant images">
               {variantSwatches.map((variant) => {
                 const swatchImage = variant.image;
+                const colorValue = getColorOptionValue(variant);
                 if (!swatchImage?.url) return null;
 
                 return (
@@ -112,8 +114,8 @@ export function ProductItem({product, loading, showAddToCart = false}) {
                       event.stopPropagation();
                       setActiveVariantId(variant.id);
                     }}
-                    aria-label={variant.title || product.title}
-                    title={variant.title || product.title}
+                    aria-label={colorValue || variant.title || product.title}
+                    title={colorValue || variant.title || product.title}
                   >
                     <img
                       src={withImageWidth(swatchImage.url, 80)}
@@ -166,6 +168,13 @@ export function ProductItem({product, loading, showAddToCart = false}) {
 function withImageWidth(url, width) {
   const separator = url.includes('?') ? '&' : '?';
   return `${url}${separator}width=${width}`;
+}
+
+function getColorOptionValue(variant) {
+  const colorOption = (variant?.selectedOptions || []).find((option) =>
+    /colou?r/i.test(option?.name || ''),
+  );
+  return colorOption?.value || null;
 }
 
 /** @typedef {import('storefrontapi.generated').ProductItemFragment} ProductItemFragment */

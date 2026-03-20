@@ -1,4 +1,4 @@
-import {useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Link, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {ArrowIcon} from '~/components/Icons';
@@ -100,6 +100,67 @@ export default function Homepage() {
     ...BRANDS.map((brand) => ({...brand, copy: 'a'})),
     ...BRANDS.map((brand) => ({...brand, copy: 'b'})),
   ];
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const [customersServed, setCustomersServed] = useState(0);
+  const [isCustomersInView, setIsCustomersInView] = useState(false);
+  const customersSectionRef = useRef(null);
+
+  useEffect(() => {
+    if (HERO_SLIDES.length <= 1) return undefined;
+
+    const intervalId = setInterval(() => {
+      setHeroSlideIndex((current) => (current + 1) % HERO_SLIDES.length);
+    }, 4200);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const node = customersSectionRef.current;
+    if (!node) return undefined;
+
+    const observer = new window.IntersectionObserver(
+      ([entry]) => {
+        setIsCustomersInView(Boolean(entry?.isIntersecting));
+      },
+      {
+        threshold: 0.35,
+      },
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const duration = 1600;
+    const target = 12000;
+    let frameId = 0;
+
+    if (!isCustomersInView) {
+      setCustomersServed(0);
+      return undefined;
+    }
+
+    const startTime = performance.now();
+    const tick = (timestamp) => {
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setCustomersServed(Math.floor(target * eased));
+
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isCustomersInView]);
 
   function scrollProducts(direction) {
     if (!carouselRef.current) return;
@@ -113,27 +174,20 @@ export default function Homepage() {
   return (
     <div className="pz-home">
       <section className="pz-hero">
-        <div className="pz-shell pz-hero-inner">
-          <p className="pz-kicker">Next Generation Gear</p>
-          <h1>
-            Latest Tech
-            <br />
-            <span>Redefined.</span>
-          </h1>
-          <p>
-            Experience high-performance devices curated for modern
-            professionals. Powerful hardware, clean design, and everyday
-            reliability.
-          </p>
-          <div className="pz-hero-actions">
-            <Link
-              to="/collections/new-arrivals"
-              prefetch="intent"
-              className="pz-btn pz-btn-primary"
+        <div className="pz-hero-slideshow" aria-label="Featured banners">
+          {HERO_SLIDES.map((slide, index) => (
+            <picture
+              key={slide.desktop}
+              className={`pz-hero-slide${index === heroSlideIndex ? ' is-active' : ''}`}
             >
-              Shop Now
-            </Link>
-          </div>
+              <source media="(max-width: 620px)" srcSet={slide.mobile} />
+              <img
+                src={slide.desktop}
+                alt={slide.alt}
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            </picture>
+          ))}
         </div>
       </section>
 
@@ -219,8 +273,8 @@ export default function Homepage() {
         <div className="pz-shell">
           <div className="pz-section-head">
             <div>
-              <p className="pz-kicker">Shop by Collection</p>
-              <h2>Main Collections</h2>
+              <p className="pz-kicker">Shop By Category</p>
+              <h2>Main Categories</h2>
             </div>
             {/* <Link to="/collections" prefetch="intent" className="pz-inline-link">
               View All Collections
@@ -276,17 +330,14 @@ export default function Homepage() {
           key={`row-${collection.id}`}
         >
           <div className="pz-shell">
-            <div className="pz-section-head">
-              <div>
-                <p className="pz-kicker">Collection Spotlight</p>
-                <h2>{collection.title}</h2>
-              </div>
+            <div className="pz-section-head pz-section-head-row">
+              <h2>{collection.title}</h2>
               <Link
                 to={`/collections/${collection.handle}`}
                 prefetch="intent"
                 className="pz-inline-link"
               >
-                View Collection
+                View All
               </Link>
             </div>
 
@@ -314,6 +365,15 @@ export default function Homepage() {
           </div>
         </section>
       ))}
+
+      <section className="pz-home-section pz-home-customers" ref={customersSectionRef}>
+        <div className="pz-shell">
+          <p className="pz-home-customers-count">
+            {customersServed.toLocaleString()}+
+          </p>
+          <h1>Customers Served</h1>
+        </div>
+      </section>
     </div>
   );
 }
@@ -714,6 +774,29 @@ const BRANDS = [
   {name: 'Asus', handle: 'asus', logo: asusLogo},
   {name: 'Beats', handle: 'beats', logo: beatsLogo},
   {name: 'Anker', handle: 'anker', logo: ankerLogo},
+];
+
+const HERO_SLIDES = [
+  {
+    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-desktop.jpg?v=1773951906',
+    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-mobile.jpg?v=1773951905',
+    alt: 'Aulumu banner',
+  },
+  {
+    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-desk.jpg?v=1773951906',
+    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-mob.jpg?v=1773951906',
+    alt: 'Nothing banner',
+  },
+  {
+    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-desk.jpg?v=1773951906',
+    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-mob.jpg?v=1773951906',
+    alt: 'Moft banner',
+  },
+  {
+    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-desk.jpg?v=1773951907',
+    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-mob.jpg?v=1773951906',
+    alt: 'DJI banner',
+  },
 ];
 
 /** @typedef {import('./+types/_index').Route} Route */

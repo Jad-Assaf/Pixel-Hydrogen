@@ -445,10 +445,13 @@ export default function Product() {
           />
 
           <div className="pz-product-price">
-            <ProductPrice
-              price={selectedVariant?.price}
-              compareAtPrice={selectedVariant?.compareAtPrice}
-            />
+            <div className="pz-product-price-line">
+              <ProductPrice
+                price={selectedVariant?.price}
+                compareAtPrice={selectedVariant?.compareAtPrice}
+              />
+              <div className="pz-product-warranty-badge">1 year warranty</div>
+            </div>
           </div>
 
           <div className="pz-product-availability">
@@ -496,7 +499,9 @@ export default function Product() {
                     dangerouslySetInnerHTML={{__html: product.descriptionHtml}}
                   />
                 ) : (
-                  <p className="pz-product-description">{product.description}</p>
+                  <p className="pz-product-description">
+                    {product.description}
+                  </p>
                 )}
               </div>
             </div>
@@ -673,16 +678,33 @@ export default function Product() {
             >
               ×
             </button>
-            <h3 id="pz-availability-title">Check availability</h3>
-            <p>Sami Solh Avenu</p>
-            <p>Beirut</p>
-            <p
-              className={`pz-availability-status${
-                isStoreOpenNow ? ' is-open' : ' is-closed'
-              }`}
-            >
-              {isStoreOpenNow ? 'Open' : 'Showroom Closed'}
-            </p>
+            <h3 id="pz-availability-title">Available at:</h3>
+            <ul className="pz-availability-options">
+              <li>
+                <span
+                  className={`pz-availability-dot${
+                    isStoreOpenNow ? ' is-open' : ' is-closed'
+                  }`}
+                  aria-hidden="true"
+                />
+                <div className="pz-availability-option-text">
+                  <p>
+                    Sami Solh Avenu, Beirut, &nbsp;
+                    <span
+                      className={`pz-availability-status${
+                        isStoreOpenNow ? ' is-open' : ' is-closed'
+                      }`}
+                    >
+                      {isStoreOpenNow ? 'Open' : 'Closed'}
+                    </span>
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span className="pz-availability-dot" aria-hidden="true" />
+                <span>Available Online</span>
+              </li>
+            </ul>
           </div>
         </div>
       ) : null}

@@ -1960,7 +1960,7 @@ body > main {
 
 .pz-main {
   flex: 1;
-  padding: 0 0 2.5rem;
+  padding: 0;
   width: 100%;
   max-width: 1500px;
   margin: 0 auto;
@@ -2840,7 +2840,7 @@ body > main {
 }
 
 .pz-footer {
-  margin-top: 5rem;
+  margin-top: 0;
   border-top: 1px solid var(--pz-border);
   padding-top: 4rem;
   padding-bottom: 2rem;
@@ -2848,7 +2848,7 @@ body > main {
 
 .pz-footer-grid {
   display: grid;
-  grid-template-columns: 1.3fr repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 2rem;
 }
 
@@ -2888,6 +2888,9 @@ body > main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
   border: 0;
   color: #0f172a;
   padding: 0;
@@ -2898,6 +2901,8 @@ body > main {
 
 .pz-footer-socials a svg {
   display: block;
+  width: 40px;
+  height: 40px;
 }
 
 .pz-footer-socials a:hover {
@@ -2980,7 +2985,106 @@ body > main {
 }
 
 .pz-footer-map {
-  margin-top: 2rem;
+  width: min(1500px, 100%);
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  overflow: hidden;
+}
+
+.pz-footer-map-link {
+  display: block;
+  position: relative;
+  width: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow:
+    rgba(15, 23, 42, 0.16) 0 10px 24px -16px,
+    rgba(15, 23, 42, 0.1) 0 4px 10px -8px;
+}
+
+.pz-footer-map-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at 49% 48%, rgb(255 0 0 / 30%) 10%, rgb(0 0 0 / 29%) 16%, rgb(0 0 0 / 54%) 56%, rgb(0 0 0) 100%);
+}
+
+.pz-footer-map-link img {
+  width: 100%;
+  max-width: 1500px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: cover;
+}
+
+.pz-footer-map-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: min(620px, calc(100% - 2rem));
+  border-radius: 1.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, rgb(42 36 15 / 76%) 0%, rgb(0 0 0 / 86%) 100%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  padding: 1rem 1rem 1.15rem;
+  pointer-events: none;
+}
+
+.pz-footer-map-kicker {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pz-footer-map-pin {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.pz-footer-map-overlay h3 {
+  margin: 0.55rem 0 0;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.pz-footer-map-address {
+  margin: 0.55rem 0 0;
+  max-width: 36ch;
+  font-size: clamp(1rem, 1.8vw, 1.8rem);
+  line-height: 1.22;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.pz-footer-map-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.82rem;
+  min-height: 3.35rem;
+  padding: 0.76rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffa31a 0%, #ef7e00 100%);
+  color: #fff;
+  font-size: clamp(1rem, 1.8vw, 1.95rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+}
+
+.pz-footer-company {
+  margin-top: 1rem;
 }
 
 .pz-contact-map-block {
@@ -3005,41 +3109,38 @@ body > main {
 }
 
 .pz-hero {
-  background:
-    radial-gradient(120% 120% at 0% 0%, rgba(249, 115, 22, 0.25), transparent 50%),
-    linear-gradient(120deg, #020617, #111827 55%, #1f2937);
-  color: #fff;
+  width: min(1500px, 100%);
+  max-width: 100%;
+  margin-inline: auto;
   padding: 0;
+  overflow: hidden;
 }
 
-.pz-hero-inner {
-  max-width: 46rem;
-  padding: 6rem 10px;
+.pz-hero-slideshow {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #e5e7eb;
 }
 
-.pz-hero h1 {
-  margin: 0.9rem 0;
-  font-size: clamp(2.4rem, 6vw, 4.9rem);
-  line-height: 1.04;
-  letter-spacing: -0.04em;
-  color: #fff;
+.pz-hero-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 540ms ease;
 }
 
-.pz-hero h1 span {
-  color: var(--pz-orange);
+.pz-hero-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.pz-hero p {
-  margin: 0;
-  max-width: 36ch;
-  color: #cbd5e1;
-}
-
-.pz-hero-actions {
-  margin-top: 1.6rem;
-  display: flex;
-  gap: 0.7rem;
-  flex-wrap: wrap;
+.pz-hero-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .pz-brand-strip {
@@ -3145,6 +3246,31 @@ body > main {
   padding-top: 2.1rem;
 }
 
+.pz-home-customers {
+  padding-top: 2.4rem;
+  padding-bottom: 3rem;
+}
+
+.pz-home-customers .pz-shell {
+  text-align: center;
+}
+
+.pz-home-customers h1 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.2rem, 2.8vw, 1.95rem);
+  letter-spacing: -0.01em;
+  color: #334155;
+}
+
+.pz-home-customers-count {
+  margin: 0;
+  font-size: clamp(3rem, 8.8vw, 6.2rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--pz-orange);
+}
+
 .pz-section-head {
   margin-bottom: 1.4rem;
   display: flex;
@@ -3152,6 +3278,14 @@ body > main {
   justify-content: space-between;
   align-items: flex-end;
   gap: 1rem;
+}
+
+.pz-section-head-row {
+  align-items: center;
+}
+
+.pz-section-head-row h2 {
+  margin: 0;
 }
 
 .pz-section-head h2 {
@@ -3205,9 +3339,10 @@ body > main {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
   scroll-snap-type: x mandatory;
   scroll-padding-left: 0.1rem;
-  padding: 0.4rem 0;
+  padding: 0.85rem 0.25rem 1rem;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
 }
@@ -3246,15 +3381,15 @@ body > main {
   padding: 0.85rem;
   background: #fff;
   box-shadow:
-    rgba(50, 50, 93, 0.25) 0 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0 1px 3px -1px;
+    rgba(15, 23, 42, 0.26) 0 18px 34px -16px,
+    rgba(15, 23, 42, 0.18) 0 10px 24px -16px;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .pz-product-card:hover {
   box-shadow:
-    rgba(50, 50, 93, 0.34) 0 12px 24px -12px,
-    rgba(0, 0, 0, 0.28) 0 8px 16px -12px;
+    rgba(15, 23, 42, 0.26) 0 18px 34px -16px,
+    rgba(15, 23, 42, 0.18) 0 10px 24px -16px;
   transform: translateY(-5px);
 }
 
@@ -3404,8 +3539,8 @@ body > main {
 
 .pz-collection-card-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 1.2rem;
   overflow: visible;
   padding-bottom: 0;
 }
@@ -3418,7 +3553,7 @@ body > main {
   width: 100%;
   min-width: 0;
   border: 0;
-  border-radius: 0.95rem;
+  border-radius: 0.5rem;
   background: #fff;
   text-decoration: none;
   overflow: hidden;
@@ -4286,6 +4421,9 @@ body > main {
   font-size: clamp(1.8rem, 3.4vw, 2.55rem);
   line-height: 1.1;
   letter-spacing: -0.035em;
+  @media (max-width: 768px) {
+    font-size: 1.6rem;
+  }
 }
 
 .pz-product-rating {
@@ -4298,6 +4436,29 @@ body > main {
   margin: 1rem 0 0;
   font-size: 2rem;
   font-weight: 800;
+}
+
+.pz-product-price-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pz-product-warranty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.8rem;
+  border: 1px solid #000;
+  border-radius: 5px;
+  background: #fff;
+  color: #000;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .pz-product-availability {
@@ -4323,8 +4484,8 @@ body > main {
   font-size: 0.9rem;
 }
 
-.pz-product-description-accordion {
-  margin-top: 0.7rem;
+.pz-product-description-accordion, .pz-product-availability-toggle {
+  padding-top: 1rem !important;
 }
 
 .pz-product-description-toggle,
@@ -4409,7 +4570,7 @@ body > main {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 1rem;
   background: #000;
-  padding: 1rem 1rem 1.1rem;
+  padding: 1.45rem 1rem 1.55rem;
   box-shadow: 0 18px 42px -24px rgba(15, 23, 42, 0.55);
   opacity: 0;
   transform: translateY(8px) scale(0.98);
@@ -4444,13 +4605,53 @@ body > main {
   color: #fff;
 }
 
+.pz-availability-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pz-availability-options li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff;
+}
+
+.pz-availability-modal .pz-availability-option-text p {
+  margin: 0.18rem 0 0;
+}
+
+.pz-availability-modal .pz-availability-option-text p:first-child {
+  margin-top: 0;
+}
+
+.pz-availability-dot {
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 999px;
+  flex: 0 0 0.56rem;
+  background: rgba(0, 255, 54, 0.92);
+}
+
+.pz-availability-dot.is-open {
+  background: #86efac;
+}
+
+.pz-availability-dot.is-closed {
+  background: #ff5353;
+}
+
 .pz-availability-modal p {
   margin: 0.25rem 0 0;
   color: #fff;
 }
 
 .pz-availability-status {
-  margin-top: 0.55rem !important;
+  margin-top: 0.38rem !important;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4461,7 +4662,7 @@ body > main {
 }
 
 .pz-availability-status.is-closed {
-  color: #fca5a5;
+  color: #ff5353;
 }
 
 .pz-product-description-collapse {
@@ -5003,7 +5204,7 @@ body > main {
     height: 44px;
     min-height: 44px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid #000;
     background: transparent;
     color: #fff;
     position: relative;
@@ -5047,6 +5248,11 @@ body > main {
   .pz-product-mobile-cart-price {
     font-size: 0.86rem;
     white-space: nowrap;
+    background: #fff;
+    color: #000;
+    border-radius: 5px;
+    padding: 0.18rem 0.55rem;
+    line-height: 1.2;
   }
 
   .pz-product-mobile-cart-btn:disabled::before {
@@ -5057,6 +5263,10 @@ body > main {
   .pz-product-mobile-cart-btn:disabled .pz-product-mobile-cart-label,
   .pz-product-mobile-cart-btn:disabled .pz-product-mobile-cart-price {
     color: #e2e8f0;
+  }
+
+  .pz-product-mobile-cart-btn:disabled .pz-product-mobile-cart-price {
+    background: #1f2937;
   }
 
   body.pz-mobile-cart-active .mbn {
@@ -5142,8 +5352,14 @@ body > main {
     stroke-linejoin: round;
   }
 
+  .mbn svg.mbn__icon--whatsapp {
+    fill: currentColor;
+    stroke: none;
+    stroke-width: 0;
+  }
+
   .pz-main {
-    padding-bottom: 7.5rem;
+    padding-bottom: 0;
   }
 }
 
@@ -5226,6 +5442,10 @@ body > main {
 }
 
 @media (max-width: 620px) {
+  .pz-hero-slideshow {
+    aspect-ratio: 9 / 16;
+  }
+
   .pz-header-left,
   .pz-header-right {
     gap: 0.5rem;
@@ -5404,6 +5624,14 @@ body > main {
     align-items: flex-start;
   }
 
+  .pz-carousel-controls .pz-carousel-btn {
+    display: none;
+  }
+
+  .pz-section-head-row {
+    align-items: center;
+  }
+
   .pz-carousel-btn {
     width: 1.85rem;
     height: 1.85rem;
@@ -5418,7 +5646,7 @@ body > main {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     justify-content: initial;
-    gap: 0.55rem;
+    gap: 1.2rem;
     overflow: visible;
     padding-bottom: 0;
   }
@@ -5428,6 +5656,32 @@ body > main {
     max-width: none;
     min-width: 0;
     flex: 0 0 auto;
+  }
+
+  .pz-product-card-footer {
+    padding-right: 2.7rem;
+  }
+
+  .pz-product-variant-slot {
+    position: relative;
+    width: calc(100% + 0.55rem);
+    margin-right: -0.55rem;
+    overflow: visible;
+  }
+
+  .pz-product-variant-slot::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1.2rem;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 1) 85%
+    );
   }
 
   .pz-collection-menu-card {
@@ -5449,10 +5703,6 @@ body > main {
     grid-template-columns: 1fr;
   }
 
-  .pz-hero-inner {
-    padding: 4rem 10px;
-  }
-
   .pz-brand-track {
     animation-duration: 18s;
   }
@@ -5470,6 +5720,44 @@ body > main {
 
   .pz-footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pz-footer-map-link img {
+    width: 1500px;
+    max-width: none;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .pz-footer-map-overlay {
+    width: min(520px, calc(100% - 1rem));
+    bottom: 0.8rem;
+    padding: 0.82rem 0.8rem 0.9rem;
+    border-radius: 1.1rem;
+  }
+
+  .pz-footer-map-kicker {
+    font-size: 0.88rem;
+  }
+
+  .pz-footer-map-overlay h3 {
+    margin-top: 0.42rem;
+    font-size: clamp(1.65rem, 8vw, 2.1rem);
+  }
+
+  .pz-footer-map-address {
+    margin-top: 0.42rem;
+    font-size: 0.95rem;
+    line-height: 1.25;
+    max-width: 32ch;
+  }
+
+  .pz-footer-map-cta {
+    margin-top: 0.66rem;
+    min-height: 2.7rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 700;
   }
 
   .pz-footer-bottom {

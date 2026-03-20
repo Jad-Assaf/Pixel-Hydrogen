@@ -8,7 +8,6 @@ export function Footer({
   footer: footerPromise,
   header,
   publicStoreDomain,
-  menuCollectionAvailability,
 }) {
   return (
     <Suspense fallback={<footer className="pz-footer" />}>
@@ -17,7 +16,6 @@ export function Footer({
           <FooterBody
             header={header}
             publicStoreDomain={publicStoreDomain}
-            menuCollectionAvailability={menuCollectionAvailability}
           />
         )}
       </Await>
@@ -29,19 +27,43 @@ export function Footer({
  * @param {{
  *   header: FooterProps['header'];
  *   publicStoreDomain: string;
- *   menuCollectionAvailability?: FooterProps['menuCollectionAvailability'];
  * }}
  */
-function FooterBody({header, publicStoreDomain, menuCollectionAvailability}) {
+function FooterBody({header, publicStoreDomain}) {
   const year = new Date().getFullYear();
   const shopName = header?.shop?.name || 'Pixel Zones';
-  const shopLinks = getMenuCollectionLinks(
-    header?.menu?.items || [],
-    menuCollectionAvailability,
-  );
 
   return (
     <footer className="pz-footer">
+      <section className="pz-footer-map" aria-label="Store location">
+        <a
+          className="pz-footer-map-link"
+          href={PIXEL_ZONES_MAP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Pixel Zones location in Google Maps"
+        >
+          <img
+            src={PIXEL_ZONES_MAP_IMAGE_URL}
+            alt="Pixel Zones location map"
+            loading="lazy"
+            width="1200"
+            height="675"
+          />
+          <div className="pz-footer-map-overlay" aria-hidden="true">
+            <p className="pz-footer-map-kicker">
+              <span className="pz-footer-map-pin">📍</span>
+              <span>Our Showroom</span>
+            </p>
+            <h3>Pixel Zones</h3>
+            <p className="pz-footer-map-address">
+              Beirut, Adlieh, Sami Al Solh Avenue, Sequoia Building
+            </p>
+            <span className="pz-footer-map-cta">Open in google maps</span>
+          </div>
+        </a>
+      </section>
+
       <div className="pz-shell">
         <div className="pz-footer-grid">
           <div>
@@ -49,92 +71,114 @@ function FooterBody({header, publicStoreDomain, menuCollectionAvailability}) {
               {shopName}
             </Link>
             <p className="pz-footer-copy-text">
-              Premium electronics curated for modern living. Built for people who
-              care about performance and design.
+              Premium electronics curated for modern living. Built for people
+              who care about performance and design.
             </p>
             <div className="pz-footer-socials" aria-label="Social links">
               <a
+                className="pz-social-icon pz-social-icon--instagram"
                 href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
               >
                 <svg
-                  fill="#000000"
-                  width="50"
-                  height="50"
-                  viewBox="0 0 32 32"
-                  aria-hidden="true"
-                  focusable="false"
+                  width="64px"
+                  height="64px"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path d="M22.3,8.4c-0.8,0-1.4,0.6-1.4,1.4c0,0.8,0.6,1.4,1.4,1.4c0.8,0,1.4-0.6,1.4-1.4C23.7,9,23.1,8.4,22.3,8.4z" />
-                  <path d="M16,10.2c-3.3,0-5.9,2.7-5.9,5.9s2.7,5.9,5.9,5.9s5.9-2.7,5.9-5.9S19.3,10.2,16,10.2z M16,19.9c-2.1,0-3.8-1.7-3.8-3.8 c0-2.1,1.7-3.8,3.8-3.8c2.1,0,3.8,1.7,3.8,3.8C19.8,18.2,18.1,19.9,16,19.9z" />
-                  <path d="M20.8,4h-9.5C7.2,4,4,7.2,4,11.2v9.5c0,4,3.2,7.2,7.2,7.2h9.5c4,0,7.2-3.2,7.2-7.2v-9.5C28,7.2,24.8,4,20.8,4z M25.7,20.8 c0,2.7-2.2,5-5,5h-9.5c-2.7,0-5-2.2-5-5v-9.5c0-2.7,2.2-5,5-5h9.5c2.7,0,5,2.2,5,5V20.8z" />
+                  <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                  <g
+                    id="SVGRepo_tracerCarrier"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></g>
+                  <g id="SVGRepo_iconCarrier">
+                    {' '}
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M2 6C2 3.79086 3.79086 2 6 2H18C20.2091 2 22 3.79086 22 6V18C22 20.2091 20.2091 22 18 22H6C3.79086 22 2 20.2091 2 18V6ZM6 4C4.89543 4 4 4.89543 4 6V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V6C20 4.89543 19.1046 4 18 4H6ZM12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9ZM7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12ZM17.5 8C18.3284 8 19 7.32843 19 6.5C19 5.67157 18.3284 5 17.5 5C16.6716 5 16 5.67157 16 6.5C16 7.32843 16.6716 8 17.5 8Z"
+                      fill="#000000"
+                    ></path>{' '}
+                  </g>
                 </svg>
               </a>
               <a
+                className="pz-social-icon pz-social-icon--facebook"
                 href={FACEBOOK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
               >
                 <svg
+                  fill="#000000"
+                  width="64px"
+                  height="64px"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                  <g
+                    id="SVGRepo_tracerCarrier"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></g>
+                  <g id="SVGRepo_iconCarrier">
+                    {' '}
+                    <path d="M12 2.03998C6.5 2.03998 2 6.52998 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.84998C10.44 7.33998 11.93 5.95998 14.22 5.95998C15.31 5.95998 16.45 6.14998 16.45 6.14998V8.61998H15.19C13.95 8.61998 13.56 9.38998 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96C15.9164 21.5878 18.0622 20.3855 19.6099 18.57C21.1576 16.7546 22.0054 14.4456 22 12.06C22 6.52998 17.5 2.03998 12 2.03998Z"></path>{' '}
+                  </g>
+                </svg>
+              </a>
+              <a
+                className="pz-social-icon pz-social-icon--youtube"
+                href={YOUTUBE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+              >
+                <svg
                   width="40"
                   height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
+                  viewBox="0 -3 20 20"
+                  fill="#000000"
                   aria-hidden="true"
                   focusable="false"
                 >
-                  <path
+                  <g
+                    stroke="none"
+                    strokeWidth="1"
+                    fill="none"
                     fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M20 1C21.6569 1 23 2.34315 23 4V20C23 21.6569 21.6569 23 20 23H4C2.34315 23 1 21.6569 1 20V4C1 2.34315 2.34315 1 4 1H20ZM20 3C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H15V13.9999H17.0762C17.5066 13.9999 17.8887 13.7245 18.0249 13.3161L18.4679 11.9871C18.6298 11.5014 18.2683 10.9999 17.7564 10.9999H15V8.99992C15 8.49992 15.5 7.99992 16 7.99992H18C18.5523 7.99992 19 7.5522 19 6.99992V6.31393C19 5.99091 18.7937 5.7013 18.4813 5.61887C17.1705 5.27295 16 5.27295 16 5.27295C13.5 5.27295 12 6.99992 12 8.49992V10.9999H10C9.44772 10.9999 9 11.4476 9 11.9999V12.9999C9 13.5522 9.44771 13.9999 10 13.9999H12V21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3H20Z"
-                    fill="#0F0F0F"
-                  />
+                  >
+                    <g
+                      transform="translate(-300.000000, -7442.000000)"
+                      fill="#000000"
+                    >
+                      <g transform="translate(56.000000, 160.000000)">
+                        <path d="M251.988432,7291.58588 L251.988432,7285.97425 C253.980638,7286.91168 255.523602,7287.8172 257.348463,7288.79353 C255.843351,7289.62824 253.980638,7290.56468 251.988432,7291.58588 M263.090998,7283.18289 C262.747343,7282.73013 262.161634,7282.37809 261.538073,7282.26141 C259.705243,7281.91336 248.270974,7281.91237 246.439141,7282.26141 C245.939097,7282.35515 245.493839,7282.58153 245.111335,7282.93357 C243.49964,7284.42947 244.004664,7292.45151 244.393145,7293.75096 C244.556505,7294.31342 244.767679,7294.71931 245.033639,7294.98558 C245.376298,7295.33761 245.845463,7295.57995 246.384355,7295.68865 C247.893451,7296.0008 255.668037,7296.17532 261.506198,7295.73552 C262.044094,7295.64178 262.520231,7295.39147 262.895762,7295.02447 C264.385932,7293.53455 264.28433,7285.06174 263.090998,7283.18289" />
+                      </g>
+                    </g>
+                  </g>
                 </svg>
               </a>
             </div>
-          </div>
-
-          <div>
-            <h4 className="pz-footer-heading">Shop</h4>
-            <ul className="pz-footer-links">
-              {(shopLinks.length ? shopLinks : FALLBACK_LINKS).map((item) => (
-                <FooterLink
-                  key={item.id || item.url || item.title}
-                  item={item}
-                  publicStoreDomain={publicStoreDomain}
-                />
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="pz-footer-heading">Company</h4>
-            <ul className="pz-footer-links">
-              {COMPANY_LINKS.map((item) => (
-                <FooterLink
-                  key={item.id || item.url || item.title}
-                  item={item}
-                  publicStoreDomain={publicStoreDomain}
-                />
-              ))}
-            </ul>
+            <section className="pz-footer-company">
+              <h4 className="pz-footer-heading">Company</h4>
+              <ul className="pz-footer-links">
+                {COMPANY_LINKS.map((item) => (
+                  <FooterLink
+                    key={item.id || item.url || item.title}
+                    item={item}
+                    publicStoreDomain={publicStoreDomain}
+                  />
+                ))}
+              </ul>
+            </section>
           </div>
         </div>
-
-        <section className="pz-footer-map" aria-label="Store location">
-          <h4 className="pz-footer-heading">Visit Us</h4>
-          <iframe
-            className="pz-map-embed"
-            src={PIXEL_ZONES_MAP_EMBED_URL}
-            title="Pixel Zones location map"
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </section>
 
         <div className="pz-footer-bottom">
           <p>
@@ -200,60 +244,6 @@ function normalizeMenuUrl(url, publicStoreDomain) {
   }
 }
 
-function getMenuCollectionLinks(items, availabilityMap = {}) {
-  const seen = new Set();
-
-  return (items || [])
-    .filter(
-      (item) => {
-        const handle = getCollectionHandleFromMenuUrl(item?.url);
-        if (!(item?.type === 'COLLECTION' || handle) || !item?.url) {
-          return false;
-        }
-
-        const unavailableById =
-          item.resourceId &&
-          (availabilityMap[item.resourceId] === false ||
-            availabilityMap[`id:${item.resourceId}`] === false);
-        const unavailableByHandle =
-          handle && availabilityMap[`handle:${handle.toLowerCase()}`] === false;
-
-        return !unavailableById && !unavailableByHandle;
-      },
-    )
-    .filter((item) => {
-      if (seen.has(item.url)) return false;
-      seen.add(item.url);
-      return true;
-    })
-    .map((item) => ({
-      id: item.id,
-      title: item.title,
-      url: item.url,
-    }));
-}
-
-function getCollectionHandleFromMenuUrl(url) {
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url, 'https://example.com');
-    const match = parsed.pathname.match(/\/collections\/([^/]+)/i);
-    if (!match?.[1]) return null;
-    const handle = decodeURIComponent(match[1]);
-    if (!handle || handle.toLowerCase() === 'all') return null;
-    return handle;
-  } catch {
-    return null;
-  }
-}
-
-const FALLBACK_LINKS = [
-  {id: 'shop-all', title: 'All products', url: '/shop'},
-  {id: 'collections', title: 'Collections', url: '/collections'},
-  {id: 'search', title: 'Search', url: '/search'},
-];
-
 const COMPANY_LINKS = [
   {id: 'privacy-policy', title: 'Privacy Policy', url: '/policies/privacy-policy'},
   {id: 'terms-of-service', title: 'Terms of Service', url: '/policies/terms-of-service'},
@@ -263,15 +253,16 @@ const COMPANY_LINKS = [
 
 const INSTAGRAM_URL = 'https://www.instagram.com/pixel.zones/';
 const FACEBOOK_URL = 'https://www.facebook.com/people/Pixel-Zones/61556339013618/';
-const PIXEL_ZONES_MAP_EMBED_URL =
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3312.4893739188915!2d35.51732977606102!3d33.87704827322348!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151f170dd933444d%3A0xad92da460ee50e1d!2sPixel%20Zones!5e0!3m2!1sen!2slb!4v1773604137545!5m2!1sen!2slb';
+const YOUTUBE_URL = 'https://www.youtube.com/@pixelzones';
+const PIXEL_ZONES_MAP_URL = 'https://maps.google.com/?q=Pixel+Zones,+Sami+Solh+Avenu,+Beirut';
+const PIXEL_ZONES_MAP_IMAGE_URL =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/use_the_color_202603192244.jpg?v=1773953210';
 
 /**
  * @typedef {Object} FooterProps
  * @property {Promise<FooterQuery|null>} footer
  * @property {HeaderQuery} header
  * @property {string} publicStoreDomain
- * @property {Record<string, boolean>} [menuCollectionAvailability]
  */
 
 /** @typedef {import('storefrontapi.generated').FooterQuery} FooterQuery */
