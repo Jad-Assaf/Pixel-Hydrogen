@@ -177,28 +177,18 @@ export default function Homepage() {
       <section className="pz-hero">
         <div className="pz-hero-slideshow" aria-label="Featured banners">
           {HERO_SLIDES.map((slide, index) => (
-            <picture
+            <a
               key={slide.desktop}
               className={`pz-hero-slide${index === heroSlideIndex ? ' is-active' : ''}`}
+              href={slide.href}
+              aria-label={slide.alt}
             >
-              <source media="(max-width: 620px)" srcSet={slide.mobile} />
               <img
                 src={slide.desktop}
                 alt={slide.alt}
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
-            </picture>
-          ))}
-        </div>
-        <div className="pz-hero-desktop-preview" aria-hidden="true">
-          {HERO_SLIDES.map((slide, index) => (
-            <img
-              key={`${slide.desktop}-desktop-preview`}
-              className={`pz-hero-desktop-slide${index === heroSlideIndex ? ' is-active' : ''}`}
-              src={slide.desktop}
-              alt=""
-              loading="lazy"
-            />
+            </a>
           ))}
         </div>
       </section>
@@ -320,10 +310,10 @@ export default function Homepage() {
                   </div>
                   <div className="pz-collection-card-copy">
                     <p>{collection.title}</p>
-                    <small>
+                    {/* <small>
                       {collection.products.length} product
                       {collection.products.length === 1 ? '' : 's'}
-                    </small>
+                    </small> */}
                   </div>
                 </Link>
               ))}
@@ -792,23 +782,23 @@ const BRANDS = [
 
 const HERO_SLIDES = [
   {
+    href: '#update-banner-1-link',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-desktop.jpg?v=1773951906',
-    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-mobile.jpg?v=1773951905',
     alt: 'Aulumu banner',
   },
   {
+    href: '#update-banner-2-link',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-desk.jpg?v=1773951906',
-    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-mob.jpg?v=1773951906',
     alt: 'Nothing banner',
   },
   {
+    href: '#update-banner-3-link',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-desk.jpg?v=1773951906',
-    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-mob.jpg?v=1773951906',
     alt: 'Moft banner',
   },
   {
+    href: '#update-banner-4-link',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-desk.jpg?v=1773951907',
-    mobile: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-mob.jpg?v=1773951906',
     alt: 'DJI banner',
   },
 ];
