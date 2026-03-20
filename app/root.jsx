@@ -238,6 +238,8 @@ export function Layout({children}) {
   const metaPixelId = data?.metaPixelId || '';
   const googlePixelId = data?.googlePixelId || '';
   const googleMerchantVerification = data?.googleMerchantVerification || '';
+  const serializedMetaPixelId = JSON.stringify(metaPixelId);
+  const serializedGooglePixelId = JSON.stringify(googlePixelId);
 
   return (
     <html lang="en">
@@ -263,18 +265,24 @@ export function Layout({children}) {
             <script
               nonce={nonce}
               dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${googlePixelId}');`,
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${serializedGooglePixelId});`,
               }}
             />
           </>
         ) : null}
         {metaPixelId ? (
-          <script
-            nonce={nonce}
-            dangerouslySetInnerHTML={{
-              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init', '${metaPixelId}');fbq('track', 'PageView');`,
-            }}
-          />
+          <>
+            <script
+              async
+              src="https://connect.facebook.net/en_US/fbevents.js"
+            />
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `window.fbq=window.fbq||function(){window.fbq.callMethod?window.fbq.callMethod.apply(window.fbq,arguments):window.fbq.queue.push(arguments)};if(!window._fbq)window._fbq=window.fbq;window.fbq.push=window.fbq;window.fbq.loaded=true;window.fbq.version='2.0';window.fbq.queue=window.fbq.queue||[];window.fbq('init', ${serializedMetaPixelId});window.fbq('track', 'PageView');`,
+              }}
+            />
+          </>
         ) : null}
       </head>
       <body>

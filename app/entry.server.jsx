@@ -28,6 +28,18 @@ export default async function handleRequest(
     'https://www.google-analytics.com',
     'https://stats.g.doubleclick.net',
   ];
+  const googleImageDomains = [
+    'https://www.google.com',
+    'https://google.com',
+    'https://www.google.com.lb',
+    'https://google.com.lb',
+    'https://www.googleadservices.com',
+    'https://googleadservices.com',
+  ];
+  const instagramMediaDomains = [
+    'https://*.cdninstagram.com',
+    'https://*.fbcdn.net',
+  ];
   const metaTrackingDomains = [
     'https://connect.facebook.net',
     'https://www.facebook.com',
@@ -40,6 +52,8 @@ export default async function handleRequest(
     'https://cdn.shopify.com',
     ...youtubeDomains,
     ...googleTrackingDomains,
+    ...googleImageDomains,
+    ...instagramMediaDomains,
     ...metaTrackingDomains,
   ];
   const scriptSources = [
@@ -57,9 +71,14 @@ export default async function handleRequest(
     styleSrc: ['https://fonts.googleapis.com'],
     fontSrc: ['https://fonts.gstatic.com'],
     scriptSrc: scriptSources,
-    connectSrc: [...youtubeDomains, ...googleTrackingDomains, ...metaTrackingDomains],
+    connectSrc: [
+      ...youtubeDomains,
+      ...googleTrackingDomains,
+      ...googleImageDomains,
+      ...metaTrackingDomains,
+    ],
     imgSrc: imageSources,
-    mediaSrc: [...commonSelf, ...youtubeDomains],
+    mediaSrc: [...commonSelf, ...youtubeDomains, ...instagramMediaDomains],
     frameSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
     childSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
   });

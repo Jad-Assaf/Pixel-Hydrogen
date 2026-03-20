@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {Link, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
+import {InstagramFeedSection} from '~/components/InstagramFeedSection';
 import {ArrowIcon} from '~/components/Icons';
 import ankerLogo from '~/assets/anker-logo.webp';
 import appleLogo from '~/assets/apple-logo.webp';
@@ -189,6 +190,17 @@ export default function Homepage() {
             </picture>
           ))}
         </div>
+        <div className="pz-hero-desktop-preview" aria-hidden="true">
+          {HERO_SLIDES.map((slide, index) => (
+            <img
+              key={`${slide.desktop}-desktop-preview`}
+              className={`pz-hero-desktop-slide${index === heroSlideIndex ? ' is-active' : ''}`}
+              src={slide.desktop}
+              alt=""
+              loading="lazy"
+            />
+          ))}
+        </div>
       </section>
 
       <section className="pz-brand-strip">
@@ -365,6 +377,8 @@ export default function Homepage() {
           </div>
         </section>
       ))}
+
+      <InstagramFeedSection />
 
       <section className="pz-home-section pz-home-customers" ref={customersSectionRef}>
         <div className="pz-shell">
