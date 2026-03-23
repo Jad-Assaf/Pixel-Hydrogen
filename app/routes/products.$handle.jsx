@@ -455,6 +455,11 @@ export default function Product() {
           </div>
 
           <div className="pz-product-availability">
+            {product.vendor ? (
+              <p>
+                <span>Brand:</span> {product.vendor}
+              </p>
+            ) : null}
             {selectedVariant?.sku ? (
               <p>
                 <span>SKU:</span> {selectedVariant.sku}
@@ -506,6 +511,93 @@ export default function Product() {
               </div>
             </div>
           </section>
+
+          <div className="pz-product-help-sections">
+            <section
+              className="pz-product-help-card"
+              aria-label="How to check availability"
+            >
+              <div className="pz-product-help-title">
+                <svg
+                  className="pz-product-help-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M15 22.75H9C3.57 22.75 1.25 20.43 1.25 15V9C1.25 3.57 3.57 1.25 9 1.25H15C20.43 1.25 22.75 3.57 22.75 9V15C22.75 20.43 20.43 22.75 15 22.75ZM9 2.75C4.39 2.75 2.75 4.39 2.75 9V15C2.75 19.61 4.39 21.25 9 21.25H15C19.61 21.25 21.25 19.61 21.25 15V9C21.25 4.39 19.61 2.75 15 2.75H9Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M10.5795 15.5801C10.3795 15.5801 10.1895 15.5001 10.0495 15.3601L7.21945 12.5301C6.92945 12.2401 6.92945 11.7601 7.21945 11.4701C7.50945 11.1801 7.98945 11.1801 8.27945 11.4701L10.5795 13.7701L15.7195 8.6301C16.0095 8.3401 16.4895 8.3401 16.7795 8.6301C17.0695 8.9201 17.0695 9.4001 16.7795 9.6901L11.1095 15.3601C10.9695 15.5001 10.7795 15.5801 10.5795 15.5801Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <h3>How to Check Availability</h3>
+              </div>
+              <p className="pz-product-help-copy">
+                Tap &quot;Check availability&quot; to confirm whether this item is
+                in stock at our showroom or available exclusively online.
+              </p>
+            </section>
+
+            <section className="pz-product-help-card" aria-label="How to order">
+              <div className="pz-product-help-title">
+                <svg
+                  className="pz-product-help-icon"
+                  viewBox="0 0 1024 1024"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M959.018 208.158c0.23-2.721 0.34-5.45 0.34-8.172 0-74.93-60.96-135.89-135.89-135.89-1.54 0-3.036 0.06-6.522 0.213l-611.757-0.043c-1.768-0.085-3.563-0.17-5.424-0.17-74.812 0-135.67 60.84-135.67 135.712l0.188 10.952h-0.306l0.391 594.972-0.162 20.382c0 74.03 60.22 134.25 134.24 134.25 1.668 0 7.007-0.239 7.1-0.239l608.934 0.085c2.985 0.357 6.216 0.468 9.55 0.468 35.815 0 69.514-13.954 94.879-39.302 25.373-25.34 39.344-58.987 39.344-94.794l-0.145-12.015h0.918l-0.008-606.41z m-757.655 693.82l-2.585-0.203c-42.524 0-76.146-34.863-76.537-79.309V332.671H900.79l0.46 485.186-0.885 2.865c-0.535 1.837-0.8 3.58-0.8 5.17 0 40.382-31.555 73.766-71.852 76.002l-10.816 0.621v-0.527l-615.533-0.01zM900.78 274.424H122.3l-0.375-65.934 0.85-2.924c0.52-1.82 0.782-3.63 0.782-5.247 0-42.236 34.727-76.665 78.179-76.809l0.45-0.068 618.177 0.018 2.662 0.203c42.329 0 76.767 34.439 76.767 76.768 0 1.326 0.196 2.687 0.655 4.532l0.332 0.884v68.577z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M697.67 471.435c-7.882 0-15.314 3.078-20.918 8.682l-223.43 223.439L346.599 596.84c-5.544-5.603-12.95-8.69-20.842-8.69s-15.323 3.078-20.918 8.665c-5.578 5.518-8.674 12.9-8.7 20.79-0.017 7.908 3.07 15.357 8.69 20.994l127.55 127.558c5.57 5.56 13.01 8.622 20.943 8.622 7.925 0 15.364-3.06 20.934-8.63l244.247-244.247c5.578-5.511 8.674-12.883 8.7-20.783 0.017-7.942-3.079-15.408-8.682-20.986-5.552-5.612-12.958-8.698-20.85-8.698z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <h3>How to order?</h3>
+              </div>
+              <ul className="pz-product-help-list">
+                <li>Click on &quot;Add to Cart&quot;</li>
+                <li>Click on &quot;Continue to Checkout&quot;</li>
+                <li>Fill in information</li>
+                <li>Click on Complete order</li>
+                <li>
+                  Ordering through the website will allow us to processes your
+                  order faster and thus faster delivery.
+                </li>
+              </ul>
+            </section>
+
+            <section className="pz-product-help-card" aria-label="Delivery">
+              <div className="pz-product-help-title">
+                <svg
+                  className="pz-product-help-icon"
+                  viewBox="0 0 30 30"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M15.48 12c-.13.004-.255.058-.347.152l-2.638 2.63-1.625-1.62c-.455-.474-1.19.258-.715.712l1.983 1.978c.197.197.517.197.715 0l2.995-2.987c.33-.32.087-.865-.367-.865zM.5 16h3c.277 0 .5.223.5.5s-.223.5-.5.5h-3c-.277 0-.5-.223-.5-.5s.223-.5.5-.5zm0-4h3c.277 0 .5.223.5.5s-.223.5-.5.5h-3c-.277 0-.5-.223-.5-.5s.223-.5.5-.5zm0-4h3c.277 0 .5.223.5.5s-.223.5-.5.5h-3C.223 9 0 8.777 0 8.5S.223 8 .5 8zm24 11c-1.375 0-2.5 1.125-2.5 2.5s1.125 2.5 2.5 2.5 2.5-1.125 2.5-2.5-1.125-2.5-2.5-2.5zm0 1c.834 0 1.5.666 1.5 1.5s-.666 1.5-1.5 1.5-1.5-.666-1.5-1.5.666-1.5 1.5-1.5zm-13-1C10.125 19 9 20.125 9 21.5s1.125 2.5 2.5 2.5 2.5-1.125 2.5-2.5-1.125-2.5-2.5-2.5zm0 1c.834 0 1.5.666 1.5 1.5s-.666 1.5-1.5 1.5-1.5-.666-1.5-1.5.666-1.5 1.5-1.5zm-5-14C5.678 6 5 6.678 5 7.5v11c0 .822.678 1.5 1.5 1.5h2c.676.01.676-1.01 0-1h-2c-.286 0-.5-.214-.5-.5v-11c0-.286.214-.5.5-.5h13c.286 0 .5.214.5.5V19h-5.5c-.66 0-.648 1.01 0 1h7c.66 0 .654-1 0-1H21v-9h4.227L29 15.896V18.5c0 .286-.214.5-.5.5h-1c-.654 0-.654 1 0 1h1c.822 0 1.5-.678 1.5-1.5v-2.75c0-.095-.027-.19-.078-.27l-4-6.25c-.092-.143-.25-.23-.422-.23H21V7.5c0-.822-.678-1.5-1.5-1.5z"
+                    fill="currentColor"
+                  />
+                </svg>
+                <h3>Delivery</h3>
+              </div>
+              <ul className="pz-product-help-list">
+                <li>
+                  Order today and receive same-day delivery in Beirut, and
+                  within 2-3 working days outside Beirut.
+                </li>
+                <li>Cash on delivery</li>
+                <li>Delivery all over Lebanon</li>
+                <li>Delivery will contact you ahead of time before delivery</li>
+              </ul>
+            </section>
+          </div>
         </section>
       </div>
 
