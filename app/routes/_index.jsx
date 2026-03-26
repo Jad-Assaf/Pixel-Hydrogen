@@ -102,19 +102,31 @@ export default function Homepage() {
     ...BRANDS.map((brand) => ({...brand, copy: 'b'})),
   ];
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const [heroProgressCycle, setHeroProgressCycle] = useState(0);
   const [customersServed, setCustomersServed] = useState(0);
   const [isCustomersInView, setIsCustomersInView] = useState(false);
   const customersSectionRef = useRef(null);
+  const heroSwipeStateRef = useRef({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    deltaX: 0,
+    hasSwiped: false,
+  });
 
   useEffect(() => {
     if (HERO_SLIDES.length <= 1) return undefined;
 
-    const intervalId = setInterval(() => {
+    const timeoutId = window.setTimeout(() => {
       setHeroSlideIndex((current) => (current + 1) % HERO_SLIDES.length);
-    }, 4200);
+    }, HERO_SLIDE_DURATION_MS);
 
-    return () => clearInterval(intervalId);
-  }, []);
+    return () => window.clearTimeout(timeoutId);
+  }, [heroSlideIndex]);
+
+  useEffect(() => {
+    setHeroProgressCycle((current) => current + 1);
+  }, [heroSlideIndex]);
 
   useEffect(() => {
     const node = customersSectionRef.current;
@@ -172,24 +184,142 @@ export default function Homepage() {
     });
   }
 
+  function goToHeroSlide(index) {
+    if (!HERO_SLIDES.length) return;
+    const total = HERO_SLIDES.length;
+    const nextIndex = ((index % total) + total) % total;
+    setHeroSlideIndex(nextIndex);
+  }
+
+  function goToNextHeroSlide() {
+    goToHeroSlide(heroSlideIndex + 1);
+  }
+
+  function goToPreviousHeroSlide() {
+    goToHeroSlide(heroSlideIndex - 1);
+  }
+
+  function handleHeroPointerDown(event) {
+    if (HERO_SLIDES.length <= 1) return;
+
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    heroSwipeStateRef.current.pointerId = event.pointerId;
+    heroSwipeStateRef.current.startX = event.clientX;
+    heroSwipeStateRef.current.startY = event.clientY;
+    heroSwipeStateRef.current.deltaX = 0;
+    heroSwipeStateRef.current.hasSwiped = false;
+  }
+
+  function handleHeroPointerMove(event) {
+    const swipe = heroSwipeStateRef.current;
+    if (swipe.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - swipe.startX;
+    const deltaY = event.clientY - swipe.startY;
+
+    if (
+      !swipe.hasSwiped &&
+      Math.abs(deltaX) > HERO_SWIPE_THRESHOLD_PX &&
+      Math.abs(deltaX) > Math.abs(deltaY)
+    ) {
+      swipe.hasSwiped = true;
+      swipe.deltaX = deltaX;
+      if (deltaX < 0) {
+        goToNextHeroSlide();
+      } else {
+        goToPreviousHeroSlide();
+      }
+      return;
+    }
+
+    swipe.deltaX = deltaX;
+  }
+
+  function resetHeroSwipe(pointerId) {
+    const swipe = heroSwipeStateRef.current;
+    if (swipe.pointerId !== pointerId) return;
+
+    window.setTimeout(() => {
+      swipe.hasSwiped = false;
+    }, 0);
+
+    swipe.pointerId = null;
+    swipe.deltaX = 0;
+  }
+
+  function handleHeroPointerUp(event) {
+    resetHeroSwipe(event.pointerId);
+  }
+
+  function handleHeroPointerCancel(event) {
+    resetHeroSwipe(event.pointerId);
+  }
+
+  function handleHeroSlideClick(event) {
+    if (!heroSwipeStateRef.current.hasSwiped) return;
+    event.preventDefault();
+  }
+
   return (
     <div className="pz-home">
       <section className="pz-hero">
-        <div className="pz-hero-slideshow" aria-label="Featured banners">
+        <div
+          className="pz-hero-slideshow"
+          aria-label="Featured banners"
+          onPointerDown={handleHeroPointerDown}
+          onPointerMove={handleHeroPointerMove}
+          onPointerUp={handleHeroPointerUp}
+          onPointerCancel={handleHeroPointerCancel}
+        >
           {HERO_SLIDES.map((slide, index) => (
             <a
               key={slide.desktop}
               className={`pz-hero-slide${index === heroSlideIndex ? ' is-active' : ''}`}
               href={slide.href}
               aria-label={slide.alt}
+              onClick={handleHeroSlideClick}
             >
               <img
                 src={slide.desktop}
                 alt={slide.alt}
                 loading={index === 0 ? 'eager' : 'lazy'}
+                draggable={false}
               />
             </a>
           ))}
+
+          {HERO_SLIDES.length > 1 ? (
+            <div className="pz-hero-dots" role="tablist" aria-label="Hero slides">
+              {HERO_SLIDES.map((slide, index) => (
+                <button
+                  key={slide.desktop}
+                  type="button"
+                  className={`pz-hero-dot${index === heroSlideIndex ? ' is-active' : ''}`}
+                  aria-label={`Show slide ${index + 1}: ${slide.alt}`}
+                  aria-current={index === heroSlideIndex ? 'true' : undefined}
+                  onClick={() => {
+                    if (index === heroSlideIndex) {
+                      setHeroProgressCycle((current) => current + 1);
+                      return;
+                    }
+                    goToHeroSlide(index);
+                  }}
+                >
+                  {index === heroSlideIndex ? (
+                    <span
+                      key={`${heroSlideIndex}-${heroProgressCycle}`}
+                      className="pz-hero-dot-fill"
+                      style={{
+                        animationDuration: `${HERO_SLIDE_DURATION_MS}ms`,
+                      }}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -802,6 +932,9 @@ const HERO_SLIDES = [
     alt: 'DJI banner',
   },
 ];
+
+const HERO_SLIDE_DURATION_MS = 4200;
+const HERO_SWIPE_THRESHOLD_PX = 46;
 
 /** @typedef {import('./+types/_index').Route} Route */
 /** @typedef {import('storefrontapi.generated').HomeProductCardFragment} HomeProduct */
