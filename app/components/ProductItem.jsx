@@ -4,12 +4,7 @@ import {Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
-import {
-  PlusIcon,
-  WishlistAddIcon,
-  WishlistCheckedIcon,
-} from '~/components/Icons';
-import {useWishlist} from '~/hooks/useWishlist';
+import {PlusIcon} from '~/components/Icons';
 
 /**
  * @param {{
@@ -71,32 +66,9 @@ export function ProductItem({product, loading, showAddToCart = false}) {
     displayVariant?.price || product.priceRange?.minVariantPrice || null;
   const cartVariant = displayVariant || selectedVariant;
   const {open} = useAside();
-  const {hasHandle, toggleHandle} = useWishlist();
-  const isWishlisted = hasHandle(product.handle);
 
   return (
     <article className="pz-product-card" key={product.id}>
-      {product?.handle ? (
-        <button
-          type="button"
-          className={`pz-product-wishlist-btn${isWishlisted ? ' is-active' : ''}`}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            toggleHandle(product.handle);
-          }}
-          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-          aria-pressed={isWishlisted}
-          title={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-        >
-          {isWishlisted ? (
-            <WishlistCheckedIcon className="pz-product-wishlist-icon" />
-          ) : (
-            <WishlistAddIcon className="pz-product-wishlist-icon" />
-          )}
-        </button>
-      ) : null}
-
       <Link className="pz-product-card-link" prefetch="intent" to={variantUrl}>
         <div className="pz-product-media">
           {imageUrl ? (

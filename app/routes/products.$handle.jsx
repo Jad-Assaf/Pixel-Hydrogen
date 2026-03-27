@@ -13,9 +13,15 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
-import {ArrowIcon, PlusIcon} from '~/components/Icons';
+import {
+  ArrowIcon,
+  PlusIcon,
+  WishlistAddIcon,
+  WishlistCheckedIcon,
+} from '~/components/Icons';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
+import {useWishlist} from '~/hooks/useWishlist';
 /* eslint-disable react/no-unknown-property */
 
 /**
@@ -95,6 +101,7 @@ export default function Product() {
   /** @type {LoaderReturnData} */
   const {product, recommendedProducts} = useLoaderData();
   const {open} = useAside();
+  const {hasHandle, toggleHandle} = useWishlist();
 
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
@@ -134,10 +141,12 @@ export default function Product() {
   const [isAvailabilityVisible, setIsAvailabilityVisible] = useState(false);
   const [showMobileStickyCart, setShowMobileStickyCart] = useState(false);
   const [isStoreOpenNow, setIsStoreOpenNow] = useState(() => getBeirutStoreStatus());
+  const [quantity, setQuantity] = useState(1);
   const relatedCarouselRef = useRef(null);
   const mainMediaRef = useRef(null);
   const mainTouchStartX = useRef(null);
   const lightboxTouchStartX = useRef(null);
+  const isWishlisted = hasHandle(product.handle);
 
   useEffect(() => {
     if (!variantImageId) return;
@@ -442,7 +451,31 @@ export default function Product() {
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
+            quantity={quantity}
           />
+
+          <div className="pz-product-quantity-row pz-product-quantity-row--desktop">
+            <span className="pz-product-quantity-label">Quantity:</span>
+            <div className="pz-product-quantity-control">
+              <button
+                type="button"
+                onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                aria-label="Decrease quantity"
+                disabled={quantity <= 1}
+              >
+                -
+              </button>
+              <span aria-live="polite">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+                aria-label="Increase quantity"
+                disabled={quantity >= 99}
+              >
+                +
+              </button>
+            </div>
+          </div>
 
           <div className="pz-product-price">
             <div className="pz-product-price-line">
@@ -453,6 +486,25 @@ export default function Product() {
               <div className="pz-product-warranty-badge">1 year warranty</div>
             </div>
           </div>
+
+          {product?.handle ? (
+            <button
+              type="button"
+              className={`pz-product-page-wishlist-btn${
+                isWishlisted ? ' is-active' : ''
+              }`}
+              onClick={() => toggleHandle(product.handle)}
+              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-pressed={isWishlisted}
+            >
+              {isWishlisted ? (
+                <WishlistCheckedIcon className="pz-product-page-wishlist-icon" />
+              ) : (
+                <WishlistAddIcon className="pz-product-page-wishlist-icon" />
+              )}
+              <span>{isWishlisted ? 'Added to Wishlist' : 'Add to Wishlist'}</span>
+            </button>
+          ) : null}
 
           <div className="pz-product-availability">
             {product.vendor ? (
@@ -805,31 +857,53 @@ export default function Product() {
         className={`pz-product-mobile-cart-nav${showMobileStickyCart ? ' is-visible' : ''}`}
         aria-label="Product mobile add to cart"
       >
-        {selectedVariant?.id ? (
-          <AddToCartButton
-            disabled={!selectedVariant.availableForSale}
-            onClick={() => open('cart')}
-            lines={[
-              {
-                merchandiseId: selectedVariant.id,
-                quantity: 1,
-                selectedVariant,
-              },
-            ]}
-            className="pz-product-mobile-cart-btn"
+        <div className="pz-product-mobile-cart-inner">
+          <div
+            className="pz-product-mobile-quantity-control"
+            role="group"
+            aria-label="Select quantity"
           >
-            <span className="pz-product-mobile-cart-label">
-              {selectedVariant.availableForSale ? 'Add to Cart' : 'Sold out'}
-            </span>
-            <span className="pz-product-mobile-cart-price">
-              {selectedVariant.price ? (
-                <Money data={selectedVariant.price} />
-              ) : (
-                ''
-              )}
-            </span>
-          </AddToCartButton>
-        ) : null}
+            <button
+              type="button"
+              onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+              aria-label="Decrease quantity"
+              disabled={quantity <= 1}
+            >
+              -
+            </button>
+            <span aria-live="polite">{quantity}</span>
+            <button
+              type="button"
+              onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+              aria-label="Increase quantity"
+              disabled={quantity >= 99}
+            >
+              +
+            </button>
+          </div>
+
+          {selectedVariant?.id ? (
+            <AddToCartButton
+              disabled={!selectedVariant.availableForSale}
+              onClick={() => open('cart')}
+              lines={[
+                {
+                  merchandiseId: selectedVariant.id,
+                  quantity,
+                  selectedVariant,
+                },
+              ]}
+              className="pz-product-mobile-cart-btn"
+            >
+              <span className="pz-product-mobile-cart-label">
+                {selectedVariant.availableForSale ? 'Add to Cart' : 'Sold out'}
+              </span>
+              <span className="pz-product-mobile-cart-price">
+                {selectedVariant.price ? <Money data={selectedVariant.price} /> : ''}
+              </span>
+            </AddToCartButton>
+          ) : null}
+        </div>
       </div>
 
       <Analytics.ProductView
@@ -842,7 +916,7 @@ export default function Product() {
               vendor: product.vendor,
               variantId: selectedVariant?.id || '',
               variantTitle: selectedVariant?.title || '',
-              quantity: 1,
+              quantity,
             },
           ],
         }}

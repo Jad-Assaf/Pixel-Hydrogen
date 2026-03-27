@@ -6,11 +6,15 @@ import {useAside} from './Aside';
  * @param {{
  *   productOptions: MappedProductOptions[];
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+ *   quantity?: number;
  * }}
  */
-export function ProductForm({productOptions, selectedVariant}) {
+export function ProductForm({productOptions, selectedVariant, quantity = 1}) {
   const navigate = useNavigate();
   const {open} = useAside();
+  const safeQuantity = Number.isFinite(quantity)
+    ? Math.min(99, Math.max(1, Math.trunc(quantity)))
+    : 1;
 
   return (
     <div className="pz-product-form">
@@ -107,7 +111,7 @@ export function ProductForm({productOptions, selectedVariant}) {
             ? [
                 {
                   merchandiseId: selectedVariant.id,
-                  quantity: 1,
+                  quantity: safeQuantity,
                   selectedVariant,
                 },
               ]

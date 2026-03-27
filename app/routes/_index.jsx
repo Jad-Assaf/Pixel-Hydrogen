@@ -331,7 +331,7 @@ export default function Homepage() {
               {carouselBrands.map((brand) => (
                 <Link
                   key={`${brand.copy}-${brand.handle}`}
-                  to={`/collections/${brand.handle}`}
+                  to={`/collections/${formatBrandCollectionHandle(brand.handle)}`}
                   prefetch="intent"
                   className="pz-brand-logo-link"
                   role="listitem"
@@ -439,7 +439,7 @@ export default function Homepage() {
                     )}
                   </div>
                   <div className="pz-collection-card-copy">
-                    <p>{collection.title}</p>
+                    <p>{formatCollectionTitle(collection)}</p>
                     {/* <small>
                       {collection.products.length} product
                       {collection.products.length === 1 ? '' : 's'}
@@ -463,7 +463,7 @@ export default function Homepage() {
         >
           <div className="pz-shell">
             <div className="pz-section-head pz-section-head-row">
-              <h2>{collection.title}</h2>
+              <h2>{formatCollectionTitle(collection)}</h2>
               <Link
                 to={`/collections/${collection.handle}`}
                 prefetch="intent"
@@ -490,7 +490,7 @@ export default function Homepage() {
               </div>
             ) : (
               <p className="pz-empty">
-                Add products to <strong>{collection.title}</strong> to fill this
+                Add products to <strong>{formatCollectionTitle(collection)}</strong> to fill this
                 row.
               </p>
             )}
@@ -539,6 +539,20 @@ function getMainMenuCollections(items) {
       seen.add(key);
       return true;
     });
+}
+
+function formatCollectionTitle(collection) {
+  const rawTitle =
+    typeof collection?.title === 'string' ? collection.title.trim() : '';
+  return rawTitle;
+}
+
+function formatBrandCollectionHandle(handle) {
+  const rawHandle = typeof handle === 'string' ? handle.trim().toLowerCase() : '';
+  if (!rawHandle || rawHandle === 'apple' || rawHandle.endsWith('-products')) {
+    return rawHandle;
+  }
+  return `${rawHandle}-products`;
 }
 
 function buildCollectionRows(menuItems, nodes) {

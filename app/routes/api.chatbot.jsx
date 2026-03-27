@@ -8,6 +8,8 @@ const PRODUCT_NOT_FOUND_REPLY =
   'I checked Shopify and could not find a matching product right now. Please try another keyword or contact us on WhatsApp: +961 81 539 339.';
 const GREETING_REPLY =
   'Hi! How can I help with Pixel Zones products, delivery, location, or customer service details?';
+const OPENAI_CHAT_MODELS = ['gpt-5.4-mini', 'gpt-5-mini'];
+const OPENAI_RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 
 const STORE_SCOPE_KEYWORDS = [
   'pixel zones',
@@ -278,27 +280,11 @@ export async function action({request, context}) {
   });
 
   try {
-    const response = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        input: openAiInput,
-        max_output_tokens: maxOutputTokens,
-      }),
+    const reply = await getOpenAiReplyWithRetry({
+      apiKey,
+      openAiInput,
+      maxOutputTokens,
     });
-
-    if (!response.ok) {
-      const failureBody = await response.text().catch(() => '');
-      console.error('OpenAI chat request failed:', response.status, failureBody);
-      return data({reply: UNAVAILABLE_REPLY});
-    }
-
-    const result = await response.json();
-    const reply = extractOutputText(result);
 
     if (!reply) {
       return data({reply: UNAVAILABLE_REPLY});
@@ -314,6 +300,78 @@ export async function action({request, context}) {
     console.error('OpenAI chat request crashed:', error);
     return data({reply: UNAVAILABLE_REPLY});
   }
+}
+
+async function getOpenAiReplyWithRetry({apiKey, openAiInput, maxOutputTokens}) {
+  for (const model of OPENAI_CHAT_MODELS) {
+    const maxAttempts = 2;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+        const response = await fetch('https://api.openai.com/v1/responses', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            input: openAiInput,
+            max_output_tokens: maxOutputTokens,
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const result = await response.json();
+          const reply = extractOutputText(result);
+          if (reply) return reply;
+
+          console.error(
+            `OpenAI chat request returned empty output (model=${model}, attempt=${attempt}).`,
+          );
+          break;
+        }
+
+        const failureBody = await response.text().catch(() => '');
+        console.error(
+          `OpenAI chat request failed (model=${model}, attempt=${attempt}):`,
+          response.status,
+          failureBody,
+        );
+
+        const isRetryableStatus = OPENAI_RETRYABLE_STATUS.has(response.status);
+        if (isRetryableStatus && attempt < maxAttempts) {
+          await sleep(250 * attempt);
+          continue;
+        }
+
+        break;
+      } catch (error) {
+        const isAbortError = error?.name === 'AbortError';
+        console.error(
+          `OpenAI chat request crashed (model=${model}, attempt=${attempt}):`,
+          isAbortError ? 'timeout' : error,
+        );
+
+        if (attempt < maxAttempts) {
+          await sleep(250 * attempt);
+          continue;
+        }
+      }
+    }
+  }
+
+  return '';
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function sanitizeText(value) {

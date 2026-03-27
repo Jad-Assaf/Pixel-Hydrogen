@@ -1,26 +1,57 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 const INTRO_MESSAGE =
   'Hi, I can help with Pixel Zones product info, delivery details, store location, and customer service contact.';
-
 const FALLBACK_ERROR_MESSAGE =
   'The assistant is temporarily unavailable. Please try again in a moment.';
 const CHATBOT_STORAGE_KEY = 'pz_store_assistant_chat_v1';
 const CHATBOT_STORAGE_TTL_MS = 1000 * 60 * 60 * 24 * 365;
 const MAX_STORED_MESSAGES = 50;
+const MAX_STORED_CONVERSATIONS = 12;
+const MESSAGE_USAGE_LIMIT = 100;
 
 export function StoreAssistantFloating() {
-  const [messages, setMessages] = useState([
-    {id: 'intro', role: 'assistant', text: INTRO_MESSAGE},
+  const [conversations, setConversations] = useState(() => [
+    createConversation('Conversation 1'),
   ]);
+  const [activeConversationId, setActiveConversationId] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
+  const [messageUsageCount, setMessageUsageCount] = useState(0);
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
   const threadRef = useRef(null);
+  const remainingMessages = Math.max(0, MESSAGE_USAGE_LIMIT - messageUsageCount);
+  const hasReachedMessageLimit = remainingMessages <= 0;
+
+  const activeConversation = useMemo(() => {
+    if (!conversations.length) return null;
+
+    return (
+      conversations.find((conversation) => conversation.id === activeConversationId) ||
+      conversations[conversations.length - 1]
+    );
+  }, [activeConversationId, conversations]);
+
+  const orderedConversations = useMemo(
+    () => [...conversations].sort((a, b) => b.updatedAt - a.updatedAt),
+    [conversations],
+  );
+  const messages = activeConversation?.messages || [];
+
+  useEffect(() => {
+    if (!conversations.length) return;
+
+    const activeExists = conversations.some(
+      (conversation) => conversation.id === activeConversationId,
+    );
+    if (!activeConversationId || !activeExists) {
+      setActiveConversationId(conversations[conversations.length - 1].id);
+    }
+  }, [activeConversationId, conversations]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -39,9 +70,52 @@ export function StoreAssistantFloating() {
         return;
       }
 
-      const restored = normalizeStoredMessages(parsed?.messages);
-      if (restored.length) {
-        setMessages(restored);
+      if (Array.isArray(parsed?.conversations)) {
+        const restoredConversations = normalizeStoredConversations(
+          parsed.conversations,
+        );
+        if (restoredConversations.length) {
+          setConversations(restoredConversations);
+          const storedUsageCount = Number(parsed?.messageUsageCount);
+          const resolvedUsageCount = Number.isFinite(storedUsageCount)
+            ? storedUsageCount
+            : countUserMessages(restoredConversations);
+          setMessageUsageCount(
+            Math.min(
+              MESSAGE_USAGE_LIMIT,
+              Math.max(0, Math.trunc(resolvedUsageCount)),
+            ),
+          );
+
+          const preferredId =
+            typeof parsed.activeConversationId === 'string'
+              ? parsed.activeConversationId
+              : '';
+          const hasPreferredId = restoredConversations.some(
+            (conversation) => conversation.id === preferredId,
+          );
+          setActiveConversationId(
+            hasPreferredId
+              ? preferredId
+              : restoredConversations[restoredConversations.length - 1].id,
+          );
+        }
+      } else if (Array.isArray(parsed?.messages)) {
+        const restoredMessages = normalizeStoredMessages(parsed.messages);
+        if (restoredMessages.length) {
+          const migratedConversation = createConversation(
+            'Conversation 1',
+            restoredMessages,
+          );
+          setConversations([migratedConversation]);
+          setActiveConversationId(migratedConversation.id);
+          setMessageUsageCount(
+            Math.min(
+              MESSAGE_USAGE_LIMIT,
+              restoredMessages.filter((item) => item.role === 'user').length,
+            ),
+          );
+        }
       }
     } catch {
       // Ignore malformed local cache entries.
@@ -54,20 +128,41 @@ export function StoreAssistantFloating() {
     if (typeof window === 'undefined' || !isCacheHydrated) return;
 
     try {
+      const normalizedConversations = normalizeStoredConversations(conversations);
+      if (!normalizedConversations.length) return;
+
+      const persistedActiveId = normalizedConversations.some(
+        (conversation) => conversation.id === activeConversationId,
+      )
+        ? activeConversationId
+        : normalizedConversations[normalizedConversations.length - 1].id;
+
       const payload = {
         savedAt: Date.now(),
-        messages: messages.slice(-MAX_STORED_MESSAGES).map((item) => ({
-          id: item.id,
-          role: item.role,
-          text: item.text,
-          products: normalizeProducts(item.products),
+        activeConversationId: persistedActiveId,
+        messageUsageCount: Math.min(
+          MESSAGE_USAGE_LIMIT,
+          Math.max(0, Math.trunc(messageUsageCount)),
+        ),
+        conversations: normalizedConversations.map((conversation) => ({
+          id: conversation.id,
+          title: conversation.title,
+          updatedAt: conversation.updatedAt,
+          messages: conversation.messages
+            .slice(-MAX_STORED_MESSAGES)
+            .map((item) => ({
+              id: item.id,
+              role: item.role,
+              text: item.text,
+              products: normalizeProducts(item.products),
+            })),
         })),
       };
       window.localStorage.setItem(CHATBOT_STORAGE_KEY, JSON.stringify(payload));
     } catch {
       // Ignore cache write errors.
     }
-  }, [messages, isCacheHydrated]);
+  }, [conversations, activeConversationId, isCacheHydrated, messageUsageCount]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -98,6 +193,15 @@ export function StoreAssistantFloating() {
   }, [isOpen]);
 
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.body.classList.toggle('pz-chatbot-open', isOpen);
+
+    return () => {
+      document.body.classList.remove('pz-chatbot-open');
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const thread = threadRef.current;
     if (!thread) return;
@@ -108,17 +212,101 @@ export function StoreAssistantFloating() {
     });
   }, [messages, isLoading, isOpen]);
 
+  function handleNewConversation() {
+    const nextConversation = createConversation(
+      `Conversation ${Math.min(999, conversations.length + 1)}`,
+    );
+
+    setConversations((current) =>
+      [...current, nextConversation].slice(-MAX_STORED_CONVERSATIONS),
+    );
+    setActiveConversationId(nextConversation.id);
+    setInputValue('');
+    setError('');
+    setIsLoading(false);
+  }
+
+  function handleClearConversation() {
+    if (!activeConversation) return;
+
+    setConversations((current) =>
+      current.map((conversation) => {
+        if (conversation.id !== activeConversation.id) return conversation;
+        return {
+          ...conversation,
+          messages: [createMessage('assistant', INTRO_MESSAGE)],
+          updatedAt: Date.now(),
+        };
+      }),
+    );
+
+    setInputValue('');
+    setError('');
+    setIsLoading(false);
+  }
+
+  function handleDeleteConversation() {
+    if (!activeConversation) return;
+
+    let nextActiveId = '';
+    setConversations((current) => {
+      if (current.length <= 1) {
+        const replacement = createConversation('Conversation 1');
+        nextActiveId = replacement.id;
+        return [replacement];
+      }
+
+      const nextConversations = current.filter(
+        (conversation) => conversation.id !== activeConversation.id,
+      );
+      const fallbackConversation =
+        [...nextConversations].sort((a, b) => b.updatedAt - a.updatedAt)[0] ||
+        nextConversations[nextConversations.length - 1];
+
+      nextActiveId = fallbackConversation?.id || '';
+      return nextConversations;
+    });
+
+    if (nextActiveId) {
+      setActiveConversationId(nextActiveId);
+    }
+
+    setInputValue('');
+    setError('');
+    setIsLoading(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     const message = inputValue.trim();
-    if (!message || isLoading) return;
+    if (!message || isLoading || !activeConversation) return;
+    if (hasReachedMessageLimit) {
+      setError(
+        `Message limit reached (${MESSAGE_USAGE_LIMIT}/${MESSAGE_USAGE_LIMIT}). Please try again later.`,
+      );
+      return;
+    }
 
     setError('');
     setInputValue('');
 
     const userMessage = createMessage('user', message);
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const nextMessages = [...activeConversation.messages, userMessage];
+    const targetConversationId = activeConversation.id;
+
+    setConversations((current) =>
+      current.map((conversation) => {
+        if (conversation.id !== targetConversationId) return conversation;
+        return {
+          ...conversation,
+          messages: nextMessages,
+          updatedAt: Date.now(),
+        };
+      }),
+    );
+    setMessageUsageCount((current) =>
+      Math.min(MESSAGE_USAGE_LIMIT, current + 1),
+    );
     setIsLoading(true);
 
     try {
@@ -148,10 +336,19 @@ export function StoreAssistantFloating() {
           : FALLBACK_ERROR_MESSAGE;
       const products = normalizeProducts(payload?.products);
 
-      setMessages((current) => [
-        ...current,
-        createMessage('assistant', reply, products),
-      ]);
+      setConversations((current) =>
+        current.map((conversation) => {
+          if (conversation.id !== targetConversationId) return conversation;
+          return {
+            ...conversation,
+            messages: [
+              ...conversation.messages,
+              createMessage('assistant', reply, products),
+            ],
+            updatedAt: Date.now(),
+          };
+        }),
+      );
     } catch {
       setError(FALLBACK_ERROR_MESSAGE);
     } finally {
@@ -208,11 +405,70 @@ export function StoreAssistantFloating() {
         </svg>
       </button>
 
-      <section className="pz-floating-chatbot-panel pz-chatbot-shell">
+      {isOpen ? (
+        <button
+          type="button"
+          className="pz-floating-chatbot-backdrop"
+          onClick={() => setIsOpen(false)}
+          aria-label="Close store assistant"
+        />
+      ) : null}
+
+      <section
+        className="pz-floating-chatbot-panel pz-chatbot-shell"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Pixel Zones AI Assistant"
+      >
         <div className="pz-chatbot-head">
-          <p className="pz-kicker">Need Help Fast?</p>
-          <h2>Store Assistant</h2>
-          <p>Ask about products, delivery timings, location, or customer service.</p>
+          <button
+            type="button"
+            className="pz-floating-chatbot-close"
+            onClick={() => setIsOpen(false)}
+            aria-label="Close assistant"
+          >
+            ×
+          </button>
+          <h2>Pixel Zones AI</h2>
+          <div className="pz-chatbot-head-controls">
+            <select
+              className="pz-chatbot-conversation-select"
+              value={activeConversation?.id || ''}
+              onChange={(event) => {
+                setActiveConversationId(event.target.value);
+                setInputValue('');
+                setError('');
+              }}
+              aria-label="Select conversation"
+            >
+              {orderedConversations.map((conversation) => (
+                <option key={conversation.id} value={conversation.id}>
+                  {conversation.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="pz-chatbot-conversation-btn"
+              onClick={handleNewConversation}
+            >
+              New chat
+            </button>
+            <button
+              type="button"
+              className="pz-chatbot-conversation-btn"
+              onClick={handleClearConversation}
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              className="pz-chatbot-conversation-btn is-delete"
+              onClick={handleDeleteConversation}
+            >
+              Delete
+            </button>
+          </div>
         </div>
 
         <div
@@ -279,16 +535,46 @@ export function StoreAssistantFloating() {
             type="text"
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
-            placeholder="Ask about products or delivery..."
+            placeholder={
+              hasReachedMessageLimit
+                ? 'Message limit reached for now.'
+                : 'Ask about products or delivery...'
+            }
             autoComplete="off"
+            disabled={hasReachedMessageLimit}
           />
-          <button type="submit" disabled={isLoading || !inputValue.trim()}>
-            Send
+          <button
+            type="submit"
+            disabled={
+              hasReachedMessageLimit || isLoading || !inputValue.trim()
+            }
+          >
+            <span className="sr-only">Send</span>
+            <svg
+              className="pz-chatbot-send-icon"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M10 4.25L10 15.75"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+              />
+              <path
+                d="M5.5 8.75L10 4.25L14.5 8.75"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         </form>
-
-        <p className="pz-chatbot-note">
-          This assistant only answers Pixel Zones related questions.
+        <p className="pz-chatbot-limit">
+          {remainingMessages} of {MESSAGE_USAGE_LIMIT} messages remaining
         </p>
         {error ? <p className="pz-chatbot-error">{error}</p> : null}
       </section>
@@ -296,13 +582,59 @@ export function StoreAssistantFloating() {
   );
 }
 
-function createMessage(role, text, products = []) {
+function createConversation(title, seedMessages) {
+  const now = Date.now();
   return {
-    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    role,
-    text,
+    id: `conv-${now}-${Math.random().toString(36).slice(2, 8)}`,
+    title: typeof title === 'string' && title.trim() ? title.trim() : 'Conversation',
+    updatedAt: now,
+    messages: normalizeStoredMessages(
+      seedMessages?.length ? seedMessages : [createMessage('assistant', INTRO_MESSAGE)],
+    ),
+  };
+}
+
+function createMessage(role, text, products = []) {
+  const safeRole = role === 'user' ? 'user' : 'assistant';
+  const cleanedText =
+    safeRole === 'assistant'
+      ? sanitizeAssistantText(text)
+      : sanitizeUserText(text);
+
+  return {
+    id: `${safeRole}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    role: safeRole,
+    text: cleanedText || (safeRole === 'assistant' ? FALLBACK_ERROR_MESSAGE : ''),
     products: normalizeProducts(products),
   };
+}
+
+function normalizeStoredConversations(items) {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((conversation, index) => {
+      if (!conversation || typeof conversation !== 'object') return null;
+
+      const messages = normalizeStoredMessages(conversation.messages);
+      if (!messages.length) return null;
+
+      const id =
+        typeof conversation.id === 'string' && conversation.id
+          ? conversation.id
+          : `conv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const title =
+        typeof conversation.title === 'string' && conversation.title.trim()
+          ? conversation.title.trim()
+          : `Conversation ${index + 1}`;
+      const updatedAt = Number.isFinite(Number(conversation.updatedAt))
+        ? Number(conversation.updatedAt)
+        : Date.now();
+
+      return {id, title, updatedAt, messages};
+    })
+    .filter(Boolean)
+    .slice(-MAX_STORED_CONVERSATIONS);
 }
 
 function normalizeStoredMessages(items) {
@@ -312,7 +644,11 @@ function normalizeStoredMessages(items) {
     .map((item) => {
       if (!item || typeof item !== 'object') return null;
       const role = item.role === 'user' ? 'user' : 'assistant';
-      const text = typeof item.text === 'string' ? item.text.trim() : '';
+      const rawText = typeof item.text === 'string' ? item.text : '';
+      const text =
+        role === 'assistant'
+          ? sanitizeAssistantText(rawText)
+          : sanitizeUserText(rawText);
       if (!text) return null;
 
       return {
@@ -327,6 +663,18 @@ function normalizeStoredMessages(items) {
     })
     .filter(Boolean)
     .slice(-MAX_STORED_MESSAGES);
+}
+
+function countUserMessages(conversationItems) {
+  if (!Array.isArray(conversationItems)) return 0;
+
+  return conversationItems.reduce((total, conversation) => {
+    if (!Array.isArray(conversation?.messages)) return total;
+    return (
+      total +
+      conversation.messages.filter((item) => item?.role === 'user').length
+    );
+  }, 0);
 }
 
 function normalizeProducts(products) {
@@ -352,4 +700,24 @@ function normalizeProducts(products) {
     })
     .filter(Boolean)
     .slice(0, 20);
+}
+
+function sanitizeUserText(value) {
+  if (typeof value !== 'string') return '';
+  return value.trim();
+}
+
+function sanitizeAssistantText(value) {
+  if (typeof value !== 'string') return '';
+
+  return value
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/gi, '$1')
+    .replace(/https?:\/\/[^\s)]+/gi, '')
+    .replace(/\bwww\.[^\s)]+/gi, '')
+    .replace(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s)]*)?/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\s+\./g, '.')
+    .replace(/\s+,/g, ',')
+    .trim();
 }
