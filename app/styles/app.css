@@ -4342,13 +4342,6 @@ body > main {
   display: block;
 }
 
-.pz-chatbot-limit {
-  margin: 0.42rem 0 0;
-  color: #475569;
-  font-size: 0.75rem;
-  letter-spacing: 0.01em;
-}
-
 .pz-chatbot-error {
   margin: 0.55rem 0 0;
   color: #b91c1c;

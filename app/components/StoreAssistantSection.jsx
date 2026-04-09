@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRevalidator} from 'react-router';
 import {useAside} from '~/components/Aside';
 
@@ -101,7 +101,7 @@ function StoreAssistantPanel({
   const revalidator = useRevalidator();
   const {open} = useAside();
   const [conversations, setConversations] = useState(() => [
-    createConversation('Conversation 1'),
+    createInitialConversation(),
   ]);
   const [activeConversationId, setActiveConversationId] = useState('');
   const [inputValue, setInputValue] = useState('');
@@ -112,8 +112,17 @@ function StoreAssistantPanel({
   const [messageUsageCount, setMessageUsageCount] = useState(0);
   const inputRef = useRef(null);
   const threadRef = useRef(null);
-  const remainingMessages = Math.max(0, MESSAGE_USAGE_LIMIT - messageUsageCount);
-  const hasReachedMessageLimit = remainingMessages <= 0;
+  const hasReachedMessageLimit = messageUsageCount >= MESSAGE_USAGE_LIMIT;
+
+  const resetChatbotSession = useCallback(() => {
+    setConversations([createInitialConversation()]);
+    setActiveConversationId('');
+    setInputValue('');
+    setIsLoading(false);
+    setIsCardActionLoading('');
+    setError('');
+    setMessageUsageCount(0);
+  }, []);
 
   const activeConversation = useMemo(() => {
     if (!conversations.length) return null;
@@ -123,7 +132,10 @@ function StoreAssistantPanel({
       conversations[conversations.length - 1]
     );
   }, [activeConversationId, conversations]);
-  const messages = activeConversation?.messages || [];
+  const messages = useMemo(
+    () => activeConversation?.messages || [],
+    [activeConversation],
+  );
 
   useEffect(() => {
     if (!conversations.length) return;
@@ -147,6 +159,13 @@ function StoreAssistantPanel({
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
+      const currentDayKey = getCurrentChatbotDayKey();
+      const storedDayKey = resolveStoredChatbotDayKey(parsed);
+      if (!storedDayKey || storedDayKey !== currentDayKey) {
+        window.localStorage.removeItem(CHATBOT_STORAGE_KEY);
+        return;
+      }
+
       const age = Date.now() - Number(parsed?.savedAt || 0);
       if (!Number.isFinite(age) || age > CHATBOT_STORAGE_TTL_MS) {
         window.localStorage.removeItem(CHATBOT_STORAGE_KEY);
@@ -219,6 +238,7 @@ function StoreAssistantPanel({
 
       const payload = {
         savedAt: Date.now(),
+        dayKey: getCurrentChatbotDayKey(),
         activeConversationId: persistedActiveId,
         messageUsageCount: Math.min(
           MESSAGE_USAGE_LIMIT,
@@ -243,6 +263,25 @@ function StoreAssistantPanel({
       // Ignore cache write errors.
     }
   }, [conversations, activeConversationId, isCacheHydrated, messageUsageCount]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    let timeoutId = 0;
+
+    const scheduleNextReset = () => {
+      timeoutId = window.setTimeout(() => {
+        resetChatbotSession();
+        scheduleNextReset();
+      }, getMsUntilNextLocalMidnight());
+    };
+
+    scheduleNextReset();
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [resetChatbotSession]);
 
   useEffect(() => {
     window.setTimeout(() => {
@@ -635,12 +674,13 @@ function StoreAssistantPanel({
             </svg>
           </button>
         </form>
-        <p className="pz-chatbot-limit">
-          {remainingMessages} of {MESSAGE_USAGE_LIMIT} messages remaining
-        </p>
         {error ? <p className="pz-chatbot-error">{error}</p> : null}
       </section>
   );
+}
+
+function createInitialConversation() {
+  return createConversation('Conversation');
 }
 
 function createConversation(title, seedMessages) {
@@ -750,6 +790,36 @@ function getRecentProductsForRequest(messages) {
   }
 
   return [];
+}
+
+function getCurrentChatbotDayKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function resolveStoredChatbotDayKey(payload) {
+  if (typeof payload?.dayKey === 'string' && payload.dayKey) {
+    return payload.dayKey;
+  }
+
+  const savedAt = Number(payload?.savedAt);
+  if (!Number.isFinite(savedAt)) return '';
+
+  const savedDate = new Date(savedAt);
+  const year = savedDate.getFullYear();
+  const month = String(savedDate.getMonth() + 1).padStart(2, '0');
+  const day = String(savedDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getMsUntilNextLocalMidnight() {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setHours(24, 0, 0, 0);
+  return Math.max(1000, nextMidnight.getTime() - now.getTime());
 }
 
 function normalizeProducts(products) {
