@@ -1,4 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
+import {useRevalidator} from 'react-router';
+import {useAside} from '~/components/Aside';
 
 const INTRO_MESSAGE =
   'Hi, I can help with Pixel Zones product info, delivery details, store location, and customer service contact.';
@@ -10,18 +12,104 @@ const MAX_STORED_MESSAGES = 50;
 const MAX_STORED_CONVERSATIONS = 12;
 const MESSAGE_USAGE_LIMIT = 100;
 
-export function StoreAssistantFloating() {
+export function StoreAssistantHomeSection() {
+  return (
+    <section className="pz-home-section pz-home-chatbot">
+      <div className="pz-shell">
+        <header className="pz-home-chatbot-intro">
+          <h2 className="pz-home-chatbot-trigger-title">Pixel Zones AI</h2>
+          <p className="pz-home-chatbot-trigger-copy">
+            Ask about products, delivery, availability, and store support.
+          </p>
+        </header>
+        <StoreAssistantPanel
+          panelClassName="pz-home-chatbot-panel"
+          inputId="pz-chatbot-home-input"
+        />
+      </div>
+    </section>
+  );
+}
+
+export function StoreAssistantProductDropdown() {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (!wrapperRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <section
+      ref={wrapperRef}
+      className={`pz-product-chatbot${isOpen ? ' is-open' : ''}`}
+      aria-label="Product assistant"
+    >
+      <button
+        type="button"
+        className="pz-product-chatbot-trigger"
+        onClick={() => setIsOpen((current) => !current)}
+        aria-expanded={isOpen}
+        aria-controls="pz-product-chatbot-dropdown"
+      >
+        Ask Pixel Zones AI About This Product
+      </button>
+
+      {isOpen ? (
+        <div
+          id="pz-product-chatbot-dropdown"
+          className="pz-product-chatbot-dropdown"
+        >
+          <StoreAssistantPanel
+            onRequestClose={() => setIsOpen(false)}
+            panelClassName="pz-product-chatbot-panel"
+            closeButtonClassName="pz-product-chatbot-close"
+            inputId="pz-chatbot-product-input"
+          />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function StoreAssistantPanel({
+  onRequestClose,
+  panelClassName = '',
+  closeButtonClassName = 'pz-chatbot-close',
+  inputId = 'pz-chatbot-input',
+}) {
+  const revalidator = useRevalidator();
+  const {open} = useAside();
   const [conversations, setConversations] = useState(() => [
     createConversation('Conversation 1'),
   ]);
   const [activeConversationId, setActiveConversationId] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCardActionLoading, setIsCardActionLoading] = useState('');
   const [error, setError] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
   const [isCacheHydrated, setIsCacheHydrated] = useState(false);
   const [messageUsageCount, setMessageUsageCount] = useState(0);
-  const wrapperRef = useRef(null);
   const inputRef = useRef(null);
   const threadRef = useRef(null);
   const remainingMessages = Math.max(0, MESSAGE_USAGE_LIMIT - messageUsageCount);
@@ -35,11 +123,6 @@ export function StoreAssistantFloating() {
       conversations[conversations.length - 1]
     );
   }, [activeConversationId, conversations]);
-
-  const orderedConversations = useMemo(
-    () => [...conversations].sort((a, b) => b.updatedAt - a.updatedAt),
-    [conversations],
-  );
   const messages = activeConversation?.messages || [];
 
   useEffect(() => {
@@ -75,11 +158,19 @@ export function StoreAssistantFloating() {
           parsed.conversations,
         );
         if (restoredConversations.length) {
-          setConversations(restoredConversations);
+          const latestConversation =
+            [...restoredConversations].sort(
+              (a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0),
+            )[0] || restoredConversations[restoredConversations.length - 1];
+          const singleConversation = {
+            ...latestConversation,
+            title: 'Conversation',
+          };
+          setConversations([singleConversation]);
           const storedUsageCount = Number(parsed?.messageUsageCount);
           const resolvedUsageCount = Number.isFinite(storedUsageCount)
             ? storedUsageCount
-            : countUserMessages(restoredConversations);
+            : countUserMessages([singleConversation]);
           setMessageUsageCount(
             Math.min(
               MESSAGE_USAGE_LIMIT,
@@ -87,18 +178,7 @@ export function StoreAssistantFloating() {
             ),
           );
 
-          const preferredId =
-            typeof parsed.activeConversationId === 'string'
-              ? parsed.activeConversationId
-              : '';
-          const hasPreferredId = restoredConversations.some(
-            (conversation) => conversation.id === preferredId,
-          );
-          setActiveConversationId(
-            hasPreferredId
-              ? preferredId
-              : restoredConversations[restoredConversations.length - 1].id,
-          );
+          setActiveConversationId(singleConversation.id);
         }
       } else if (Array.isArray(parsed?.messages)) {
         const restoredMessages = normalizeStoredMessages(parsed.messages);
@@ -130,12 +210,12 @@ export function StoreAssistantFloating() {
     try {
       const normalizedConversations = normalizeStoredConversations(conversations);
       if (!normalizedConversations.length) return;
+      const activeOnly =
+        normalizedConversations.find(
+          (conversation) => conversation.id === activeConversationId,
+        ) || normalizedConversations[normalizedConversations.length - 1];
 
-      const persistedActiveId = normalizedConversations.some(
-        (conversation) => conversation.id === activeConversationId,
-      )
-        ? activeConversationId
-        : normalizedConversations[normalizedConversations.length - 1].id;
+      const persistedActiveId = activeOnly.id;
 
       const payload = {
         savedAt: Date.now(),
@@ -144,19 +224,19 @@ export function StoreAssistantFloating() {
           MESSAGE_USAGE_LIMIT,
           Math.max(0, Math.trunc(messageUsageCount)),
         ),
-        conversations: normalizedConversations.map((conversation) => ({
-          id: conversation.id,
-          title: conversation.title,
-          updatedAt: conversation.updatedAt,
-          messages: conversation.messages
-            .slice(-MAX_STORED_MESSAGES)
-            .map((item) => ({
+        conversations: [
+          {
+            id: activeOnly.id,
+            title: 'Conversation',
+            updatedAt: activeOnly.updatedAt,
+            messages: activeOnly.messages.slice(-MAX_STORED_MESSAGES).map((item) => ({
               id: item.id,
               role: item.role,
               text: item.text,
               products: normalizeProducts(item.products),
             })),
-        })),
+          },
+        ],
       };
       window.localStorage.setItem(CHATBOT_STORAGE_KEY, JSON.stringify(payload));
     } catch {
@@ -165,44 +245,12 @@ export function StoreAssistantFloating() {
   }, [conversations, activeConversationId, isCacheHydrated, messageUsageCount]);
 
   useEffect(() => {
-    if (!isOpen) return;
-
-    function handlePointerDown(event) {
-      if (!wrapperRef.current?.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-      }
-    }
-
-    window.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('keydown', handleKeyDown);
-
     window.setTimeout(() => {
       inputRef.current?.focus();
     }, 80);
-
-    return () => {
-      window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
+  }, []);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.body.classList.toggle('pz-chatbot-open', isOpen);
-
-    return () => {
-      document.body.classList.remove('pz-chatbot-open');
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
     const thread = threadRef.current;
     if (!thread) return;
 
@@ -210,71 +258,7 @@ export function StoreAssistantFloating() {
       top: thread.scrollHeight,
       behavior: 'smooth',
     });
-  }, [messages, isLoading, isOpen]);
-
-  function handleNewConversation() {
-    const nextConversation = createConversation(
-      `Conversation ${Math.min(999, conversations.length + 1)}`,
-    );
-
-    setConversations((current) =>
-      [...current, nextConversation].slice(-MAX_STORED_CONVERSATIONS),
-    );
-    setActiveConversationId(nextConversation.id);
-    setInputValue('');
-    setError('');
-    setIsLoading(false);
-  }
-
-  function handleClearConversation() {
-    if (!activeConversation) return;
-
-    setConversations((current) =>
-      current.map((conversation) => {
-        if (conversation.id !== activeConversation.id) return conversation;
-        return {
-          ...conversation,
-          messages: [createMessage('assistant', INTRO_MESSAGE)],
-          updatedAt: Date.now(),
-        };
-      }),
-    );
-
-    setInputValue('');
-    setError('');
-    setIsLoading(false);
-  }
-
-  function handleDeleteConversation() {
-    if (!activeConversation) return;
-
-    let nextActiveId = '';
-    setConversations((current) => {
-      if (current.length <= 1) {
-        const replacement = createConversation('Conversation 1');
-        nextActiveId = replacement.id;
-        return [replacement];
-      }
-
-      const nextConversations = current.filter(
-        (conversation) => conversation.id !== activeConversation.id,
-      );
-      const fallbackConversation =
-        [...nextConversations].sort((a, b) => b.updatedAt - a.updatedAt)[0] ||
-        nextConversations[nextConversations.length - 1];
-
-      nextActiveId = fallbackConversation?.id || '';
-      return nextConversations;
-    });
-
-    if (nextActiveId) {
-      setActiveConversationId(nextActiveId);
-    }
-
-    setInputValue('');
-    setError('');
-    setIsLoading(false);
-  }
+  }, [messages, isLoading]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -315,6 +299,8 @@ export function StoreAssistantFloating() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           message,
+          pageContext: getChatbotPageContext(),
+          recentProducts: getRecentProductsForRequest(nextMessages),
           history: nextMessages
             .filter((item) => item.role === 'user' || item.role === 'assistant')
             .slice(-10)
@@ -335,6 +321,7 @@ export function StoreAssistantFloating() {
           ? payload.reply.trim()
           : FALLBACK_ERROR_MESSAGE;
       const products = normalizeProducts(payload?.products);
+      const actions = normalizeAgentActions(payload?.actions);
 
       setConversations((current) =>
         current.map((conversation) => {
@@ -349,6 +336,13 @@ export function StoreAssistantFloating() {
           };
         }),
       );
+
+      if (actions.length) {
+        const actionError = await executeAgentActions(actions);
+        if (actionError) {
+          setError(actionError);
+        }
+      }
     } catch {
       setError(FALLBACK_ERROR_MESSAGE);
     } finally {
@@ -356,119 +350,162 @@ export function StoreAssistantFloating() {
     }
   }
 
+  async function executeAgentActions(actions) {
+    for (const action of actions) {
+      if (action.type === 'add_to_cart') {
+        const result = await performAgentActionRequest({
+          type: 'add_to_cart',
+          variantId: action.variantId,
+          quantity: action.quantity,
+        });
+
+        if (!result.ok) {
+          return (
+            result.error || 'I could not add that item to cart right now.'
+          );
+        }
+        open('cart');
+        continue;
+      }
+
+      if (action.type === 'clear_cart') {
+        const result = await performAgentActionRequest({
+          type: 'clear_cart',
+        });
+        if (!result.ok) {
+          return result.error || 'I could not clear your cart right now.';
+        }
+        open('cart');
+        continue;
+      }
+
+      if (action.type === 'go_to_checkout') {
+        const result = await performAgentActionRequest({
+          type: 'get_checkout_url',
+        });
+        const checkoutUrl =
+          typeof result.checkoutUrl === 'string' ? result.checkoutUrl : '';
+
+        if (checkoutUrl) {
+          window.location.assign(checkoutUrl);
+          return '';
+        }
+
+        window.location.assign('/cart');
+        return '';
+      }
+
+      if (action.type === 'navigate' && action.target) {
+        window.location.assign(action.target);
+        return '';
+      }
+    }
+
+    return '';
+  }
+
+  async function handleProductCardAddToCart(product) {
+    if (
+      !product ||
+      !activeConversation ||
+      isLoading ||
+      !product.variantId ||
+      !product.availableForSale
+    ) {
+      return;
+    }
+
+    setError('');
+    const pendingKey = product.id || product.variantId;
+    setIsCardActionLoading(pendingKey);
+
+    const result = await performAgentActionRequest({
+      type: 'add_to_cart',
+      variantId: product.variantId,
+      quantity: 1,
+    });
+
+    if (!result.ok) {
+      setError(result.error || 'I could not add that item to cart right now.');
+      setIsCardActionLoading('');
+      return;
+    }
+    open('cart');
+
+    const confirmation = createMessage(
+      'assistant',
+      `${product.title} was added to your cart.`,
+    );
+    setConversations((current) =>
+      current.map((conversation) => {
+        if (conversation.id !== activeConversation.id) return conversation;
+        return {
+          ...conversation,
+          messages: [...conversation.messages, confirmation],
+          updatedAt: Date.now(),
+        };
+      }),
+    );
+    setIsCardActionLoading('');
+  }
+
+  async function performAgentActionRequest(agentAction) {
+    try {
+      const response = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
+        body: JSON.stringify({agentAction}),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return {
+          ok: false,
+          error:
+            typeof payload?.error === 'string' && payload.error
+              ? payload.error
+              : 'Agent action failed.',
+        };
+      }
+
+      return payload && typeof payload === 'object'
+        ? (() => {
+            if (
+              payload.ok &&
+              (agentAction?.type === 'add_to_cart' ||
+                agentAction?.type === 'clear_cart') &&
+              revalidator.state === 'idle'
+            ) {
+              revalidator.revalidate();
+            }
+            return payload;
+          })()
+        : {ok: false, error: 'Agent action failed.'};
+    } catch {
+      return {ok: false, error: 'Agent action failed.'};
+    }
+  }
+
   return (
-    <div
-      ref={wrapperRef}
-      className={`pz-floating-chatbot ${isOpen ? 'is-open' : ''}`}
-      aria-label="Store assistant"
-    >
-      <span className="pz-floating-chatbot-label" aria-hidden="true">
-        Pixel Zones AI
-      </span>
-      <button
-        type="button"
-        className="pz-floating-chatbot-toggle"
-        onClick={() => setIsOpen((current) => !current)}
-        aria-label={isOpen ? 'Close store assistant' : 'Open store assistant'}
-        aria-expanded={isOpen}
-      >
-        <svg
-          className="pz-floating-chatbot-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path
-            d="M9 15C8.44771 15 8 15.4477 8 16C8 16.5523 8.44771 17 9 17C9.55229 17 10 16.5523 10 16C10 15.4477 9.55229 15 9 15Z"
-            fill="#111830"
-          />
-          <path
-            d="M14 16C14 15.4477 14.4477 15 15 15C15.5523 15 16 15.4477 16 16C16 16.5523 15.5523 17 15 17C14.4477 17 14 16.5523 14 16Z"
-            fill="#111830"
-          />
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M12 1C10.8954 1 10 1.89543 10 3C10 3.74028 10.4022 4.38663 11 4.73244V7H6C4.34315 7 3 8.34315 3 10V20C3 21.6569 4.34315 23 6 23H18C19.6569 23 21 21.6569 21 20V10C21 8.34315 19.6569 7 18 7H13V4.73244C13.5978 4.38663 14 3.74028 14 3C14 1.89543 13.1046 1 12 1ZM5 10C5 9.44772 5.44772 9 6 9H7.38197L8.82918 11.8944C9.16796 12.572 9.86049 13 10.618 13H13.382C14.1395 13 14.832 12.572 15.1708 11.8944L16.618 9H18C18.5523 9 19 9.44772 19 10V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V10ZM13.382 11L14.382 9H9.61803L10.618 11H13.382Z"
-            fill="#111830"
-          />
-          <path
-            d="M1 14C0.447715 14 0 14.4477 0 15V17C0 17.5523 0.447715 18 1 18C1.55228 18 2 17.5523 2 17V15C2 14.4477 1.55228 14 1 14Z"
-            fill="#111830"
-          />
-          <path
-            d="M22 15C22 14.4477 22.4477 14 23 14C23.5523 14 24 14.4477 24 15V17C24 17.5523 23.5523 18 23 18C22.4477 18 22 17.5523 22 17V15Z"
-            fill="#111830"
-          />
-        </svg>
-      </button>
-
-      {isOpen ? (
-        <button
-          type="button"
-          className="pz-floating-chatbot-backdrop"
-          onClick={() => setIsOpen(false)}
-          aria-label="Close store assistant"
-        />
-      ) : null}
-
       <section
-        className="pz-floating-chatbot-panel pz-chatbot-shell"
+        className={`pz-chatbot-shell ${panelClassName}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-label="Pixel Zones AI Assistant"
       >
         <div className="pz-chatbot-head">
-          <button
-            type="button"
-            className="pz-floating-chatbot-close"
-            onClick={() => setIsOpen(false)}
-            aria-label="Close assistant"
-          >
-            ×
-          </button>
+          {onRequestClose ? (
+            <button
+              type="button"
+              className={closeButtonClassName}
+              onClick={onRequestClose}
+              aria-label="Close assistant"
+            >
+              ×
+            </button>
+          ) : null}
           <h2>Pixel Zones AI</h2>
-          <div className="pz-chatbot-head-controls">
-            <select
-              className="pz-chatbot-conversation-select"
-              value={activeConversation?.id || ''}
-              onChange={(event) => {
-                setActiveConversationId(event.target.value);
-                setInputValue('');
-                setError('');
-              }}
-              aria-label="Select conversation"
-            >
-              {orderedConversations.map((conversation) => (
-                <option key={conversation.id} value={conversation.id}>
-                  {conversation.title}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="pz-chatbot-conversation-btn"
-              onClick={handleNewConversation}
-            >
-              New chat
-            </button>
-            <button
-              type="button"
-              className="pz-chatbot-conversation-btn"
-              onClick={handleClearConversation}
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              className="pz-chatbot-conversation-btn is-delete"
-              onClick={handleDeleteConversation}
-            >
-              Delete
-            </button>
-          </div>
         </div>
 
         <div
@@ -482,35 +519,60 @@ export function StoreAssistantFloating() {
               key={message.id}
               className={`pz-chatbot-bubble is-${message.role}`}
             >
-              {message.text}
+              {renderChatMessageText(message.text)}
               {message.role === 'assistant' && message.products?.length ? (
                 <div className="pz-chatbot-product-strip" aria-label="Related products">
                   {message.products.map((product, index) => {
                     const url = product.url || `/products/${product.handle}`;
+                    const actionKey = product.id || product.variantId;
+                    const isPending = isCardActionLoading === actionKey;
                     return (
-                      <a
+                      <article
                         key={product.id || `${product.handle || 'product'}-${index}`}
-                        href={url}
                         className="pz-chatbot-product-card"
                       >
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.imageAlt || product.title || 'Product image'}
-                            loading="lazy"
-                          />
-                        ) : (
-                          <span className="pz-chatbot-product-image-fallback">
-                            No image
-                          </span>
-                        )}
-                        <span className="pz-chatbot-product-title">{product.title}</span>
-                        {product.price ? (
-                          <span className="pz-chatbot-product-price">
-                            {product.price}
-                          </span>
-                        ) : null}
-                      </a>
+                        <a
+                          href={url}
+                          className="pz-chatbot-product-link"
+                        >
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.imageAlt || product.title || 'Product image'}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span className="pz-chatbot-product-image-fallback">
+                              No image
+                            </span>
+                          )}
+                          <span className="pz-chatbot-product-title">{product.title}</span>
+                          {product.price ? (
+                            <span className="pz-chatbot-product-price">
+                              {product.price}
+                            </span>
+                          ) : null}
+                        </a>
+                        <button
+                          type="button"
+                          className="pz-chatbot-product-add-btn"
+                          onClick={() => handleProductCardAddToCart(product)}
+                          aria-label={`Add ${product.title} to cart`}
+                          title={
+                            product.availableForSale
+                              ? `Add ${product.title} to cart`
+                              : 'Out of stock'
+                          }
+                          disabled={
+                            isPending ||
+                            isLoading ||
+                            !product.variantId ||
+                            !product.availableForSale
+                          }
+                        >
+                          {isPending ? '…' : '+'}
+                        </button>
+                      </article>
                     );
                   })}
                 </div>
@@ -525,12 +587,12 @@ export function StoreAssistantFloating() {
         </div>
 
         <form className="pz-chatbot-form" onSubmit={handleSubmit}>
-          <label htmlFor="pz-chatbot-input" className="sr-only">
+          <label htmlFor={inputId} className="sr-only">
             Ask the store assistant
           </label>
           <input
             ref={inputRef}
-            id="pz-chatbot-input"
+            id={inputId}
             name="message"
             type="text"
             value={inputValue}
@@ -578,7 +640,6 @@ export function StoreAssistantFloating() {
         </p>
         {error ? <p className="pz-chatbot-error">{error}</p> : null}
       </section>
-    </div>
   );
 }
 
@@ -677,6 +738,20 @@ function countUserMessages(conversationItems) {
   }, 0);
 }
 
+function getRecentProductsForRequest(messages) {
+  if (!Array.isArray(messages)) return [];
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const item = messages[index];
+    if (item?.role !== 'assistant') continue;
+    const products = normalizeProducts(item?.products);
+    if (!products.length) continue;
+    return products;
+  }
+
+  return [];
+}
+
 function normalizeProducts(products) {
   if (!Array.isArray(products)) return [];
 
@@ -692,6 +767,12 @@ function normalizeProducts(products) {
         handle: typeof product.handle === 'string' ? product.handle : '',
         title,
         url: typeof product.url === 'string' ? product.url : '',
+        variantId:
+          typeof product.variantId === 'string' ? product.variantId : '',
+        availableForSale:
+          typeof product.availableForSale === 'boolean'
+            ? product.availableForSale
+            : true,
         imageUrl: typeof product.imageUrl === 'string' ? product.imageUrl : '',
         imageAlt:
           typeof product.imageAlt === 'string' ? product.imageAlt : title,
@@ -700,6 +781,73 @@ function normalizeProducts(products) {
     })
     .filter(Boolean)
     .slice(0, 20);
+}
+
+function normalizeAgentActions(actions) {
+  if (!Array.isArray(actions)) return [];
+
+  return actions
+    .map((action) => {
+      if (!action || typeof action !== 'object') return null;
+      const type =
+        typeof action.type === 'string'
+          ? action.type.trim().toLowerCase()
+          : '';
+
+      if (type === 'navigate') {
+        const target = normalizeNavigationTarget(action.target);
+        if (!target) return null;
+        return {type, target};
+      }
+
+      if (type === 'add_to_cart') {
+        const variantId =
+          typeof action.variantId === 'string' ? action.variantId.trim() : '';
+        if (!variantId) return null;
+
+        const quantity = Number(action.quantity);
+        const normalizedQuantity =
+          Number.isFinite(quantity) && quantity > 0
+            ? Math.min(10, Math.trunc(quantity))
+            : 1;
+
+        return {
+          type,
+          variantId,
+          quantity: normalizedQuantity,
+        };
+      }
+
+      if (type === 'go_to_checkout') {
+        return {type};
+      }
+
+      if (type === 'clear_cart') {
+        return {type};
+      }
+
+      return null;
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function normalizeNavigationTarget(target) {
+  if (typeof target !== 'string') return '';
+  const trimmed = target.trim();
+  if (!trimmed) return '';
+
+  if (trimmed.startsWith('/')) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed);
+    if (typeof window !== 'undefined' && parsed.origin !== window.location.origin) {
+      return '';
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return '';
+  }
 }
 
 function sanitizeUserText(value) {
@@ -720,4 +868,43 @@ function sanitizeAssistantText(value) {
     .replace(/\s+\./g, '.')
     .replace(/\s+,/g, ',')
     .trim();
+}
+
+function renderChatMessageText(text) {
+  const safeText = typeof text === 'string' ? text : '';
+  if (!safeText) return '';
+
+  const lines = safeText.split(/\r?\n/);
+  return lines.map((line, lineIndex) => (
+    <span key={`line-${lineIndex}`}>
+      {renderInlineStrongText(line)}
+      {lineIndex < lines.length - 1 ? <br /> : null}
+    </span>
+  ));
+}
+
+function renderInlineStrongText(text) {
+  const safeText = typeof text === 'string' ? text : '';
+  if (!safeText) return '';
+
+  const parts = safeText.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+  return parts.map((part, index) => {
+    const match = part.match(/^\*\*([^*]+)\*\*$/);
+    if (match?.[1]) {
+      return <strong key={`strong-${index}`}>{match[1]}</strong>;
+    }
+
+    return <span key={`text-${index}`}>{part}</span>;
+  });
+}
+
+function getChatbotPageContext() {
+  if (typeof window === 'undefined') return null;
+
+  const pathname = String(window.location?.pathname || '').trim();
+  const url = String(window.location?.href || '').trim();
+  const title = String(document?.title || '').trim();
+
+  if (!pathname && !url && !title) return null;
+  return {pathname, url, title};
 }

@@ -27,16 +27,20 @@ export default function Policies() {
   const {policies} = useLoaderData();
 
   return (
-    <div className="policies">
-      <h1>Policies</h1>
-      <div>
+    <section className="policies pz-static-page pz-policies-page">
+      <header className="pz-static-page-header">
+        <h1>Policies</h1>
+      </header>
+      <div className="pz-policies-grid">
         {policies.map((policy) => (
-          <fieldset key={policy.id}>
-            <Link to={`/policies/${policy.handle}`}>{policy.title}</Link>
+          <fieldset key={policy.id} className="pz-policies-item">
+            <Link className="pz-policies-link" to={`/policies/${policy.handle}`}>
+              {policy.title}
+            </Link>
           </fieldset>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

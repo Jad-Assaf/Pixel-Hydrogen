@@ -42,18 +42,24 @@ export async function loader({params, context}) {
 export default function Policy() {
   /** @type {LoaderReturnData} */
   const {policy} = useLoaderData();
+  const handle = policy?.handle?.toLowerCase() || '';
 
   return (
-    <div className="policy">
-      <br />
-      <br />
-      <div>
-        <Link to="/policies">← Back to Policies</Link>
-      </div>
-      <br />
-      <h1>{policy.title}</h1>
-      <div dangerouslySetInnerHTML={{__html: policy.body}} />
-    </div>
+    <article
+      className="policy pz-static-page pz-policy-page"
+      data-handle={handle || undefined}
+    >
+      <Link className="pz-static-page-back-link" to="/policies">
+        ← Back to Policies
+      </Link>
+      <header className="pz-static-page-header">
+        <h1>{policy.title}</h1>
+      </header>
+      <div
+        className="pz-static-page-content"
+        dangerouslySetInnerHTML={{__html: policy.body}}
+      />
+    </article>
   );
 }
 

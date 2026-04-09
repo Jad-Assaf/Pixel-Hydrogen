@@ -4,7 +4,6 @@ import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
-import {StoreAssistantFloating} from '~/components/StoreAssistantSection';
 import {WishlistCheckedIcon} from '~/components/Icons';
 import {useWishlist} from '~/hooks/useWishlist';
 
@@ -49,7 +48,6 @@ export function PageLayout({
           publicStoreDomain={publicStoreDomain}
         />
         <DesktopWishlistButton />
-        <StoreAssistantFloating />
         <DesktopWhatsAppButton />
         <MobileBottomNav />
       </div>

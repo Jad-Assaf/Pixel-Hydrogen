@@ -5,6 +5,7 @@ import {
   useLoaderData,
   useLocation,
   useNavigate,
+  useRouteLoaderData,
 } from 'react-router';
 import {useEffect, useMemo, useState} from 'react';
 import {Analytics} from '@shopify/hydrogen';
@@ -61,81 +62,17 @@ export async function loader({context, params, request}) {
     throw redirect('/collections');
   }
 
-  const [collectionResult, menuResultPrimary] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {
-        handle,
-        first: initialBatchSize,
-        filters: selectedFilters,
-        sortKey: selectedSort.sortKey,
-        reverse: selectedSort.reverse,
-      },
-    }),
-    storefront
-      .query(COLLECTION_MENU_QUERY, {
-        cache: storefront.CacheLong(),
-        variables: {menuHandle: handle},
-      })
-      .catch(() => ({menu: null})),
-  ]);
+  const collectionResult = await storefront.query(COLLECTION_QUERY, {
+    variables: {
+      handle,
+      first: initialBatchSize,
+      filters: selectedFilters,
+      sortKey: selectedSort.sortKey,
+      reverse: selectedSort.reverse,
+    },
+  });
 
   const {collection} = collectionResult;
-
-  let menuResult = menuResultPrimary;
-  if (!menuResult?.menu && !handle.startsWith('/')) {
-    menuResult = await storefront
-      .query(COLLECTION_MENU_QUERY, {
-        cache: storefront.CacheLong(),
-        variables: {menuHandle: `/${handle}`},
-      })
-      .catch(() => ({menu: null}));
-  }
-
-  const menuCollectionItems = getMenuCollectionItems(menuResult?.menu?.items || []);
-  let menuCollectionCards = [];
-
-  if (menuCollectionItems.length) {
-    const ids = menuCollectionItems
-      .map((item) => item.resourceId)
-      .filter(Boolean);
-    const handles = menuCollectionItems
-      .map((item) => item.handle)
-      .filter(Boolean)
-      .map((value) => value.toLowerCase());
-
-    let collectionsById = [];
-    let collectionsByHandle = [];
-
-    if (ids.length) {
-      const {nodes} = await storefront.query(MENU_COLLECTIONS_QUERY, {
-        cache: storefront.CacheLong(),
-        variables: {ids},
-      });
-      collectionsById = nodes || [];
-    }
-
-    if (handles.length) {
-      const handleResults = await Promise.all(
-        handles.map((menuHandle) =>
-          storefront
-            .query(MENU_COLLECTION_BY_HANDLE_QUERY, {
-              cache: storefront.CacheLong(),
-              variables: {handle: menuHandle},
-            })
-            .catch(() => null),
-        ),
-      );
-
-      collectionsByHandle = handleResults
-        .map((result) => result?.collection)
-        .filter(Boolean);
-    }
-
-    menuCollectionCards = buildMenuCollectionCards(menuCollectionItems, [
-      ...collectionsById,
-      ...collectionsByHandle,
-    ]);
-  }
 
   if (!collection) {
     throw new Response(`Collection ${handle} not found`, {status: 404});
@@ -206,7 +143,6 @@ export async function loader({context, params, request}) {
 
   return {
     collection: paginatedCollection,
-    menuCollectionCards,
     pagination: {
       currentPage,
       totalPages,
@@ -223,11 +159,11 @@ export default function CollectionRoute() {
   /** @type {LoaderReturnData} */
   const {
     collection,
-    menuCollectionCards,
     pagination,
     selectedFilterValues,
     selectedSortValue,
   } = useLoaderData();
+  const rootData = useRouteLoaderData('root');
   const location = useLocation();
   const navigate = useNavigate();
   const products = collection.products?.nodes || EMPTY_PRODUCTS;
@@ -247,6 +183,30 @@ export default function CollectionRoute() {
   const visibleFilters = (collection.products?.filters || []).filter(
     (filter) => !/availability/i.test(filter.label || filter.id || ''),
   );
+  const menuCollectionCards = useMemo(() => {
+    const rootMenuItems = rootData?.header?.menu?.items || [];
+    if (!rootMenuItems.length) return [];
+
+    const parentItem = findMenuItemByCollectionHandle(
+      rootMenuItems,
+      collection.handle,
+    );
+    if (!parentItem?.items?.length) return [];
+
+    const childCollectionItems = getMenuCollectionItems(parentItem.items);
+    if (!childCollectionItems.length) return [];
+
+    return buildMenuCollectionCards(
+      childCollectionItems,
+      rootData?.menuCollectionAvailability || {},
+      rootData?.menuCollectionMedia || {},
+    );
+  }, [
+    collection.handle,
+    rootData?.header?.menu?.items,
+    rootData?.menuCollectionAvailability,
+    rootData?.menuCollectionMedia,
+  ]);
 
   useEffect(() => {
     setCurrentPage(pagination.currentPage);
@@ -593,54 +553,80 @@ function dedupeMenuCollectionItems(items) {
   });
 }
 
-function buildMenuCollectionCards(menuItems, nodes) {
-  const collectionNodes = (nodes || []).filter(
-    (node) => node?.__typename === 'Collection' || node?.handle,
-  );
-  const collectionById = new Map(
-    collectionNodes
-      .filter((node) => node?.id)
-      .map((collection) => [collection.id, collection]),
-  );
-  const collectionByHandle = new Map(
-    collectionNodes
-      .filter((collection) => collection?.handle)
-      .map((collection) => [collection.handle.toLowerCase(), collection]),
-  );
-
+function buildMenuCollectionCards(menuItems, availabilityMap, mediaMap) {
   return menuItems
     .map((item) => {
-      const collection =
-        (item.resourceId ? collectionById.get(item.resourceId) : null) ||
-        collectionByHandle.get(item.handle.toLowerCase());
+      const handle = item.handle?.toLowerCase();
+      if (!handle) return null;
 
-      if (!collection?.handle) return null;
-      if (!collectionHasProducts(collection)) return null;
+      const hasProducts = resolveMenuCollectionAvailability(
+        item,
+        availabilityMap,
+      );
+      if (!hasProducts) return null;
 
       return {
-        id: collection.id || item.id || collection.handle,
-        title: collection.title || item.title,
-        handle: collection.handle,
-        image: pickCollectionImage(collection),
+        id: item.resourceId || item.id || `handle:${handle}`,
+        title: item.title || handle,
+        handle,
+        image: resolveMenuCollectionImage(item, mediaMap),
       };
     })
     .filter(Boolean);
 }
 
-function collectionHasProducts(collection) {
-  return Boolean(
-    collection?.products?.nodes?.length || collection?.latestProduct?.nodes?.length,
-  );
+function resolveMenuCollectionAvailability(item, availabilityMap) {
+  if (!availabilityMap || typeof availabilityMap !== 'object') return true;
+
+  const handleKey = item.handle ? `handle:${item.handle.toLowerCase()}` : '';
+  const idKey = item.resourceId ? `id:${item.resourceId}` : '';
+
+  if (handleKey && availabilityMap[handleKey] !== undefined) {
+    return Boolean(availabilityMap[handleKey]);
+  }
+  if (idKey && availabilityMap[idKey] !== undefined) {
+    return Boolean(availabilityMap[idKey]);
+  }
+  if (item.resourceId && availabilityMap[item.resourceId] !== undefined) {
+    return Boolean(availabilityMap[item.resourceId]);
+  }
+
+  return true;
 }
 
-function pickCollectionImage(collection) {
-  const candidates = [
-    collection?.image,
-    collection?.latestProduct?.nodes?.[0]?.featuredImage,
-    collection?.products?.nodes?.[0]?.featuredImage,
-  ];
+function resolveMenuCollectionImage(item, mediaMap) {
+  if (!mediaMap || typeof mediaMap !== 'object') return null;
 
-  return candidates.find((image) => image?.url) || null;
+  const handleKey = item.handle ? `handle:${item.handle.toLowerCase()}` : '';
+  const idKey = item.resourceId ? `id:${item.resourceId}` : '';
+
+  if (handleKey && mediaMap[handleKey]) return mediaMap[handleKey];
+  if (idKey && mediaMap[idKey]) return mediaMap[idKey];
+  if (item.resourceId && mediaMap[item.resourceId]) return mediaMap[item.resourceId];
+
+  return null;
+}
+
+function findMenuItemByCollectionHandle(items, targetHandle) {
+  const normalizedTarget = (targetHandle || '').toLowerCase();
+  if (!normalizedTarget) return null;
+
+  const stack = [...(items || [])];
+  while (stack.length) {
+    const item = stack.pop();
+    if (!item) continue;
+
+    const itemHandle = getCollectionHandleFromMenuUrl(item.url);
+    if ((itemHandle || '').toLowerCase() === normalizedTarget) {
+      return item;
+    }
+
+    if (item.items?.length) {
+      stack.push(...item.items);
+    }
+  }
+
+  return null;
 }
 
 function getCollectionHandleFromMenuUrl(url) {
@@ -779,140 +765,6 @@ const COLLECTION_QUERY = `#graphql
           hasNextPage
           startCursor
           endCursor
-        }
-      }
-    }
-  }
-`;
-
-const COLLECTION_MENU_QUERY = `#graphql
-  fragment CollectionMenuItemFields on MenuItem {
-    id
-    resourceId
-    title
-    type
-    url
-  }
-
-  fragment CollectionMenuItemLevel4 on MenuItem {
-    ...CollectionMenuItemFields
-  }
-
-  fragment CollectionMenuItemLevel3 on MenuItem {
-    ...CollectionMenuItemFields
-    items {
-      ...CollectionMenuItemLevel4
-    }
-  }
-
-  fragment CollectionMenuItemLevel2 on MenuItem {
-    ...CollectionMenuItemFields
-    items {
-      ...CollectionMenuItemLevel3
-    }
-  }
-
-  fragment CollectionMenuItemLevel1 on MenuItem {
-    ...CollectionMenuItemFields
-    items {
-      ...CollectionMenuItemLevel2
-    }
-  }
-
-  query CollectionMenu(
-    $country: CountryCode
-    $language: LanguageCode
-    $menuHandle: String!
-  ) @inContext(country: $country, language: $language) {
-    menu(handle: $menuHandle) {
-      id
-      items {
-        ...CollectionMenuItemLevel1
-      }
-    }
-  }
-`;
-
-const MENU_COLLECTIONS_QUERY = `#graphql
-  query CollectionMenuCollections(
-    $country: CountryCode
-    $language: LanguageCode
-    $ids: [ID!]!
-  ) @inContext(country: $country, language: $language) {
-    nodes(ids: $ids) {
-      __typename
-      ...CollectionMenuCollectionNode
-    }
-  }
-
-  fragment CollectionMenuCollectionNode on Collection {
-    id
-    title
-    handle
-    image {
-      url
-      altText
-      width
-      height
-    }
-    latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
-      nodes {
-        featuredImage {
-          url
-          altText
-          width
-          height
-        }
-      }
-    }
-    products(first: 1) {
-      nodes {
-        featuredImage {
-          url
-          altText
-          width
-          height
-        }
-      }
-    }
-  }
-`;
-
-const MENU_COLLECTION_BY_HANDLE_QUERY = `#graphql
-  query CollectionMenuCollectionByHandle(
-    $country: CountryCode
-    $language: LanguageCode
-    $handle: String!
-  ) @inContext(country: $country, language: $language) {
-    collection(handle: $handle) {
-      __typename
-      id
-      title
-      handle
-      image {
-        url
-        altText
-        width
-        height
-      }
-      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
-        nodes {
-          featuredImage {
-            url
-            altText
-            width
-            height
-          }
-        }
-      }
-      products(first: 1) {
-        nodes {
-          featuredImage {
-            url
-            altText
-            width
-            height
-          }
         }
       }
     }

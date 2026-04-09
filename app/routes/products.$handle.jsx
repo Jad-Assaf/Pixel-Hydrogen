@@ -22,6 +22,7 @@ import {
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/hooks/useWishlist';
+import {StoreAssistantProductDropdown} from '~/components/StoreAssistantSection';
 /* eslint-disable react/no-unknown-property */
 
 /**
@@ -526,7 +527,7 @@ export default function Product() {
             >
               <span>Check availability</span>
               <PlusIcon className="pz-product-availability-toggle-icon" />
-            </button>
+              </button>
           </div>
 
           <section
@@ -563,6 +564,8 @@ export default function Product() {
               </div>
             </div>
           </section>
+
+          <StoreAssistantProductDropdown />
 
           <div className="pz-product-help-sections">
             <section

@@ -64,14 +64,26 @@ function loadDeferredData({context}) {
 export default function Page() {
   /** @type {LoaderReturnData} */
   const {page} = useLoaderData();
-  const isContactPage = page?.handle?.toLowerCase() === 'contact';
+  const handle = page?.handle?.toLowerCase() || '';
+  const isContactPage = handle === 'contact';
+  const pageClassName = [
+    'page',
+    'pz-static-page',
+    'pz-cms-page',
+    isContactPage ? 'pz-contact-page' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={`page${isContactPage ? ' pz-contact-page' : ''}`}>
-      <header>
+    <article className={pageClassName} data-handle={handle || undefined}>
+      <header className="pz-static-page-header">
         <h1>{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
+      <main
+        className="pz-static-page-content"
+        dangerouslySetInnerHTML={{__html: page.body}}
+      />
       {isContactPage ? (
         <section className="pz-contact-map-block" aria-label="Store location">
           <h2>Visit Us</h2>
@@ -85,7 +97,7 @@ export default function Page() {
           />
         </section>
       ) : null}
-    </div>
+    </article>
   );
 }
 
