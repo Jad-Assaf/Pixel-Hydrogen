@@ -287,12 +287,6 @@ function StoreAssistantPanel({
   }, [resetChatbotSession]);
 
   useEffect(() => {
-    window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 80);
-  }, []);
-
-  useEffect(() => {
     const thread = threadRef.current;
     if (!thread) return;
 
