@@ -426,11 +426,11 @@ export default function Homepage() {
                   <div className="pz-collection-card-image">
                     {collection.image?.url ? (
                       <img
-                        src={withImageWidth(collection.image.url, 600)}
+                        src={withImageWidth(collection.image.url, 200)}
                         alt={collection.image.altText || collection.title}
                         loading="lazy"
-                        width={collection.image.width || 600}
-                        height={collection.image.height || 600}
+                        width={collection.image.width || 200}
+                        height={collection.image.height || 200}
                       />
                     ) : (
                       <div

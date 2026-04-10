@@ -285,11 +285,11 @@ export default function CollectionRoute() {
                 <div className="pz-collection-card-image">
                   {menuCollection.image?.url ? (
                     <img
-                      src={withImageWidth(menuCollection.image.url, 600)}
+                      src={withImageWidth(menuCollection.image.url, 200)}
                       alt={menuCollection.image.altText || menuCollection.title}
                       loading="lazy"
-                      width={menuCollection.image.width || 600}
-                      height={menuCollection.image.height || 600}
+                      width={menuCollection.image.width || 200}
+                      height={menuCollection.image.height || 200}
                     />
                   ) : (
                     <div className="pz-image-placeholder" aria-hidden="true" />
