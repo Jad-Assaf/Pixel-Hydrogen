@@ -1,5 +1,7 @@
 import {useFetcher, useNavigate} from 'react-router';
 import {useRef, useEffect} from 'react';
+import {useAnalytics} from '@shopify/hydrogen';
+import {publishSearchSubmitted} from '~/lib/tracking';
 
 export const SEARCH_ENDPOINT = '/search';
 
@@ -17,12 +19,14 @@ export function SearchFormPredictive({
   const fetcher = useFetcher({key: 'search'});
   const inputRef = useRef(null);
   const navigate = useNavigate();
+  const {publish, shop} = useAnalytics();
 
   /** Navigate to the search page with the current input value */
   function goToSearch(event) {
     event?.preventDefault();
     event?.stopPropagation();
     const term = inputRef?.current?.value?.trim();
+    publishSearchSubmitted(publish, {searchTerm: term, shop});
     void navigate(SEARCH_ENDPOINT + (term ? `?q=${encodeURIComponent(term)}` : ''));
     onClose?.();
   }

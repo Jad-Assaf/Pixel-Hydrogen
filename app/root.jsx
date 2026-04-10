@@ -14,6 +14,7 @@ import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
+import {TrackingEvents} from './components/TrackingEvents';
 
 const MAIN_MENU_HANDLE = 'new-main-menu';
 
@@ -71,6 +72,7 @@ export async function loader(args) {
   const criticalData = await loadCriticalData(args);
 
   const {storefront, env} = args.context;
+  const wetrackedShopDomain = resolveWetrackedShopDomain(env);
 
   return {
     ...deferredData,
@@ -99,6 +101,7 @@ export async function loader(args) {
       env.PUBLIC_GOOGLE_MERCHANT_CENTER_VERIFICATION ||
       env.PUBLIC_GOOGLE_SITE_VERIFICATION ||
       '',
+    wetrackedShopDomain,
   };
 }
 
@@ -238,6 +241,7 @@ export function Layout({children}) {
   const metaPixelId = data?.metaPixelId || '';
   const googlePixelId = data?.googlePixelId || '';
   const googleMerchantVerification = data?.googleMerchantVerification || '';
+  const wetrackedShopDomain = data?.wetrackedShopDomain || '';
   const serializedMetaPixelId = JSON.stringify(metaPixelId);
   const serializedGooglePixelId = JSON.stringify(googlePixelId);
 
@@ -265,7 +269,7 @@ export function Layout({children}) {
             <script
               nonce={nonce}
               dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${serializedGooglePixelId});`,
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', ${serializedGooglePixelId}, {'send_page_view': false});`,
               }}
             />
           </>
@@ -279,7 +283,7 @@ export function Layout({children}) {
             <script
               nonce={nonce}
               dangerouslySetInnerHTML={{
-                __html: `window.fbq=window.fbq||function(){window.fbq.callMethod?window.fbq.callMethod.apply(window.fbq,arguments):window.fbq.queue.push(arguments)};if(!window._fbq)window._fbq=window.fbq;window.fbq.push=window.fbq;window.fbq.loaded=true;window.fbq.version='2.0';window.fbq.queue=window.fbq.queue||[];window.fbq('init', ${serializedMetaPixelId});window.fbq('track', 'PageView');`,
+                __html: `window.fbq=window.fbq||function(){window.fbq.callMethod?window.fbq.callMethod.apply(window.fbq,arguments):window.fbq.queue.push(arguments)};if(!window._fbq)window._fbq=window.fbq;window.fbq.push=window.fbq;window.fbq.loaded=true;window.fbq.version='2.0';window.fbq.queue=window.fbq.queue||[];window.fbq('init', ${serializedMetaPixelId});`,
               }}
             />
           </>
@@ -298,11 +302,50 @@ export function Layout({children}) {
           </noscript>
         ) : null}
         {children}
+        {wetrackedShopDomain ? (
+          <>
+            <script async src="https://pixel.wetracked.io/ppt.js" />
+            <script
+              async
+              src={`https://pixel.wetracked.io/${wetrackedShopDomain}/events.js`}
+            />
+          </>
+        ) : null}
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>
     </html>
   );
+}
+
+function resolveWetrackedShopDomain(env) {
+  const candidates = [
+    env.PUBLIC_WETRACKED_SHOP_DOMAIN,
+    env.SHOPIFY_STORE_DOMAIN,
+    env.PRIVATE_STORE_DOMAIN,
+    env.PUBLIC_CHECKOUT_DOMAIN,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeWetrackedShopDomain(candidate);
+    if (normalized) return normalized;
+  }
+
+  return '';
+}
+
+function normalizeWetrackedShopDomain(value) {
+  const raw = String(value || '')
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .split('/')[0]
+    ?.trim();
+  if (!raw) return '';
+
+  if (raw.endsWith('.myshopify.com')) return raw;
+  if (!raw.includes('.')) return `${raw}.myshopify.com`;
+
+  return '';
 }
 
 function getMenuCollectionReferences(items) {
@@ -437,6 +480,7 @@ export default function App() {
       shop={data.shop}
       consent={data.consent}
     >
+      <TrackingEvents />
       <PageLayout {...data}>
         <Outlet />
       </PageLayout>

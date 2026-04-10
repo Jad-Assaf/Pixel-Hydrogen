@@ -1,4 +1,5 @@
-import {Money} from '@shopify/hydrogen';
+import {Money, useAnalytics} from '@shopify/hydrogen';
+import {publishCheckoutStarted, withWetrackedParams} from '~/lib/tracking';
 
 /**
  * @param {CartSummaryProps}
@@ -29,7 +30,7 @@ export function CartSummary({cart, layout}) {
         </strong>
       </div>
 
-      <CartCheckoutActions checkoutUrl={cart?.checkoutUrl} />
+      <CartCheckoutActions cart={cart} />
 
       {layout === 'page' ? (
         <div className="pz-summary-benefits">
@@ -51,13 +52,28 @@ function SummaryRow({label, amount, fallback = '-'}) {
 }
 
 /**
- * @param {{checkoutUrl?: string}}
+ * @param {{cart: OptimisticCart<CartApiQueryFragment | null>}}
  */
-function CartCheckoutActions({checkoutUrl}) {
+function CartCheckoutActions({cart}) {
+  const {publish, shop} = useAnalytics();
+  const checkoutUrl = cart?.checkoutUrl;
   if (!checkoutUrl) return null;
 
+  const checkoutHref = withWetrackedParams(checkoutUrl);
+
   return (
-    <a href={checkoutUrl} target="_self" className="pz-btn pz-btn-primary pz-summary-checkout">
+    <a
+      href={checkoutHref}
+      target="_self"
+      className="pz-btn pz-btn-primary pz-summary-checkout"
+      onClick={() => {
+        publishCheckoutStarted(publish, {
+          cart,
+          checkoutUrl: checkoutHref,
+          shop,
+        });
+      }}
+    >
       Proceed to Checkout
     </a>
   );

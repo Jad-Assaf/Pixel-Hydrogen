@@ -1,5 +1,7 @@
 import {useRef, useEffect} from 'react';
 import {Form} from 'react-router';
+import {useAnalytics} from '@shopify/hydrogen';
+import {publishSearchSubmitted} from '~/lib/tracking';
 
 /**
  * Search form component that sends search requests to the `/search` route.
@@ -21,8 +23,9 @@ import {Form} from 'react-router';
  *  </SearchForm>
  * @param {SearchFormProps}
  */
-export function SearchForm({children, ...props}) {
+export function SearchForm({children, onSubmit, ...props}) {
   const inputRef = useRef(null);
+  const {publish, shop} = useAnalytics();
 
   useFocusOnCmdK(inputRef);
 
@@ -30,8 +33,18 @@ export function SearchForm({children, ...props}) {
     return null;
   }
 
+  function handleSubmit(event) {
+    onSubmit?.(event);
+    if (event.defaultPrevented) return;
+
+    publishSearchSubmitted(publish, {
+      searchTerm: new FormData(event.currentTarget).get('q'),
+      shop,
+    });
+  }
+
   return (
-    <Form method="get" {...props}>
+    <Form method="get" {...props} onSubmit={handleSubmit}>
       {children({inputRef})}
     </Form>
   );

@@ -1,6 +1,8 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRevalidator} from 'react-router';
+import {useAnalytics} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {publishCheckoutStarted, withWetrackedParams} from '~/lib/tracking';
 
 const INTRO_MESSAGE =
   'Hi, I can help with Pixel Zones product info, delivery details, store location, and customer service contact.';
@@ -100,6 +102,7 @@ function StoreAssistantPanel({
 }) {
   const revalidator = useRevalidator();
   const {open} = useAside();
+  const {cart, publish, shop} = useAnalytics();
   const [conversations, setConversations] = useState(() => [
     createInitialConversation(),
   ]);
@@ -426,7 +429,15 @@ function StoreAssistantPanel({
           typeof result.checkoutUrl === 'string' ? result.checkoutUrl : '';
 
         if (checkoutUrl) {
-          window.location.assign(checkoutUrl);
+          const checkoutHref = withWetrackedParams(checkoutUrl);
+          publishCheckoutStarted(publish, {
+            cart,
+            cartQuantity: result.cartQuantity,
+            checkoutUrl: checkoutHref,
+            shop,
+            source: 'store_assistant',
+          });
+          window.location.assign(checkoutHref);
           return '';
         }
 

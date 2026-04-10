@@ -44,6 +44,7 @@ export default async function handleRequest(
     'https://connect.facebook.net',
     'https://www.facebook.com',
   ];
+  const wetrackedDomains = ['https://pixel.wetracked.io'];
   const commonSelf = ["'self'"];
   const imageSources = [
     ...commonSelf,
@@ -55,6 +56,7 @@ export default async function handleRequest(
     ...googleImageDomains,
     ...instagramMediaDomains,
     ...metaTrackingDomains,
+    ...wetrackedDomains,
   ];
   const scriptSources = [
     ...commonSelf,
@@ -62,6 +64,7 @@ export default async function handleRequest(
     ...youtubeDomains,
     ...googleTrackingDomains,
     ...metaTrackingDomains,
+    ...wetrackedDomains,
   ];
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
@@ -76,6 +79,7 @@ export default async function handleRequest(
       ...googleTrackingDomains,
       ...googleImageDomains,
       ...metaTrackingDomains,
+      ...wetrackedDomains,
     ],
     imgSrc: imageSources,
     mediaSrc: [...commonSelf, ...youtubeDomains, ...instagramMediaDomains],
