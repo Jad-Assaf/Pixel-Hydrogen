@@ -17,6 +17,7 @@ import {PageLayout} from './components/PageLayout';
 import {TrackingEvents} from './components/TrackingEvents';
 
 const MAIN_MENU_HANDLE = 'new-main-menu';
+const GOOGLE_SITE_VERIFICATION = 'pJfBw-YIBn4TmK7axzDJC8YIRpuTvY7LvjQ8Kz_x_Do';
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -100,7 +101,7 @@ export async function loader(args) {
     googleMerchantVerification:
       env.PUBLIC_GOOGLE_MERCHANT_CENTER_VERIFICATION ||
       env.PUBLIC_GOOGLE_SITE_VERIFICATION ||
-      '',
+      GOOGLE_SITE_VERIFICATION,
     wetrackedShopDomain,
   };
 }
