@@ -5,7 +5,7 @@ const OUT_OF_SCOPE_REPLY =
 const UNAVAILABLE_REPLY =
   'Store assistant is temporarily unavailable. Please contact us on WhatsApp: +961 81 539 339.';
 const PRODUCT_NOT_FOUND_REPLY =
-  'I checked Shopify and could not find a matching product right now. Please try another keyword or contact us on WhatsApp: +961 81 539 339.';
+  'I could not find a matching product in the Pixel Zones catalog right now. Please try another keyword or contact us on WhatsApp: +961 81 539 339.';
 const GREETING_REPLY =
   'Hi! How can I help with Pixel Zones products, delivery, location, or customer service details?';
 const OPENAI_CHAT_MODELS = ['gpt-5.4-mini', 'gpt-5-mini'];
@@ -53,7 +53,7 @@ const STORE_TOOL_DEFINITIONS = [
     type: 'function',
     name: 'get_product_details',
     description:
-      'Fetch detailed product information by Shopify product handle or product URL.',
+      'Fetch detailed product information by product handle or product URL.',
     parameters: {
       type: 'object',
       additionalProperties: false,
@@ -135,8 +135,12 @@ const PRODUCT_HINT_KEYWORDS = [
   'item',
   'items',
   'iphone',
+  'phone',
   'smartphone',
   'mobile',
+  'computer',
+  'desktop',
+  'pc',
   'laptop',
   'tablet',
   'airpods',
@@ -144,8 +148,11 @@ const PRODUCT_HINT_KEYWORDS = [
   'charger',
   'cable',
   'powerbank',
-  'headphone',
   'router',
+  'headphone',
+  'headphones',
+  'headset',
+  'speaker',
   'brand',
   'brands',
   'price',
@@ -188,6 +195,10 @@ const DEVICE_INTENT_KEYWORDS = [
   'ipad',
   'tablet',
   'laptop',
+  'computer',
+  'desktop',
+  'pc',
+  'notebook',
   'macbook',
   'watch',
   'airpods',
@@ -206,6 +217,20 @@ const ACCESSORY_KEYWORDS = [
   'holder',
   'skin',
   'strap',
+  'briefcase',
+  'tote',
+  'backpack',
+  'bag',
+  'sleeve',
+  'stand',
+  'mouse',
+  'keyboard',
+  'printer',
+  'router',
+  'headphone',
+  'headphones',
+  'headset',
+  'speaker',
 ];
 
 const CONTEXT_CARRY_TOKENS = [
@@ -357,6 +382,7 @@ export async function action({request, context}) {
   let contextualProducts = recentProducts;
   let toolReply = '';
   let toolBasedProducts = [];
+  let usedFallbackProductLookup = false;
 
   if (!isExplicitOptionAddIntent) {
     try {
@@ -387,6 +413,7 @@ export async function action({request, context}) {
       requestedCount: extractRequestedProductCount(message),
       listCatalog: isListRequest,
     });
+    usedFallbackProductLookup = contextualProducts.length > 0;
   }
 
   let policyContext = '';
@@ -432,7 +459,7 @@ export async function action({request, context}) {
     });
   }
 
-  if (toolReply) {
+  if (toolReply && !(shouldLookupProducts && usedFallbackProductLookup)) {
     return data({
       reply: toolReply,
       products: shouldAttachProducts
@@ -766,19 +793,14 @@ async function searchStoreCatalogTool(args, toolContext) {
   let products = Array.from(deduped.values());
   const requestedFamily = getRequestedCatalogFamily(query);
   if (requestedFamily) {
-    const familyMatches = products.filter((product) =>
-      matchesRequestedCatalogFamily(product, requestedFamily),
-    );
-    if (familyMatches.length) {
-      products = familyMatches;
-    }
+    products = filterProductsByCatalogFamily(products, requestedFamily);
   }
 
   products = rankProductsForMessage(products, query).slice(0, SHOPIFY_MCP_MAX_RESULTS);
 
   return {
     ok: true,
-    source: 'shopify_storefront_mcp',
+    source: 'pixel_zones_catalog',
     query,
     products,
   };
@@ -806,7 +828,7 @@ async function searchStorePoliciesTool(args, toolContext) {
   const answer = extractMcpResultText(result);
   return {
     ok: true,
-    source: 'shopify_storefront_mcp',
+    source: 'pixel_zones_policy',
     answer: answer || null,
   };
 }
@@ -932,10 +954,13 @@ function getRequestedCatalogFamily(query) {
   if (!normalized) return null;
 
   if (/\b(laptop|notebook|macbook)\b/.test(normalized)) return 'laptop';
-  if (/\b(desktop|gaming pc|pc build|tower)\b/.test(normalized)) return 'desktop';
+  if (/\b(computer|desktop|gaming pc|pc build|tower|pc)\b/.test(normalized))
+    return 'computer';
   if (/\b(monitor|display)\b/.test(normalized)) return 'monitor';
+  if (/\b(ip phone|voip|sip|dect|grandstream|desk phone|office phone|conference phone)\b/.test(normalized))
+    return 'ipPhone';
   if (/\b(phone|smartphone|iphone|mobile|galaxy)\b/.test(normalized))
-    return 'phone';
+    return 'smartphone';
   if (/\b(tablet|ipad|tab)\b/.test(normalized)) return 'tablet';
   return null;
 }
@@ -955,23 +980,20 @@ function matchesRequestedCatalogFamily(product, family) {
 
   switch (family) {
     case 'laptop':
+      return isComputerLikeText(haystack);
+    case 'computer':
       return (
-        /\b(laptop|notebook|macbook|alienware|omen|nitro|legion|zenbook|vivobook|thinkpad|rog|predator)\b/.test(
-          haystack,
-        ) && !isAccessoryLikeText(haystack)
-      );
-    case 'desktop':
-      return (
-        /\b(desktop|pc|computer|tower|all in one|aio)\b/.test(haystack) &&
-        !isAccessoryLikeText(haystack)
+        isComputerLikeText(haystack) && !isAccessoryLikeText(haystack)
       );
     case 'monitor':
       return /\b(monitor|display)\b/.test(haystack);
-    case 'phone':
+    case 'ipPhone':
       return (
-        /\b(phone|smartphone|iphone|mobile|galaxy|pixel)\b/.test(haystack) &&
+        isIpPhoneLikeText(haystack) &&
         !isAccessoryLikeText(haystack)
       );
+    case 'smartphone':
+      return isSmartphoneLikeText(haystack) && !isAccessoryLikeText(haystack);
     case 'tablet':
       return /\b(tablet|ipad|tab)\b/.test(haystack) && !isAccessoryLikeText(haystack);
     default:
@@ -979,9 +1001,47 @@ function matchesRequestedCatalogFamily(product, family) {
   }
 }
 
+function filterProductsByCatalogFamily(products, family) {
+  if (!family) return products;
+  return (products || []).filter((product) =>
+    matchesRequestedCatalogFamily(product, family),
+  );
+}
+
 function isAccessoryLikeText(text) {
-  return /\b(backpack|bag|sleeve|cooling|cooler|fan|pad|stand|holder|dock|docking|adapter|charger|cable|hub|case|cover|skin|sticker|mouse|keyboard|headset|speaker|controller|accessor(?:y|ies))\b/.test(
+  return /\b(backpack|bag|briefcase|tote|pouch|sleeve|cooling|cooler|fan|pad|stand|holder|dock|docking|adapter|charger|cable|hub|case|cover|skin|sticker|mouse|keyboard|headset|speaker|controller|printer|router|wifi router|mobile wifi|flash drive|hard drive|card reader|splitter|switch|accessor(?:y|ies))\b/.test(
     String(text || '').toLowerCase(),
+  );
+}
+
+function isSmartphoneLikeText(text) {
+  const normalized = String(text || '').toLowerCase();
+  if (isIpPhoneLikeText(normalized)) return false;
+  if (/\b(smartphone printer|mobile wifi|wifi router|router|printer)\b/.test(normalized))
+    return false;
+
+  return /\b(iphone|smartphone|mobile phone|cell phone|samsung galaxy|galaxy s\d*|galaxy a\d*|galaxy z|xiaomi|redmi|poco|huawei|oppo|oneplus|google pixel)\b/.test(
+    normalized,
+  );
+}
+
+function isIpPhoneLikeText(text) {
+  return /\b(ip phone|sip account|sip accounts|voip|dect|grandstream|desk phone|office phone|conference phone|wifi ip phone|wi-fi ip phone)\b/.test(
+    String(text || '').toLowerCase(),
+  );
+}
+
+function isComputerLikeText(text) {
+  const normalized = String(text || '').toLowerCase();
+  if (isAccessoryLikeText(normalized)) return false;
+
+  return (
+    /\b(laptop|notebook|macbook|desktop|computer|tower|all in one|aio|alienware|omen|nitro|legion|zenbook|vivobook|thinkpad|rog|predator)\b/.test(
+      normalized,
+    ) ||
+    /\b(i[3579]-\d{4,5}|ryzen\s+[3579]|intel core|windows\s+11|ssd|ram|ddr[45]?|fhd)\b/.test(
+      normalized,
+    )
   );
 }
 
@@ -1737,7 +1797,7 @@ function looksLikeModelPhrase(message) {
   const hasDigit = /\b\d{1,3}\b/.test(lower);
   const hasModelWord = MODEL_HINT_WORDS.some((word) => lower.includes(word));
   const hasDeviceWord = DEVICE_INTENT_KEYWORDS.some((word) =>
-    lower.includes(word),
+    hasCatalogKeyword(lower, word),
   );
 
   return hasDeviceWord || (hasDigit && hasModelWord);
@@ -2021,8 +2081,12 @@ async function fetchProductMatches(context, message, history = [], options = {})
   }
 
   let products = Array.from(dedupedProducts.values());
+  const requestedFamily = getRequestedCatalogFamily(rankingSeed);
+  if (requestedFamily) {
+    products = filterProductsByCatalogFamily(products, requestedFamily);
+  }
 
-  if (intentProfile.prefersPrimaryDevice) {
+  if (intentProfile.prefersPrimaryDevice && !requestedFamily) {
     const primaryDeviceMatches = products.filter(
       (product) => !isAccessoryProduct(product),
     );
@@ -2056,6 +2120,9 @@ async function fetchProductMatches(context, message, history = [], options = {})
       contextHint: 'Fallback to broad catalog search',
       limit: maxResults,
     });
+    if (requestedFamily) {
+      products = filterProductsByCatalogFamily(products, requestedFamily);
+    }
   }
 
   return rankProductsForMessage(products, rankingSeed).slice(0, maxResults);
@@ -2119,10 +2186,89 @@ async function searchShopCatalogViaMcp(
   });
 
   if (!result || result.isError) {
-    return [];
+    return searchShopCatalogViaStorefrontApi(context, {
+      query: normalizedQuery,
+      limit,
+    });
   }
 
-  return normalizeMcpCatalogProducts(result).slice(0, Math.max(1, limit));
+  const mcpProducts = normalizeMcpCatalogProducts(result).slice(
+    0,
+    Math.max(1, limit),
+  );
+  if (mcpProducts.length) return mcpProducts;
+
+  return searchShopCatalogViaStorefrontApi(context, {
+    query: normalizedQuery,
+    limit,
+  });
+}
+
+async function searchShopCatalogViaStorefrontApi(context, {query, limit = 10}) {
+  const normalizedQuery = sanitizeText(query);
+  if (!normalizedQuery || !context?.storefront?.query) return [];
+
+  try {
+    const result = await context.storefront.query(CHATBOT_PRODUCT_SEARCH_QUERY, {
+      variables: {
+        term: normalizedQuery,
+        first: Math.max(1, Math.min(Number(limit) || 10, SHOPIFY_MCP_MAX_RESULTS)),
+      },
+    });
+
+    const nodes = Array.isArray(result?.products?.nodes)
+      ? result.products.nodes
+      : [];
+
+    return nodes
+      .filter((node) => node?.__typename === 'Product')
+      .map(normalizeStorefrontProductForChatbot)
+      .filter(Boolean)
+      .slice(0, Math.max(1, limit));
+  } catch (error) {
+    console.error('[chatbot] Storefront product search failed:', error);
+    return [];
+  }
+}
+
+function normalizeStorefrontProductForChatbot(product) {
+  if (!product?.title) return null;
+
+  const selectedVariant =
+    product.selectedOrFirstAvailableVariant ||
+    product.variants?.nodes?.find((variant) => variant?.availableForSale) ||
+    product.variants?.nodes?.[0] ||
+    null;
+  const selectedPrice =
+    selectedVariant?.price || product.priceRange?.minVariantPrice || null;
+
+  return {
+    id: product.id || '',
+    handle: product.handle || '',
+    title: product.title || '',
+    vendor: product.vendor || '',
+    productType: product.productType || '',
+    tags: Array.isArray(product.tags) ? product.tags : [],
+    onlineStoreUrl: product.onlineStoreUrl || '',
+    featuredImage:
+      product.featuredImage || selectedVariant?.image || product.images?.nodes?.[0] || null,
+    priceRange: selectedPrice
+      ? {
+          minVariantPrice: selectedPrice,
+        }
+      : null,
+    selectedOrFirstAvailableVariant: selectedVariant
+      ? {
+          id: selectedVariant.id || '',
+          availableForSale: Boolean(selectedVariant.availableForSale),
+          title: selectedVariant.title || '',
+          price: selectedPrice,
+          compareAtPrice: selectedVariant.compareAtPrice || null,
+        }
+      : null,
+    availableForSale: Boolean(selectedVariant?.availableForSale),
+    variantId: selectedVariant?.id || '',
+  };
 }
 
 async function callStorefrontMcpTool(context, {toolName, argumentsPayload}) {
@@ -2291,7 +2437,14 @@ function buildPrimaryDeviceFallbackQuery(message, intentProfile = {}) {
     parts.push(cleanMessage);
   }
 
-  parts.push('device phone smartphone');
+  const requestedFamily = getRequestedCatalogFamily(message);
+  if (requestedFamily === 'smartphone') {
+    parts.push('iphone samsung galaxy smartphone mobile phone');
+  } else if (requestedFamily === 'laptop' || requestedFamily === 'computer') {
+    parts.push('laptop notebook macbook desktop computer');
+  } else {
+    parts.push('device phone smartphone laptop tablet');
+  }
   return sanitizeText(parts.join(' '));
 }
 
@@ -2736,6 +2889,27 @@ function buildProductSearchQueries(message, intentProfile = {}) {
     tokens.slice(0, 5).forEach((token) => push(token));
   }
 
+  const requestedFamily = getRequestedCatalogFamily(cleaned);
+  if (requestedFamily === 'smartphone') {
+    push('iphone');
+    push('samsung galaxy');
+    push('smartphone');
+    push('mobile phone');
+  } else if (requestedFamily === 'tablet') {
+    push('ipad');
+    push('tablet');
+    push('samsung tab');
+  } else if (requestedFamily === 'laptop') {
+    push('macbook');
+    push('laptop');
+    push('notebook');
+  } else if (requestedFamily === 'computer') {
+    push('laptop');
+    push('desktop computer');
+    push('notebook');
+    push('macbook');
+  }
+
   if (intentProfile.prefersPrimaryDevice) {
     push(`${cleaned} device`);
     push(`${cleaned} phone`);
@@ -2764,10 +2938,10 @@ function getCatalogIntentProfile(message) {
   const tokenized = normalized.replace(/[^\p{L}\p{N}\s-]/gu, ' ');
 
   const wantsDevice = DEVICE_INTENT_KEYWORDS.some((keyword) =>
-    tokenized.includes(keyword),
+    hasCatalogKeyword(tokenized, keyword),
   );
   const wantsAccessory = ACCESSORY_KEYWORDS.some((keyword) =>
-    tokenized.includes(keyword),
+    hasCatalogKeyword(tokenized, keyword),
   );
 
   const brandHints = extractBrandHints(tokenized);
@@ -2844,10 +3018,10 @@ function shouldPreferPrimaryDevice(message) {
   if (!lower) return false;
 
   const hasDeviceIntent = DEVICE_INTENT_KEYWORDS.some((word) =>
-    lower.includes(word),
+    hasCatalogKeyword(lower, word),
   );
   const hasAccessoryIntent = ACCESSORY_KEYWORDS.some((word) =>
-    lower.includes(word),
+    hasCatalogKeyword(lower, word),
   );
 
   return hasDeviceIntent && !hasAccessoryIntent;
@@ -2862,7 +3036,21 @@ function isAccessoryProduct(product) {
     .join(' ')
     .toLowerCase();
 
-  return ACCESSORY_KEYWORDS.some((keyword) => searchable.includes(keyword));
+  return ACCESSORY_KEYWORDS.some((keyword) =>
+    hasCatalogKeyword(searchable, keyword),
+  );
+}
+
+function hasCatalogKeyword(value, keyword) {
+  const normalizedValue = String(value || '').toLowerCase();
+  const normalizedKeyword = String(keyword || '').toLowerCase().trim();
+  if (!normalizedValue || !normalizedKeyword) return false;
+
+  const pattern = normalizedKeyword
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+
+  return new RegExp(`\\b${pattern}\\b`, 'i').test(normalizedValue);
 }
 
 function scoreProductMatch(product, terms, options = {}) {
@@ -2936,7 +3124,7 @@ function serializeChatbotProducts(products) {
 
 function formatProductContext(products) {
   if (!products.length) {
-    return 'No direct Shopify product matches were found for this query.';
+    return 'No direct Pixel Zones catalog matches were found for this query.';
   }
 
   return products
@@ -2977,13 +3165,13 @@ function buildOpenAiInput({
   const systemPrompt = [
     'You are Pixel Zones store assistant.',
     'You must ONLY answer questions related to Pixel Zones store details and products.',
-    'Allowed topics: store location, customer service number, delivery information, and Shopify product data.',
+    'Allowed topics: store location, customer service number, delivery information, and Pixel Zones catalog data.',
     `If the user asks anything outside scope, reply exactly: "${OUT_OF_SCOPE_REPLY}"`,
     'Never provide general knowledge answers.',
-    'Use only the facts provided here and any live Shopify Storefront MCP lookup data provided in the conversation.',
-    'If live Shopify lookup data is provided, only mention products from that data.',
+    'Use only the facts provided here and any live Pixel Zones catalog lookup data provided in the conversation.',
+    'If live catalog lookup data is provided, only mention products from that data.',
     'Do not invent warranty, specs, stock, or prices.',
-    'If asked for a product URL, provide the url value from live Shopify lookup data when available.',
+    'If asked for a product URL, provide the url value from live catalog data when available.',
     'If no live product match is provided, clearly say the product is not currently found.',
     'If only accessories/cases are shown, do not claim the main device itself is available.',
     'If user asks to list N products and live lookup data is provided, list up to N products from that data.',
@@ -3010,14 +3198,14 @@ function buildOpenAiInput({
   if (includeProductContext && productContext) {
     input.push({
       role: 'assistant',
-      content: `Live Shopify lookup data:\n${productContext}`,
+      content: `Live Pixel Zones catalog data:\n${productContext}`,
     });
   }
 
   if (includePolicyContext && policyContext) {
     input.push({
       role: 'assistant',
-      content: `Live Shopify policy/FAQ lookup data:\n${policyContext}`,
+      content: `Live Pixel Zones policy/FAQ data:\n${policyContext}`,
     });
   }
 
@@ -3081,6 +3269,80 @@ const CHATBOT_PRODUCT_DETAILS_QUERY = `#graphql
         price {
           amount
           currencyCode
+        }
+      }
+    }
+  }
+`;
+
+const CHATBOT_PRODUCT_SEARCH_QUERY = `#graphql
+  query ChatbotProductSearch($term: String!, $first: Int!) {
+    products: search(
+      query: $term
+      types: [PRODUCT]
+      first: $first
+      unavailableProducts: HIDE
+    ) {
+      nodes {
+        __typename
+        ... on Product {
+          id
+          handle
+          title
+          vendor
+          productType
+          tags
+          onlineStoreUrl
+          featuredImage {
+            url
+            altText
+          }
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          selectedOrFirstAvailableVariant(
+            selectedOptions: []
+            ignoreUnknownOptions: true
+            caseInsensitiveMatch: true
+          ) {
+            id
+            availableForSale
+            title
+            image {
+              url
+              altText
+            }
+            price {
+              amount
+              currencyCode
+            }
+            compareAtPrice {
+              amount
+              currencyCode
+            }
+          }
+          variants(first: 5) {
+            nodes {
+              id
+              availableForSale
+              title
+              image {
+                url
+                altText
+              }
+              price {
+                amount
+                currencyCode
+              }
+              compareAtPrice {
+                amount
+                currencyCode
+              }
+            }
+          }
         }
       }
     }

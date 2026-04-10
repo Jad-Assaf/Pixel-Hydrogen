@@ -581,7 +581,7 @@ function StoreAssistantPanel({
                         >
                           {product.imageUrl ? (
                             <img
-                              src={product.imageUrl}
+                              src={withImageWidth(product.imageUrl, 100)}
                               alt={product.imageAlt || product.title || 'Product image'}
                               loading="lazy"
                             />
@@ -856,6 +856,24 @@ function normalizeProducts(products) {
     })
     .filter(Boolean)
     .slice(0, 20);
+}
+
+function withImageWidth(url, width) {
+  if (!url || !width) return url || '';
+  try {
+    const parsedUrl = new URL(
+      url,
+      typeof window === 'undefined' ? 'https://pixelzones.local' : window.location.origin,
+    );
+    parsedUrl.searchParams.set('width', String(width));
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      return `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    }
+    return parsedUrl.toString();
+  } catch {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}width=${width}`;
+  }
 }
 
 function normalizeAgentActions(actions) {

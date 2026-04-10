@@ -994,6 +994,69 @@ export type ChatbotProductDetailsQuery = {
   >;
 };
 
+export type ChatbotProductSearchQueryVariables = StorefrontAPI.Exact<{
+  term: StorefrontAPI.Scalars['String']['input'];
+  first: StorefrontAPI.Scalars['Int']['input'];
+}>;
+
+export type ChatbotProductSearchQuery = {
+  products: {
+    nodes: Array<
+      | {__typename: 'Article' | 'Page'}
+      | ({__typename: 'Product'} & Pick<
+          StorefrontAPI.Product,
+          | 'id'
+          | 'handle'
+          | 'title'
+          | 'vendor'
+          | 'productType'
+          | 'tags'
+          | 'onlineStoreUrl'
+        > & {
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Image, 'url' | 'altText'>
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'title'
+              > & {
+                image?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                >;
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            variants: {
+              nodes: Array<
+                Pick<
+                  StorefrontAPI.ProductVariant,
+                  'id' | 'availableForSale' | 'title'
+                > & {
+                  image?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                  >;
+                  price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                  compareAtPrice?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                  >;
+                }
+              >;
+            };
+          })
+    >;
+  };
+};
+
 export type ArticleQueryVariables = StorefrontAPI.Exact<{
   articleHandle: StorefrontAPI.Scalars['String']['input'];
   blogHandle: StorefrontAPI.Scalars['String']['input'];
@@ -2314,6 +2377,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query ChatbotProductDetails($handle: String!) {\n    product(handle: $handle) {\n      id\n      handle\n      title\n      vendor\n      productType\n      tags\n      onlineStoreUrl\n      featuredImage {\n        url\n        altText\n      }\n      priceRange {\n        minVariantPrice {\n          amount\n          currencyCode\n        }\n      }\n      selectedOrFirstAvailableVariant {\n        id\n        availableForSale\n        price {\n          amount\n          currencyCode\n        }\n      }\n    }\n  }\n': {
     return: ChatbotProductDetailsQuery;
     variables: ChatbotProductDetailsQueryVariables;
+  };
+  '#graphql\n  query ChatbotProductSearch($term: String!, $first: Int!) {\n    products: search(\n      query: $term\n      types: [PRODUCT]\n      first: $first\n      unavailableProducts: HIDE\n    ) {\n      nodes {\n        __typename\n        ... on Product {\n          id\n          handle\n          title\n          vendor\n          productType\n          tags\n          onlineStoreUrl\n          featuredImage {\n            url\n            altText\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          selectedOrFirstAvailableVariant(\n            selectedOptions: []\n            ignoreUnknownOptions: true\n            caseInsensitiveMatch: true\n          ) {\n            id\n            availableForSale\n            title\n            image {\n              url\n              altText\n            }\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 5) {\n            nodes {\n              id\n              availableForSale\n              title\n              image {\n                url\n                altText\n              }\n              price {\n                amount\n                currencyCode\n              }\n              compareAtPrice {\n                amount\n                currencyCode\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+    return: ChatbotProductSearchQuery;
+    variables: ChatbotProductSearchQueryVariables;
   };
   '#graphql\n  query Article(\n    $articleHandle: String!\n    $blogHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blog(handle: $blogHandle) {\n      handle\n      articleByHandle(handle: $articleHandle) {\n        handle\n        title\n        contentHtml\n        publishedAt\n        author: authorV2 {\n          name\n        }\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        seo {\n          description\n          title\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;
