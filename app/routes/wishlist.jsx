@@ -161,6 +161,9 @@ const WISHLIST_PRODUCT_BY_HANDLE_QUERY = `#graphql
         price {
           ...WishlistMoney
         }
+        compareAtPrice {
+          ...WishlistMoney
+        }
       }
     }
   }

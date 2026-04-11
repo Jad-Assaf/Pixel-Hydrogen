@@ -1,10 +1,10 @@
 import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router';
-import {Money} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import {PlusIcon} from '~/components/Icons';
+import {ProductPrice} from '~/components/ProductPrice';
 
 /**
  * @param {{
@@ -64,6 +64,11 @@ export function ProductItem({product, loading, showAddToCart = false}) {
   const imageUrl = displayImage?.url ? withImageWidth(displayImage.url, 300) : null;
   const displayPrice =
     displayVariant?.price || product.priceRange?.minVariantPrice || null;
+  const displayCompareAtPrice =
+    displayVariant?.compareAtPrice ||
+    (displayVariant?.id === selectedVariant?.id
+      ? selectedVariant?.compareAtPrice || null
+      : null);
   const cartVariant = displayVariant || selectedVariant;
   const {open} = useAside();
 
@@ -131,13 +136,14 @@ export function ProductItem({product, loading, showAddToCart = false}) {
           ) : null}
         </div>
         <div className="pz-product-price-row">
-          <strong>
-            {displayPrice ? (
-              <Money data={displayPrice} />
-            ) : (
-              'N/A'
-            )}
-          </strong>
+          {displayPrice ? (
+            <ProductPrice
+              price={displayPrice}
+              compareAtPrice={displayCompareAtPrice}
+            />
+          ) : (
+            <span className="pz-product-price-unavailable">N/A</span>
+          )}
         </div>
       </div>
 

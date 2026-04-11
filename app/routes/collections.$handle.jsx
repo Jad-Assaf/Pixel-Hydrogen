@@ -716,6 +716,9 @@ const COLLECTION_QUERY = `#graphql
         price {
           ...MoneyCollectionProduct
         }
+        compareAtPrice {
+          ...MoneyCollectionProduct
+        }
       }
     }
   }

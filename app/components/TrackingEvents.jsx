@@ -39,19 +39,49 @@ function trackPageViewed(payload = {}) {
   if (!url || url === lastPageViewUrl) return;
   lastPageViewUrl = url;
   persistWetrackedAttribution();
+  const pagePath = getPagePath(url);
+  const pageTitle = getDocumentTitle();
+  const contentCategory = getContentCategory(pagePath);
 
   sendGtag('event', 'page_view', {
     page_location: url,
-    page_path: getPagePath(url),
-    page_title: getDocumentTitle(),
+    page_path: pagePath,
+    page_title: pageTitle,
   });
   sendFbq('track', 'PageView');
   pushDataLayer('page_view', {
     page_location: url,
-    page_path: getPagePath(url),
-    page_title: getDocumentTitle(),
+    page_path: pagePath,
+    page_title: pageTitle,
   });
   dispatchWetrackedEvent('page_viewed', {url});
+
+  sendGtag('event', 'view_content', {
+    content_type: contentCategory,
+    page_location: url,
+    page_path: pagePath,
+    page_title: pageTitle,
+  });
+  sendFbq('track', 'ViewContent', {
+    content_category: contentCategory,
+    content_ids: pagePath ? [pagePath] : undefined,
+    content_name: pageTitle,
+    content_type: contentCategory,
+  });
+  pushDataLayer('view_content', {
+    content_category: contentCategory,
+    content_type: contentCategory,
+    page_location: url,
+    page_path: pagePath,
+    page_title: pageTitle,
+  });
+  dispatchWetrackedEvent('view_content', {
+    contentCategory,
+    contentType: contentCategory,
+    pagePath,
+    pageTitle,
+    url,
+  });
 }
 
 function trackProductAddedToCart(payload = {}) {
@@ -339,4 +369,16 @@ function normalizeSearchTerm(value) {
   return String(value || '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function getContentCategory(pathname) {
+  const path = String(pathname || '').toLowerCase();
+
+  if (path === '/' || path === '') return 'home';
+  if (path.startsWith('/products/')) return 'product';
+  if (path.startsWith('/collections/')) return 'collection';
+  if (path.startsWith('/search')) return 'search';
+  if (path.startsWith('/cart')) return 'cart';
+
+  return 'page';
 }

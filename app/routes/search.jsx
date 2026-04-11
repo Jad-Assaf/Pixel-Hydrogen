@@ -152,6 +152,10 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
           amount
           currencyCode
         }
+        compareAtPrice {
+          amount
+          currencyCode
+        }
       }
     }
   }

@@ -9,7 +9,7 @@ import {
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
 } from '@shopify/hydrogen';
-import {ProductPrice} from '~/components/ProductPrice';
+import {hasCompareAtPrice, ProductPrice} from '~/components/ProductPrice';
 import {ProductForm} from '~/components/ProductForm';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
@@ -148,6 +148,10 @@ export default function Product() {
   const mainTouchStartX = useRef(null);
   const lightboxTouchStartX = useRef(null);
   const isWishlisted = hasHandle(product.handle);
+  const showMobileCompareAtPrice = hasCompareAtPrice(
+    selectedVariant?.price,
+    selectedVariant?.compareAtPrice,
+  );
 
   useEffect(() => {
     if (!variantImageId) return;
@@ -901,8 +905,17 @@ export default function Product() {
               <span className="pz-product-mobile-cart-label">
                 {selectedVariant.availableForSale ? 'Add to Cart' : 'Sold out'}
               </span>
-              <span className="pz-product-mobile-cart-price">
+              <span
+                className={`pz-product-mobile-cart-price${
+                  showMobileCompareAtPrice ? ' is-on-sale' : ''
+                }`}
+              >
                 {selectedVariant.price ? <Money data={selectedVariant.price} /> : ''}
+                {showMobileCompareAtPrice ? (
+                  <s className="pz-product-mobile-cart-compare-at">
+                    <Money data={selectedVariant.compareAtPrice} />
+                  </s>
+                ) : null}
               </span>
             </AddToCartButton>
           ) : null}
@@ -1090,6 +1103,10 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
           amount
           currencyCode
         }
+        compareAtPrice {
+          amount
+          currencyCode
+        }
       }
       variants(first: 12) {
         nodes {
@@ -1108,6 +1125,10 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
             value
           }
           price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
             amount
             currencyCode
           }

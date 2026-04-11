@@ -7,21 +7,35 @@ import {Money} from '@shopify/hydrogen';
  * }}
  */
 export function ProductPrice({price, compareAtPrice}) {
+  const showCompareAtPrice = hasCompareAtPrice(price, compareAtPrice);
+
   return (
-    <div className="product-price">
-      {compareAtPrice ? (
-        <div className="product-price-on-sale">
-          {price ? <Money data={price} /> : null}
-          <s>
-            <Money data={compareAtPrice} />
-          </s>
-        </div>
-      ) : price ? (
-        <Money data={price} />
+    <div className={`product-price${showCompareAtPrice ? ' is-on-sale' : ''}`}>
+      {price ? (
+        <span className="product-price-current">
+          <Money data={price} />
+        </span>
       ) : (
         <span>&nbsp;</span>
       )}
+
+      {showCompareAtPrice ? (
+        <s className="product-price-compare">
+          <Money data={compareAtPrice} />
+        </s>
+      ) : null}
     </div>
+  );
+}
+
+export function hasCompareAtPrice(price, compareAtPrice) {
+  const priceAmount = Number.parseFloat(price?.amount || '');
+  const compareAtAmount = Number.parseFloat(compareAtPrice?.amount || '');
+
+  return (
+    Number.isFinite(priceAmount) &&
+    Number.isFinite(compareAtAmount) &&
+    compareAtAmount > priceAmount
   );
 }
 

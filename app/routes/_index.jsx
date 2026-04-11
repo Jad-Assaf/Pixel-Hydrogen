@@ -274,10 +274,11 @@ export default function Homepage() {
           onPointerCancel={handleHeroPointerCancel}
         >
           {HERO_SLIDES.map((slide, index) => (
-            <a
+            <Link
               key={slide.desktop}
               className={`pz-hero-slide${index === heroSlideIndex ? ' is-active' : ''}`}
-              href={slide.href}
+              to={slide.href}
+              prefetch="intent"
               aria-label={slide.alt}
               onClick={handleHeroSlideClick}
             >
@@ -287,7 +288,7 @@ export default function Homepage() {
                 loading={index === 0 ? 'eager' : 'lazy'}
                 draggable={false}
               />
-            </a>
+            </Link>
           ))}
 
           {HERO_SLIDES.length > 1 ? (
@@ -688,6 +689,9 @@ const HOME_QUERY = `#graphql
         price {
           ...HomeMoney
         }
+        compareAtPrice {
+          ...HomeMoney
+        }
       }
     }
   }
@@ -813,6 +817,9 @@ const MENU_COLLECTION_ROWS_QUERY = `#graphql
         price {
           ...HomeCollectionMoney
         }
+        compareAtPrice {
+          ...HomeCollectionMoney
+        }
       }
     }
   }
@@ -907,6 +914,10 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
                 amount
                 currencyCode
               }
+              compareAtPrice {
+                amount
+                currencyCode
+              }
             }
           }
         }
@@ -928,22 +939,22 @@ const BRANDS = [
 
 const HERO_SLIDES = [
   {
-    href: '#update-banner-1-link',
+    href: '/collections/aulumu-products',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-desktop.jpg?v=1773951906',
     alt: 'Aulumu banner',
   },
   {
-    href: '#update-banner-2-link',
+    href: '/products/nothing-headphone-1-headphones',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-desk.jpg?v=1773951906',
     alt: 'Nothing banner',
   },
   {
-    href: '#update-banner-3-link',
+    href: '/collections/moft-products',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-desk.jpg?v=1773951906',
     alt: 'Moft banner',
   },
   {
-    href: '#update-banner-4-link',
+    href: '/collections/dji-products',
     desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-desk.jpg?v=1773951907',
     alt: 'DJI banner',
   },
