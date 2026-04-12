@@ -7,11 +7,19 @@ import {ArrowIcon} from '~/components/Icons';
 import ankerLogo from '~/assets/anker-logo.webp';
 import appleLogo from '~/assets/apple-logo.webp';
 import asusLogo from '~/assets/asus-logo.webp';
+import aulumuLogo from '~/assets/aulumu.jpg';
 import beatsLogo from '~/assets/beats-logo.webp';
 import hpLogo from '~/assets/hp-logo.webp';
 import lenovoLogo from '~/assets/lenovo-logo.webp';
+import markrydenLogo from '~/assets/markryden.jpg';
+import moftLogo from '~/assets/moft.jpg';
 import msiLogo from '~/assets/msi-logo.webp';
+import nothingLogo from '~/assets/nothing.jpg';
+import philipsLogo from '~/assets/philips.jpg';
+import powerologyLogo from '~/assets/powerology.jpg';
+import razerLogo from '~/assets/razer.jpg';
 import samsungLogo from '~/assets/samsung-logo.webp';
+import xiaomiLogo from '~/assets/xiaomi.jpg';
 
 const HEADER_MENU_HANDLE = 'new-main-menu';
 
@@ -555,6 +563,9 @@ function formatBrandCollectionHandle(handle) {
   if (!rawHandle || rawHandle === 'apple' || rawHandle.endsWith('-products')) {
     return rawHandle;
   }
+  if (rawHandle === 'markryden') {
+    return 'mark-ryden-products';
+  }
   return `${rawHandle}-products`;
 }
 
@@ -935,6 +946,14 @@ const BRANDS = [
   {name: 'Asus', handle: 'asus', logo: asusLogo},
   {name: 'Beats', handle: 'beats', logo: beatsLogo},
   {name: 'Anker', handle: 'anker', logo: ankerLogo},
+  {name: 'Aulumu', handle: 'aulumu', logo: aulumuLogo},
+  {name: 'Mark Ryden', handle: 'markryden', logo: markrydenLogo},
+  {name: 'Moft', handle: 'moft', logo: moftLogo},
+  {name: 'Nothing', handle: 'nothing', logo: nothingLogo},
+  {name: 'Philips', handle: 'philips', logo: philipsLogo},
+  {name: 'Powerology', handle: 'powerology', logo: powerologyLogo},
+  {name: 'Razer', handle: 'razer', logo: razerLogo},
+  {name: 'Xiaomi', handle: 'xiaomi', logo: xiaomiLogo},
 ];
 
 const HERO_SLIDES = [
