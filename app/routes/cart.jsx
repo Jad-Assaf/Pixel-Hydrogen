@@ -1,6 +1,12 @@
 import {useLoaderData, data} from 'react-router';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
+import {
+  CHECKOUT_STAMP_ACTION,
+  mergeCheckoutStampAttributes,
+  mergeCheckoutStampNote,
+  normalizeAttributeInputs,
+} from '~/lib/checkoutStamp';
 
 /**
  * @type {Route.MetaFunction}
@@ -30,6 +36,14 @@ export async function action({request, context}) {
   let result;
 
   switch (action) {
+    case CartForm.ACTIONS.AttributesUpdateInput:
+      result = await cart.updateAttributes(
+        normalizeAttributeInputs(inputs.attributes),
+      );
+      break;
+    case CartForm.ACTIONS.NoteUpdate:
+      result = await cart.updateNote(String(inputs.note ?? ''));
+      break;
     case CartForm.ACTIONS.LinesAdd:
       result = await cart.addLines(sanitizeLineInputs(inputs.lines));
       break;
@@ -61,6 +75,12 @@ export async function action({request, context}) {
     case CartForm.ACTIONS.BuyerIdentityUpdate:
       result = await cart.updateBuyerIdentity({...inputs.buyerIdentity});
       break;
+    case CHECKOUT_STAMP_ACTION:
+      result = await stampCartForCheckout({
+        cart,
+        attributes: inputs.attributes,
+      });
+      break;
     default:
       throw new Error(`${action} cart action is not defined`);
   }
@@ -69,8 +89,11 @@ export async function action({request, context}) {
   const responseHeaders = cartId ? cart.setCartId(result.cart.id) : new Headers();
   const {cart: cartResult, errors, warnings} = result;
 
-  const redirectTo = formData.get('redirectTo') ?? null;
-  if (typeof redirectTo === 'string') {
+  const redirectTo =
+    typeof inputs.redirectTo === 'string'
+      ? inputs.redirectTo
+      : formData.get('redirectTo') ?? null;
+  if (typeof redirectTo === 'string' && !(errors?.length > 0)) {
     status = 303;
     responseHeaders.set('Location', redirectTo);
   }
@@ -99,6 +122,58 @@ function sanitizeLineInputs(lines) {
       ...(line.attributes ? {attributes: line.attributes} : {}),
       ...(line.sellingPlanId ? {sellingPlanId: line.sellingPlanId} : {}),
     }));
+}
+
+async function stampCartForCheckout({cart, attributes}) {
+  const existingCart = await cart.get();
+
+  if (!existingCart?.id) {
+    return {
+      cart: existingCart ?? null,
+      errors: [{message: 'No active cart found for checkout.'}],
+      warnings: [],
+    };
+  }
+
+  const currentAttributes = normalizeAttributeInputs(existingCart.attributes);
+  const nextAttributes = mergeCheckoutStampAttributes(
+    currentAttributes,
+    attributes,
+    existingCart.id,
+  );
+  const nextNote = mergeCheckoutStampNote(existingCart.note, existingCart.id);
+
+  let result = {
+    cart: existingCart,
+    errors: [],
+    warnings: [],
+  };
+
+  if (nextNote !== String(existingCart.note || '')) {
+    result = await cart.updateNote(nextNote);
+    if (result?.errors?.length) return result;
+  }
+
+  if (!areAttributesEqual(currentAttributes, nextAttributes)) {
+    result = await cart.updateAttributes(nextAttributes);
+  }
+
+  return result;
+}
+
+function areAttributesEqual(left, right) {
+  const normalizedLeft = normalizeAttributeInputs(left);
+  const normalizedRight = normalizeAttributeInputs(right);
+
+  if (normalizedLeft.length !== normalizedRight.length) return false;
+
+  return normalizedLeft.every((attribute, index) => {
+    const nextAttribute = normalizedRight[index];
+    return (
+      attribute.key === nextAttribute?.key &&
+      attribute.value === nextAttribute?.value
+    );
+  });
 }
 
 /**

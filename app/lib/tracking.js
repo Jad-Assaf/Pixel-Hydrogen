@@ -12,6 +12,7 @@ const WETRACKED_ATTRIBUTION_KEYS = [
   'msclkid',
   'rdt_cid',
   'ScCid',
+  'ttp',
   'ttclid',
   'twclid',
   'wbraid',
@@ -106,6 +107,71 @@ export function persistWetrackedAttribution() {
   }
 }
 
+export function buildWetrackedCheckoutAttributes({
+  country = '',
+  host = '',
+  locale = '',
+} = {}) {
+  if (typeof window === 'undefined') return [];
+
+  const trackedAttributes = getTrackedWetrackedAttributes();
+  const checkoutAttributes = new Map();
+
+  Object.entries(trackedAttributes).forEach(([key, value]) => {
+    if (value) {
+      checkoutAttributes.set(key, String(value));
+    }
+  });
+
+  setCheckoutAttribute(
+    checkoutAttributes,
+    'country',
+    firstNonEmpty(
+      normalizeCountryCode(country),
+      normalizeCountryCode(window.Shopify?.country),
+      extractCountryFromLocale(locale),
+      extractCountryFromLocale(document?.documentElement?.lang),
+      extractCountryFromLocale(navigator?.language),
+    ),
+  );
+  setCheckoutAttribute(
+    checkoutAttributes,
+    'fbp',
+    firstNonEmpty(trackedAttributes.fbp, readCookie('_fbp')),
+  );
+  setCheckoutAttribute(
+    checkoutAttributes,
+    'host',
+    firstNonEmpty(normalizeHost(host), normalizeHost(window.location.host)),
+  );
+  setCheckoutAttribute(
+    checkoutAttributes,
+    'locale',
+    firstNonEmpty(
+      normalizeLocale(locale),
+      normalizeLocale(window.Shopify?.locale),
+      normalizeLocale(document?.documentElement?.lang),
+      normalizeLocale(navigator?.language),
+    ),
+  );
+  setCheckoutAttribute(checkoutAttributes, 'sh', window.screen?.height);
+  setCheckoutAttribute(checkoutAttributes, 'sw', window.screen?.width);
+  setCheckoutAttribute(
+    checkoutAttributes,
+    'ttp',
+    firstNonEmpty(trackedAttributes.ttp, readCookie('_ttp')),
+  );
+  // WeTracked did not document `vid`; map it to Shopify's visitor cookie as a best-effort visitor id.
+  setCheckoutAttribute(checkoutAttributes, 'vid', readCookie('_shopify_y'));
+
+  return Array.from(checkoutAttributes.entries())
+    .map(([key, value]) => ({
+      key: String(key || '').trim(),
+      value: String(value || '').trim(),
+    }))
+    .filter((attribute) => attribute.key && attribute.value);
+}
+
 function getWetrackedParams() {
   const params = new URLSearchParams();
 
@@ -114,6 +180,27 @@ function getWetrackedParams() {
   addStoredWetrackedAttributes(params);
 
   return params.toString();
+}
+
+function getTrackedWetrackedAttributes() {
+  const trackedAttributes = {};
+
+  addTrackedAttributesFromSearchParams(trackedAttributes, window['wt:params']);
+  addTrackedAttributesFromSearchParams(
+    trackedAttributes,
+    window.location.search,
+  );
+  Object.entries(readStoredWetrackedAttributes()).forEach(([key, value]) => {
+    if (
+      WETRACKED_ATTRIBUTION_KEYS.includes(key) &&
+      value &&
+      !trackedAttributes[key]
+    ) {
+      trackedAttributes[key] = String(value);
+    }
+  });
+
+  return trackedAttributes;
 }
 
 function addSearchParams(targetParams, rawParams) {
@@ -127,6 +214,22 @@ function addSearchParams(targetParams, rawParams) {
   params.forEach((value, key) => {
     if (value && !targetParams.has(key)) {
       targetParams.set(key, value);
+    }
+  });
+}
+
+function addTrackedAttributesFromSearchParams(targetAttributes, rawParams) {
+  if (!rawParams || typeof rawParams !== 'string') return;
+
+  const normalizedParams = rawParams.startsWith('?')
+    ? rawParams.slice(1)
+    : rawParams;
+  const params = new URLSearchParams(normalizedParams);
+
+  WETRACKED_ATTRIBUTION_KEYS.forEach((key) => {
+    const value = params.get(key);
+    if (value && !targetAttributes[key]) {
+      targetAttributes[key] = value;
     }
   });
 }
@@ -159,13 +262,94 @@ function readStoredWetrackedAttributes() {
     const storedAttributes = JSON.parse(
       window.localStorage.getItem('wt:attributes') || '{}',
     );
+    const runtimeAttributes =
+      window['wt:attributes'] && typeof window['wt:attributes'] === 'object'
+        ? window['wt:attributes']
+        : {};
+    const nextAttributes = {
+      ...runtimeAttributes,
+      ...storedAttributes,
+    };
 
-    if (!storedAttributes || typeof storedAttributes !== 'object') return {};
+    if (!nextAttributes || typeof nextAttributes !== 'object') return {};
 
-    return storedAttributes;
+    return nextAttributes;
   } catch {
     return {};
   }
+}
+
+function setCheckoutAttribute(attributes, key, value) {
+  const normalizedKey = String(key || '').trim();
+  const normalizedValue = String(value || '').trim();
+
+  if (!normalizedKey || !normalizedValue) return;
+  attributes.set(normalizedKey, normalizedValue);
+}
+
+function firstNonEmpty(...values) {
+  return (
+    values.find((value) => String(value || '').trim()) || ''
+  );
+}
+
+function normalizeCountryCode(value) {
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) return '';
+
+  return normalizedValue.toUpperCase();
+}
+
+function normalizeHost(value) {
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) return '';
+
+  try {
+    if (normalizedValue.includes('://')) {
+      return new URL(normalizedValue).host;
+    }
+  } catch {
+    return '';
+  }
+
+  return normalizedValue;
+}
+
+function normalizeLocale(value) {
+  const normalizedValue = String(value || '')
+    .replace(/_/g, '-')
+    .trim();
+  if (!normalizedValue) return '';
+
+  const [languagePart, regionPart, ...rest] = normalizedValue.split('-');
+  const language = languagePart ? languagePart.toLowerCase() : '';
+  const region = regionPart ? regionPart.toUpperCase() : '';
+  const nextParts = [language];
+
+  if (region) nextParts.push(region);
+  if (rest.length) nextParts.push(...rest.filter(Boolean));
+
+  return nextParts.filter(Boolean).join('-');
+}
+
+function extractCountryFromLocale(locale) {
+  const normalizedLocale = normalizeLocale(locale);
+  if (!normalizedLocale.includes('-')) return '';
+
+  const [, region = ''] = normalizedLocale.split('-');
+  return normalizeCountryCode(region);
+}
+
+function readCookie(name) {
+  const normalizedName = String(name || '').trim();
+  if (!normalizedName || typeof document === 'undefined') return '';
+
+  const escapedName = normalizedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${escapedName}=([^;]*)`),
+  );
+
+  return match?.[1] ? decodeURIComponent(match[1]) : '';
 }
 
 function normalizeSearchTerm(value) {

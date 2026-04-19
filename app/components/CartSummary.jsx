@@ -1,5 +1,11 @@
-import {Money, useAnalytics} from '@shopify/hydrogen';
-import {publishCheckoutStarted, withWetrackedParams} from '~/lib/tracking';
+import {CartForm, Money, useAnalytics} from '@shopify/hydrogen';
+import {useRouteLoaderData} from 'react-router';
+import {buildCheckoutStampFormInput} from '~/lib/checkoutStamp';
+import {
+  buildWetrackedCheckoutAttributes,
+  publishCheckoutStarted,
+  withWetrackedParams,
+} from '~/lib/tracking';
 
 /**
  * @param {CartSummaryProps}
@@ -56,26 +62,43 @@ function SummaryRow({label, amount, fallback = '-'}) {
  */
 function CartCheckoutActions({cart}) {
   const {publish, shop} = useAnalytics();
+  const rootData = useRouteLoaderData('root');
   const checkoutUrl = cart?.checkoutUrl;
   if (!checkoutUrl) return null;
 
   const checkoutHref = withWetrackedParams(checkoutUrl);
+  const checkoutAttributes = buildWetrackedCheckoutAttributes({
+    country: rootData?.consent?.country,
+    host: rootData?.publicStoreDomain,
+    locale: [rootData?.consent?.language, rootData?.consent?.country]
+      .filter(Boolean)
+      .join('-'),
+  });
+  const checkoutStampFormInput = buildCheckoutStampFormInput({
+    redirectTo: checkoutHref,
+    attributes: checkoutAttributes,
+  });
 
   return (
-    <a
-      href={checkoutHref}
-      target="_self"
-      className="pz-btn pz-btn-primary pz-summary-checkout"
-      onClick={() => {
-        publishCheckoutStarted(publish, {
-          cart,
-          checkoutUrl: checkoutHref,
-          shop,
-        });
-      }}
+    <CartForm
+      route="/cart"
+      action={checkoutStampFormInput.action}
+      inputs={checkoutStampFormInput.inputs}
     >
-      Proceed to Checkout
-    </a>
+      <button
+        type="submit"
+        className="pz-btn pz-btn-primary pz-summary-checkout"
+        onClick={() => {
+          publishCheckoutStarted(publish, {
+            cart,
+            checkoutUrl: checkoutHref,
+            shop,
+          });
+        }}
+      >
+        Proceed to Checkout
+      </button>
+    </CartForm>
   );
 }
 

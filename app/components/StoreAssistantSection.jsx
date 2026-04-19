@@ -1,8 +1,13 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {useRevalidator} from 'react-router';
+import {useRevalidator, useRouteLoaderData} from 'react-router';
 import {useAnalytics} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
-import {publishCheckoutStarted, withWetrackedParams} from '~/lib/tracking';
+import {submitCheckoutStamp} from '~/lib/checkoutStamp';
+import {
+  buildWetrackedCheckoutAttributes,
+  publishCheckoutStarted,
+  withWetrackedParams,
+} from '~/lib/tracking';
 
 const INTRO_MESSAGE =
   'Hi, I can help with Pixel Zones product info, delivery details, store location, and customer service contact.';
@@ -101,6 +106,7 @@ function StoreAssistantPanel({
   inputId = 'pz-chatbot-input',
 }) {
   const revalidator = useRevalidator();
+  const rootData = useRouteLoaderData('root');
   const {open} = useAside();
   const {cart, publish, shop} = useAnalytics();
   const [conversations, setConversations] = useState(() => [
@@ -424,6 +430,13 @@ function StoreAssistantPanel({
 
         if (checkoutUrl) {
           const checkoutHref = withWetrackedParams(checkoutUrl);
+          const checkoutAttributes = buildWetrackedCheckoutAttributes({
+            country: rootData?.consent?.country,
+            host: rootData?.publicStoreDomain,
+            locale: [rootData?.consent?.language, rootData?.consent?.country]
+              .filter(Boolean)
+              .join('-'),
+          });
           publishCheckoutStarted(publish, {
             cart,
             cartQuantity: result.cartQuantity,
@@ -431,6 +444,14 @@ function StoreAssistantPanel({
             shop,
             source: 'store_assistant',
           });
+          if (
+            submitCheckoutStamp({
+              redirectTo: checkoutHref,
+              attributes: checkoutAttributes,
+            })
+          ) {
+            return '';
+          }
           window.location.assign(checkoutHref);
           return '';
         }
