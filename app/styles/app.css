@@ -1820,6 +1820,17 @@ a {
 
 .product-price-current {
   color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.product-price-suffix {
+  margin-left: 0.32rem;
+  font-size: 0.52em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: baseline;
 }
 
 .product-price-compare {
@@ -6839,6 +6850,18 @@ body>main {
     display: inline-flex;
     align-items: baseline;
     gap: 0.35rem;
+  }
+
+  .pz-product-mobile-cart-current {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.24rem;
+  }
+
+  .pz-product-mobile-cart-suffix {
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .pz-product-mobile-cart-compare-at {

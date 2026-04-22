@@ -487,6 +487,7 @@ export default function Product() {
               <ProductPrice
                 price={selectedVariant?.price}
                 compareAtPrice={selectedVariant?.compareAtPrice}
+                suffix="TTC"
               />
               <div className="pz-product-warranty-badge">1 year warranty</div>
             </div>
@@ -910,7 +911,14 @@ export default function Product() {
                   showMobileCompareAtPrice ? ' is-on-sale' : ''
                 }`}
               >
-                {selectedVariant.price ? <Money data={selectedVariant.price} /> : ''}
+                {selectedVariant.price ? (
+                  <span className="pz-product-mobile-cart-current">
+                    <Money data={selectedVariant.price} />
+                    <span className="pz-product-mobile-cart-suffix">TTC</span>
+                  </span>
+                ) : (
+                  ''
+                )}
                 {showMobileCompareAtPrice ? (
                   <s className="pz-product-mobile-cart-compare-at">
                     <Money data={selectedVariant.compareAtPrice} />

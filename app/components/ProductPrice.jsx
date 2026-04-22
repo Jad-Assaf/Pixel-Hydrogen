@@ -4,16 +4,21 @@ import {Money} from '@shopify/hydrogen';
  * @param {{
  *   price?: MoneyV2;
  *   compareAtPrice?: MoneyV2 | null;
+ *   suffix?: string;
  * }}
  */
-export function ProductPrice({price, compareAtPrice}) {
+export function ProductPrice({price, compareAtPrice, suffix = ''}) {
   const showCompareAtPrice = hasCompareAtPrice(price, compareAtPrice);
+  const normalizedSuffix = String(suffix || '').trim();
 
   return (
     <div className={`product-price${showCompareAtPrice ? ' is-on-sale' : ''}`}>
       {price ? (
         <span className="product-price-current">
           <Money data={price} />
+          {normalizedSuffix ? (
+            <span className="product-price-suffix">{normalizedSuffix}</span>
+          ) : null}
         </span>
       ) : (
         <span>&nbsp;</span>
