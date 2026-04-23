@@ -582,9 +582,12 @@ export default function Product() {
               </p>
             ) : null}
             {selectedVariant?.sku ? (
-              <p>
-                <span>SKU:</span> {selectedVariant.sku}
-              </p>
+              <>
+                <p>
+                  <span>SKU:</span> {selectedVariant.sku}
+                </p>
+                <p className="pz-product-tax-note">Tax Included</p>
+              </>
             ) : null}
             <button
               type="button"
