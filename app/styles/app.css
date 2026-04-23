@@ -2446,6 +2446,9 @@ body>main {
 }
 
 .pz-header {
+  --pz-header-search-surface: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.92) 100%);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -2456,6 +2459,9 @@ body>main {
 }
 
 .pz-header.is-condensed {
+  --pz-header-search-surface: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0.62) 100%);
   background: transparent;
   border-bottom-color: transparent;
   box-shadow: none;
@@ -2705,11 +2711,14 @@ body>main {
   position: relative;
   top: 5px;
   border-radius: var(--pz-header-radius);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(28px) saturate(170%);
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
-  box-shadow: 0 14px 30px -26px rgba(2, 6, 23, 0.65);
+  --pz-ai-surface-layer: var(--pz-header-search-surface);
+  border: 1px solid transparent;
+  backdrop-filter: blur(6px) saturate(160%);
+  -webkit-backdrop-filter: blur(6px) saturate(160%);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.12),
+    0 0 18px rgba(147, 197, 253, 0.18),
+    0 14px 30px -26px rgba(2, 6, 23, 0.65);
   overflow: hidden;
 }
 
@@ -2732,9 +2741,9 @@ body>main {
 }
 
 .pz-header-search-input-wrap:focus-within {
-  border-color: rgba(249, 115, 22, 0.45);
   box-shadow:
-    0 0 0 1px rgba(249, 115, 22, 0.35),
+    0 0 0 1px rgba(249, 115, 22, 0.28),
+    0 0 24px rgba(147, 197, 253, 0.22),
     0 14px 30px -24px rgba(2, 6, 23, 0.6);
 }
 
@@ -2746,10 +2755,8 @@ body>main {
   width: 1.9rem;
   height: 1.9rem;
   border-radius: var(--pz-header-radius);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: #fff;
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 0;
+  background: transparent;
   color: #334155;
   padding: 0;
   z-index: 3;
@@ -2757,8 +2764,7 @@ body>main {
 
 .pz-header-search-icon-btn:hover {
   color: #0f172a;
-  border-color: rgba(249, 115, 22, 0.4);
-  background: #fff;
+  background: transparent;
 }
 
 .pz-header-search-icon-btn svg {
@@ -3724,6 +3730,7 @@ body>main {
 
 .pz-home-chatbot .pz-shell,
 .pz-chatbot-shell,
+.pz-header-search-input-wrap,
 .pz-product-chatbot-trigger,
 .pz-product-chatbot-panel {
   --pz-ai-border-base: #e5e7eb;
@@ -3749,6 +3756,7 @@ body>main {
 
   .pz-home-chatbot .pz-shell,
   .pz-chatbot-shell,
+  .pz-header-search-input-wrap,
   .pz-product-chatbot-trigger,
   .pz-product-chatbot-panel {
     animation: none;
