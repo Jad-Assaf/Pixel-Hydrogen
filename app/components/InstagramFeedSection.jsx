@@ -5,11 +5,33 @@ const INSTAGRAM_PROFILE_URL = 'https://instagram.com/pixel.zones';
 const INSTAGRAM_WIDGET_ID = 'GSC-VBMlYlrniwZwsnY';
 const INSTAGRAM_WIDGET_INSTANCE_ID =
   'Aa3hkWW1md2pMT0FPY__gsc_instagram_feed_instafeed_PctyXi';
+const INSTAGRAM_SECTION_ID =
+  'shopify-section-template--25201153769779__1763578844b3ecc611';
+const INSTAGRAM_BLOCK_ID =
+  'shopify-block-Aa3hkWW1md2pMT0FPY__gsc_instagram_feed_instafeed_PctyXi';
 const INSTAGRAM_USERNAME = 'pixel.zones';
 const INSTAGRAM_AVATAR_URL =
   'https://scontent-iad3-1.cdninstagram.com/v/t51.82787-19/615006492_18034821095754206_6243383907067935488_n.jpg?stp=dst-jpg_s206x206_tt6&_nc_cat=108&ccb=7-5&_nc_sid=bf7eb4&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=BT0-OdwtockQ7kNvwFYO353&_nc_oc=Adoeic9TCV5GR6pzF2dIERlzvwtC_Fn6MVHKWEfxwVUC6bj_YWqNVt_MZFQ5C8MODWM&_nc_zt=24&_nc_ht=scontent-iad3-1.cdninstagram.com&edm=AP4hL3IEAAAA&_nc_gid=lghw8Rx2InKDz5pHe1vY7A&_nc_tpa=Q5bMBQEqAac_UK87ybI-66CUQVMcBhyNBldSmj4t_spHbeqg3iu1C1jpcQ5nhZ2sfGnqdek4q0kJoHtr&oh=00_Af1JSvgAeRvQ8ZitS38IfT_XAtP84aH2YIGGK3gCkdiB9Q&oe=69E0D96D';
 
 const INSTAGRAM_WIDGET_MEDIA = [
+  {
+    id: '17883315126536871',
+    mediaType: 'VIDEO',
+    mediaUrl:
+      'https://scontent-iad6-1.cdninstagram.com/o1/v/t2/f2/m86/AQPSyzmUZi8kGkaHcWITSIX_rLEJbwY7EwJ1XkyYwo1fVh1GhVctKXWal4mfQva-RLXfCoGsdZaq1ukUqfgeDbTuB2BiKPoWzdu8xFs.mp4?_nc_cat=107&_nc_sid=5e9851&_nc_ht=scontent-iad6-1.cdninstagram.com&_nc_ohc=5rf8PDzhOJIQ7kNvwEGMORc&efg=eyJ2ZW5jb2RlX3RhZyI6Inhwdl9wcm9ncmVzc2l2ZS5JTlNUQUdSQU0uQ0xJUFMuQzMuNzIwLmRhc2hfYmFzZWxpbmVfMV92MSIsInhwdl9hc3NldF9pZCI6MTc4NzQwNTUwODk1OTU4OTIsImFzc2V0X2FnZV9kYXlzIjoxLCJ2aV91c2VjYXNlX2lkIjoxMDA5OSwiZHVyYXRpb25fcyI6ODksInVybGdlbl9zb3VyY2UiOiJ3d3cifQ%3D%3D&ccb=17-1&vs=bc4742d7f2141b53&_nc_vs=HBksFQIYUmlnX3hwdl9yZWVsc19wZXJtYW5lbnRfc3JfcHJvZC85NDRDNzU2QjJFQjA1Rjk5NDE2RTk3OUE2MjgzRjQ4Q192aWRlb19kYXNoaW5pdC5tcDQVAALIARIAFQIYUWlnX3hwdl9wbGFjZW1lbnRfcGVybWFuZW50X3YyLzgyNDY2RjA4RUYyRTQ3RTQ2MTFCQTg1MTlEMDE2M0JEX2F1ZGlvX2Rhc2hpbml0Lm1wNBUCAsgBEgAoABgAGwKIB3VzZV9vaWwBMRJwcm9ncmVzc2l2ZV9yZWNpcGUBMRUAACbol_2E-JbAPxUCKAJDMywXQFZDAgxJul4YEmRhc2hfYmFzZWxpbmVfMV92MREAdf4HZeadAQA&_nc_gid=m20I3bIQuZh7jAF49Ssk-g&edm=ANo9K5cEAAAA&_nc_zt=28&_nc_tpa=Q5bMBQEK3fbNrGIXxFbvQByB9Y9Ny26z7hLFxf3JL4N7UPnmzR00goAdZzBxWV2cGoDge5EUe34rQJNd&oh=00_Af1BBoAwvu7Bzx4B31h0Sd7WSNY_ptkLHtWiVJAR4iwkgA&oe=69EB7A18',
+    permalink: 'https://www.instagram.com/reel/DXZdDPMDKXn/',
+    timestamp: '2026-04-21T14:53:19+0000',
+    caption:
+      '#Decoded Just Landed! Real leather. Strong colors and unique character.',
+    likeCount: 55,
+    commentsCount: 6,
+    username: INSTAGRAM_USERNAME,
+    avatarUrl: INSTAGRAM_AVATAR_URL,
+    thumbnailUrl:
+      'https://scontent-iad3-1.cdninstagram.com/v/t51.82787-15/671269166_18046980110754206_5447433913377711881_n.jpg?stp=dst-jpg_e35_tt6&_nc_cat=104&ccb=7-5&_nc_sid=18de74&efg=eyJlZmdfdGFnIjoiQ0xJUFMuYmVzdF9pbWFnZV91cmxnZW4uQzMifQ%3D%3D&_nc_ohc=RpDzoh6111IQ7kNvwGR8Phc&_nc_oc=AdqzvfrXaVHIMo1lfy0p2JEHHGY8yVnTrfjyDeppebfd-yg7Hjfp_gNVWZX7jEX_wEM&_nc_zt=23&_nc_ht=scontent-iad3-1.cdninstagram.com&edm=ANo9K5cEAAAA&_nc_gid=m20I3bIQuZh7jAF49Ssk-g&_nc_tpa=Q5bMBQHb9tLnSs6yOKq_-8gYZJFXSalzOGi3rQx5TGndld8j1HtiTIS1FpBPSuWPrWmRAhj4w68Hn1Gt&oh=00_Af0GEwLSaFy0u0bsMNkzz2mdE3saZnPfNDmGVwDGjsWyDA&oe=69EF7E6D',
+    children: null,
+    isSharedToFeed: true,
+  },
   {
     id: '18002360498876086',
     mediaType: 'VIDEO',
@@ -245,6 +267,14 @@ const INSTAGRAM_WIDGET_BOOTSTRAP = `(function() {
 }())`;
 
 const WIDGET_STYLES = `
+  .page-width.scroll-trigger.animate--slide-in {
+    width: 100%;
+  }
+
+  .shopify-block.shopify-app-block {
+    width: 100%;
+  }
+
   .gfa-widget.GSC-VBMlYlrniwZwsnY {
     display: flex;
     justify-content: center;
@@ -297,31 +327,53 @@ const WIDGET_STYLES = `
     color: #616161;
   }
 
-  .gfa-content__carousel-container.GSC-VBMlYlrniwZwsnY {
+  .gfa-carousel.GSC-VBMlYlrniwZwsnY {
     position: relative;
-    width: 100%;
-  }
-
-  .gfa-content__carousel-track.GSC-VBMlYlrniwZwsnY {
     display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    scroll-behavior: smooth;
+    width: 100%;
+    box-sizing: border-box;
     padding: 0;
   }
 
-  .gfa-content__carousel-track.GSC-VBMlYlrniwZwsnY::-webkit-scrollbar {
+  .gfa-carousel__viewport.GSC-VBMlYlrniwZwsnY {
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  .gfa-carousel__track.GSC-VBMlYlrniwZwsnY {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+  }
+
+  .gfa-carousel__track.GSC-VBMlYlrniwZwsnY::-webkit-scrollbar {
     display: none;
   }
 
-  .gfa-content__carousel-slide.GSC-VBMlYlrniwZwsnY {
+  .gfa-carousel__slide.GSC-VBMlYlrniwZwsnY {
+    position: relative;
     flex: 0 0 calc(20% - 9.6px);
     min-width: calc(20% - 9.6px);
     scroll-snap-align: start;
+    box-sizing: border-box;
     user-select: none;
     -webkit-user-select: none;
+    pointer-events: none;
+  }
+
+  .gfa-carousel__slide-media.GSC-VBMlYlrniwZwsnY {
+    position: relative;
+    width: 100%;
+    height: 100%;
   }
 
   .gfa-media.GSC-VBMlYlrniwZwsnY {
@@ -331,6 +383,8 @@ const WIDGET_STYLES = `
     overflow: hidden;
     cursor: pointer;
     background-color: #0000003d;
+    pointer-events: all;
+    text-decoration: none;
   }
 
   .gfa-media.GSC-VBMlYlrniwZwsnY::before {
@@ -351,8 +405,8 @@ const WIDGET_STYLES = `
     -webkit-user-drag: none;
   }
 
-  .gfa-media--zoom:hover .gfa-media__source,
-  .gfa-media--zoom:focus-visible .gfa-media__source {
+  .gfa-media--zoom-media:hover .gfa-media__source,
+  .gfa-media--zoom-media:focus-visible .gfa-media__source {
     transform: scale(1.1);
   }
 
@@ -448,13 +502,21 @@ const WIDGET_STYLES = `
     align-items: center;
     z-index: 3;
     transition: opacity 0.25s, visibility 0.25s, transform 0.2s linear;
-    opacity: 1;
-    visibility: visible;
+    opacity: 0;
+    visibility: hidden;
     min-width: unset;
     box-shadow: none;
-    background-color: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(12px);
-    color: #000000;
+  }
+
+  .gfa-arrow-button__haze {
+    background:
+      linear-gradient(
+        0deg,
+        var(--gfa-arrow-custom-bg, rgba(201, 201, 201, 0.2)) 0%,
+        var(--gfa-arrow-custom-bg, rgba(201, 201, 201, 0.2)) 100%
+      ),
+      #fff;
+    color: var(--gfa-arrow-custom-color, #000000);
   }
 
   .gfa-arrow-button:hover:not(:disabled) {
@@ -473,6 +535,11 @@ const WIDGET_STYLES = `
 
   .gfa-arrow-right {
     right: 24px;
+  }
+
+  .gfa-arrow-button--visible {
+    opacity: 1;
+    visibility: visible;
   }
 
   .gfa-content__button-container.button-oAWOBOllLYUW {
@@ -525,7 +592,7 @@ const WIDGET_STYLES = `
       padding-bottom: 8px;
     }
 
-    .gfa-content__carousel-slide.GSC-VBMlYlrniwZwsnY {
+    .gfa-carousel__slide.GSC-VBMlYlrniwZwsnY {
       flex-basis: calc(50% - 6px);
       min-width: calc(50% - 6px);
     }
@@ -593,7 +660,7 @@ export function InstagramFeedSection() {
     const track = trackRef.current;
     if (!track) return;
 
-    const firstSlide = track.querySelector('.gfa-content__carousel-slide');
+    const firstSlide = track.querySelector('.gfa-carousel__slide');
     const slideWidth =
       firstSlide?.getBoundingClientRect().width || track.clientWidth * 0.5;
 
@@ -625,115 +692,147 @@ export function InstagramFeedSection() {
   };
 
   return (
-    <section className="pz-home-section pz-home-instagram">
+    <section
+      id={INSTAGRAM_SECTION_ID}
+      className="shopify-section section pz-home-section pz-home-instagram"
+      data-shopify-editor-section={JSON.stringify({
+        id: 'template--25201153769779__1763578844b3ecc611',
+        type: 'apps',
+        disabled: false,
+      })}
+    >
       <script
         nonce={nonce}
         dangerouslySetInnerHTML={{__html: INSTAGRAM_WIDGET_BOOTSTRAP}}
       />
       <style nonce={nonce}>{WIDGET_STYLES}</style>
-      <div
-        className={`gfa-widget ${INSTAGRAM_WIDGET_ID}`}
-        id={INSTAGRAM_WIDGET_INSTANCE_ID}
-      >
-        <div className={`gfa-content ${INSTAGRAM_WIDGET_ID}`}>
-          <div className="gfa-content__text heading-jGjKbkcJqchH">
-            <h3>Follow us on Instagram</h3>
-          </div>
-          <div className="gfa-content__text text-ZINqArAMvzSx">
-            <span>
-              Join our community for daily inspiration and a closer look at our
-              creations
-            </span>
-          </div>
+      <div className="page-width scroll-trigger animate--slide-in">
+        <div
+          id={INSTAGRAM_BLOCK_ID}
+          className="shopify-block shopify-app-block"
+          data-shopify-editor-block={JSON.stringify({
+            id: 'template--25201153769779__1763578844b3ecc611__gsc_instagram_feed_instafeed_PctyXi',
+            domId: 'Aa3hkWW1md2pMT0FPY__gsc_instagram_feed_instafeed_PctyXi',
+            type: 'shopify://apps/gsc-instagram-feed/blocks/instafeed/96970b1b-b770-454f-b16b-51f47e1aa4ed',
+            disabled: false,
+          })}
+        >
+          <div
+            className={`gfa-widget ${INSTAGRAM_WIDGET_ID}`}
+            id={INSTAGRAM_WIDGET_INSTANCE_ID}
+          >
+            <div className={`gfa-content ${INSTAGRAM_WIDGET_ID}`}>
+              <div className="gfa-content__text heading-jGjKbkcJqchH">
+                <h3>Follow us on Instagram</h3>
+              </div>
+              <div className="gfa-content__text text-ZINqArAMvzSx">
+                <span>
+                  Join our community for daily inspiration and a closer look at our
+                  creations
+                </span>
+              </div>
 
-          <div className="gfa-content__carousel-container GSC-VBMlYlrniwZwsnY">
-            <div
-              ref={trackRef}
-              className="gfa-content__carousel-track GSC-VBMlYlrniwZwsnY gfa-content__carousel-track--classic-running"
-            >
-              {INSTAGRAM_FEED_ITEMS.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="gfa-content__carousel-slide GSC-VBMlYlrniwZwsnY"
-                >
+              <div className={`gfa-carousel gfa-carousel--effect-default ${INSTAGRAM_WIDGET_ID}`}>
+                <div className={`gfa-carousel__viewport ${INSTAGRAM_WIDGET_ID}`}>
                   <div
-                    className="gfa-media GSC-VBMlYlrniwZwsnY gfa-media--zoom"
-                    onMouseEnter={() => playVideo(index)}
-                    onMouseLeave={() => resetVideo(index)}
-                    onFocus={() => playVideo(index)}
-                    onBlur={() => resetVideo(index)}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Preview Instagram reel ${index + 1}`}
+                    ref={trackRef}
+                    className={`gfa-carousel__track ${INSTAGRAM_WIDGET_ID} gfa-carousel__track--classic-running`}
                   >
-                    <video
-                      ref={setVideoRef(index)}
-                      preload={index < 2 ? 'auto' : 'none'}
-                      src={item.video}
-                      playsInline
-                      muted
-                      loop
-                      poster={item.poster}
-                      className="gfa-media__source"
-                    />
-                    <div className="gfa-media__overlay-media-type">
-                      <div className="gfa-media__media-type GSC-VBMlYlrniwZwsnY">
-                        <ReelIcon />
-                      </div>
-                    </div>
-                    <div className="gfa-media__overlay GSC-VBMlYlrniwZwsnY">
-                      <div className="gfa-media__inst-logo GSC-VBMlYlrniwZwsnY">
-                        <InstagramPlayIcon />
-                      </div>
-                      <div className="gfa-media__overlay-content GSC-VBMlYlrniwZwsnY">
-                        <div className="gfa-media__meta">
-                          <div className="gfa-media__counters">
-                            <div className="gfa-media__counter">
-                              <HeartIcon />
-                              {item.likes}
+                    {INSTAGRAM_FEED_ITEMS.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className={`gfa-carousel__slide ${INSTAGRAM_WIDGET_ID}`}
+                      >
+                        <div className={`gfa-carousel__slide-media ${INSTAGRAM_WIDGET_ID}`}>
+                          <a
+                            href={item.permalink || INSTAGRAM_PROFILE_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`gfa-media ${INSTAGRAM_WIDGET_ID} gfa-media--zoom-media`}
+                            onMouseEnter={() => playVideo(index)}
+                            onMouseLeave={() => resetVideo(index)}
+                            onFocus={() => playVideo(index)}
+                            onBlur={() => resetVideo(index)}
+                            aria-label={`Open Instagram reel ${index + 1}`}
+                          >
+                            <video
+                              ref={setVideoRef(index)}
+                              preload={index < 2 ? 'auto' : 'none'}
+                              src={item.video}
+                              playsInline
+                              muted
+                              loop
+                              poster={item.poster}
+                              className="gfa-media__source"
+                            />
+                            <div className="gfa-media__overlay-media-type">
+                              <div className={`gfa-media__media-type ${INSTAGRAM_WIDGET_ID}`}>
+                                <ReelIcon />
+                              </div>
                             </div>
-                            <div className="gfa-media__counter">
-                              <CommentIcon />
-                              {item.comments}
+                            <div className={`gfa-media__overlay ${INSTAGRAM_WIDGET_ID}`}>
+                              <div className={`gfa-media__inst-logo ${INSTAGRAM_WIDGET_ID}`}>
+                                <InstagramPlayIcon />
+                              </div>
+                              <div
+                                className={`gfa-media__overlay-content ${INSTAGRAM_WIDGET_ID}`}
+                              >
+                                <div className="gfa-media__meta">
+                                  <div className="gfa-media__counters">
+                                    <div className="gfa-media__counter">
+                                      <HeartIcon />
+                                      {item.likes}
+                                    </div>
+                                    <div className="gfa-media__counter">
+                                      <CommentIcon />
+                                      {item.comments}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
+                          </a>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                <button
+                  type="button"
+                  className={`gfa-arrow-button gfa-arrow-button__haze gfa-arrow-left${
+                    canScrollPrev ? ' gfa-arrow-button--visible' : ''
+                  }`}
+                  onClick={() => scrollCarousel(-1)}
+                  disabled={!canScrollPrev}
+                  aria-label="Previous Instagram posts"
+                >
+                  <ArrowIcon flipped />
+                </button>
+                <button
+                  type="button"
+                  className={`gfa-arrow-button gfa-arrow-button__haze gfa-arrow-right${
+                    canScrollNext ? ' gfa-arrow-button--visible' : ''
+                  }`}
+                  onClick={() => scrollCarousel(1)}
+                  disabled={!canScrollNext}
+                  aria-label="Next Instagram posts"
+                >
+                  <ArrowIcon />
+                </button>
+              </div>
+
+              <div className="gfa-content__button-container button-oAWOBOllLYUW">
+                <a
+                  href={INSTAGRAM_PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gfa-content__button button-oAWOBOllLYUW"
+                >
+                  Visit Instagram
+                </a>
+              </div>
             </div>
-
-            <button
-              type="button"
-              className="gfa-arrow-button gfa-arrow-left"
-              onClick={() => scrollCarousel(-1)}
-              disabled={!canScrollPrev}
-              aria-label="Previous Instagram posts"
-            >
-              <ArrowIcon flipped />
-            </button>
-            <button
-              type="button"
-              className="gfa-arrow-button gfa-arrow-right"
-              onClick={() => scrollCarousel(1)}
-              disabled={!canScrollNext}
-              aria-label="Next Instagram posts"
-            >
-              <ArrowIcon />
-            </button>
-          </div>
-
-          <div className="gfa-content__button-container button-oAWOBOllLYUW">
-            <a
-              href={INSTAGRAM_PROFILE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="gfa-content__button button-oAWOBOllLYUW"
-            >
-              Visit Instagram
-            </a>
           </div>
         </div>
       </div>

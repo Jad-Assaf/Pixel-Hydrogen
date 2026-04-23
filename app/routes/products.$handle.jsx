@@ -23,19 +23,82 @@ import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/hooks/useWishlist';
 import {StoreAssistantProductDropdown} from '~/components/StoreAssistantSection';
+import {canonicalUrl} from '~/lib/canonical';
 /* eslint-disable react/no-unknown-property */
 
 /**
  * @type {Route.MetaFunction}
  */
 export const meta = ({data}) => {
-  return [
-    {title: `Pixel Zones | ${data?.product.title ?? ''}`},
+  const product = data?.product;
+
+  if (!product) {
+    return [
+      {title: 'Pixel Zones'},
+      {property: 'og:site_name', content: 'Pixel Zones'},
+      {property: 'og:type', content: 'website'},
+      {property: 'og:title', content: 'Pixel Zones'},
+      {name: 'twitter:card', content: 'summary'},
+      {name: 'twitter:title', content: 'Pixel Zones'},
+    ];
+  }
+
+  const seoTitle = product.seo?.title?.trim() || product.title || '';
+  const title = seoTitle ? `Pixel Zones | ${seoTitle}` : 'Pixel Zones';
+  const description = (product.seo?.description || product.description || '').trim();
+  const url = canonicalUrl(`/products/${product.handle}`);
+  const firstProductImage = product.images?.nodes?.[0] || null;
+  const metaTags = [
+    {title},
+    {property: 'og:site_name', content: 'Pixel Zones'},
+    {property: 'og:type', content: 'product'},
+    {property: 'og:title', content: title},
+    {property: 'og:url', content: url},
     {
-      rel: 'canonical',
-      href: `/products/${data?.product.handle}`,
+      name: 'twitter:card',
+      content: firstProductImage?.url ? 'summary_large_image' : 'summary',
     },
+    {name: 'twitter:title', content: title},
+    {tagName: 'link', rel: 'canonical', href: url},
   ];
+
+  if (description) {
+    metaTags.push(
+      {name: 'description', content: description},
+      {property: 'og:description', content: description},
+      {name: 'twitter:description', content: description},
+    );
+  }
+
+  if (firstProductImage?.url) {
+    metaTags.push(
+      {property: 'og:image', content: firstProductImage.url},
+      {name: 'twitter:image', content: firstProductImage.url},
+    );
+  }
+
+  if (firstProductImage?.altText) {
+    metaTags.push(
+      {property: 'og:image:alt', content: firstProductImage.altText},
+      {name: 'twitter:image:alt', content: firstProductImage.altText},
+    );
+  }
+
+  if (firstProductImage?.width) {
+    metaTags.push({
+      property: 'og:image:width',
+      content: String(firstProductImage.width),
+    });
+  }
+
+  if (firstProductImage?.height) {
+    metaTags.push({
+      property: 'og:image:height',
+      content: String(firstProductImage.height),
+    });
+  }
+
+  return metaTags;
 };
 
 /**
