@@ -5041,17 +5041,17 @@ body>main {
 .pz-search-form input {
   flex: 1;
   min-width: 0;
-  height: 3.35rem;
+  height: 3.85rem;
   border-radius: 0.75rem;
   border: 1px solid var(--pz-border);
   background: #fff;
   color: #0f172a;
   font-size: 1rem;
-  padding: 0 1rem;
+  padding: 1rem 1rem;
 }
 
 .pz-search-form button {
-  height: 3.35rem;
+  height: 3.85rem;
   border-radius: 0.75rem;
   border: 1px solid #0f172a;
   background: #0f172a;
@@ -7362,7 +7362,7 @@ body>main {
 
   .pz-search-form input,
   .pz-search-form button {
-    height: 3.75rem;
+    height: 3rem;
   }
 
   .pz-search-list-products {
