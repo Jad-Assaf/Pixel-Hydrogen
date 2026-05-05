@@ -5,13 +5,21 @@ import {
   SEARCH_SUBMITTED_EVENT,
   persistWetrackedAttribution,
 } from '~/lib/tracking';
+import {getMetaContentIdFromVariant} from '~/lib/meta';
 
 const TRACKING_INTEGRATION_NAME = 'Pixel_Zones_Tracking_Events';
+const META_DEBUG_EVENTS = new Set([
+  'PageView',
+  'ViewContent',
+  'AddToCart',
+  'InitiateCheckout',
+]);
+const RECENT_EVENT_WINDOW_MS = 1500;
 
 let didRegisterTrackingEvents = false;
 let lastPageViewUrl = '';
-let lastCheckoutEventAt = 0;
 let lastSearchEvent = {term: '', timestamp: 0};
+const recentEventRegistry = new Map();
 
 export function TrackingEvents() {
   const {register, subscribe} = useAnalytics();
@@ -23,6 +31,7 @@ export function TrackingEvents() {
     const {ready} = register(TRACKING_INTEGRATION_NAME);
 
     subscribe(AnalyticsEvent.PAGE_VIEWED, trackPageViewed);
+    subscribe(AnalyticsEvent.PRODUCT_VIEWED, trackProductViewed);
     subscribe(AnalyticsEvent.PRODUCT_ADD_TO_CART, trackProductAddedToCart);
     subscribe(SEARCH_SUBMITTED_EVENT, trackSearchSubmitted);
     subscribe(AnalyticsEvent.SEARCH_VIEWED, trackSearchViewed);
@@ -37,49 +46,80 @@ export function TrackingEvents() {
 function trackPageViewed(payload = {}) {
   const url = getPayloadUrl(payload);
   if (!url || url === lastPageViewUrl) return;
+
   lastPageViewUrl = url;
   persistWetrackedAttribution();
+
   const pagePath = getPagePath(url);
   const pageTitle = getDocumentTitle();
-  const contentCategory = getContentCategory(pagePath);
 
   sendGtag('event', 'page_view', {
     page_location: url,
     page_path: pagePath,
     page_title: pageTitle,
   });
-  sendFbq('track', 'PageView');
+  trackMetaEvent('PageView');
   pushDataLayer('page_view', {
     page_location: url,
     page_path: pagePath,
     page_title: pageTitle,
   });
   dispatchWetrackedEvent('page_viewed', {url});
+}
+
+function trackProductViewed(payload = {}) {
+  const trackedProduct = getTrackedProduct(payload);
+  const metaContentId = getMetaContentIdFromVariant({
+    id: trackedProduct?.variantId,
+  });
+
+  if (!trackedProduct || !metaContentId) return;
+
+  const url = getPayloadUrl(payload);
+  const eventKey = ['ViewContent', metaContentId, url].filter(Boolean).join(':');
+  if (shouldSkipRecentEvent(eventKey)) return;
+
+  const pagePath = getPagePath(url);
+  const pageTitle = getDocumentTitle();
+  const price = roundCurrencyValue(moneyAmount(trackedProduct.price));
+  const currency = getTrackedProductCurrency(trackedProduct, payload);
+  const item = productViewToItem(trackedProduct, metaContentId, price);
 
   sendGtag('event', 'view_content', {
-    content_type: contentCategory,
+    currency,
+    value: price,
+    items: [item],
     page_location: url,
     page_path: pagePath,
     page_title: pageTitle,
   });
-  sendFbq('track', 'ViewContent', {
-    content_category: contentCategory,
-    content_ids: pagePath ? [pagePath] : undefined,
-    content_name: pageTitle,
-    content_type: contentCategory,
+  trackMetaEvent('ViewContent', {
+    content_ids: [metaContentId],
+    content_type: 'product',
+    contents: [
+      {
+        id: metaContentId,
+        quantity: 1,
+        item_price: price,
+      },
+    ],
+    value: price,
+    currency,
   });
   pushDataLayer('view_content', {
-    content_category: contentCategory,
-    content_type: contentCategory,
     page_location: url,
     page_path: pagePath,
     page_title: pageTitle,
+    ecommerce: {
+      currency,
+      value: price,
+      items: [item],
+    },
   });
   dispatchWetrackedEvent('view_content', {
-    contentCategory,
-    contentType: contentCategory,
-    pagePath,
-    pageTitle,
+    currency,
+    item,
+    value: price,
     url,
   });
 }
@@ -87,6 +127,14 @@ function trackPageViewed(payload = {}) {
 function trackProductAddedToCart(payload = {}) {
   const item = cartLineToItem(payload.currentLine, getAddedQuantity(payload));
   if (!item) return;
+
+  const eventKey = [
+    'AddToCart',
+    payload?.currentLine?.id || item.item_id,
+    item.quantity,
+    payload?.cart?.updatedAt || '',
+  ].join(':');
+  if (shouldSkipRecentEvent(eventKey)) return;
 
   const value = roundCurrencyValue(item.price * item.quantity);
   const currency = getLineCurrency(payload.currentLine) || getCartCurrency(payload.cart);
@@ -96,9 +144,8 @@ function trackProductAddedToCart(payload = {}) {
     value,
     items: [item],
   });
-  sendFbq('track', 'AddToCart', {
-    content_ids: [item.item_id].filter(Boolean),
-    content_name: item.item_name,
+  trackMetaEvent('AddToCart', {
+    content_ids: [item.item_id],
     content_type: 'product',
     contents: [
       {
@@ -106,7 +153,7 @@ function trackProductAddedToCart(payload = {}) {
         quantity: item.quantity,
         item_price: item.price,
       },
-    ].filter((content) => content.id),
+    ],
     currency,
     value,
   });
@@ -125,22 +172,35 @@ function trackProductAddedToCart(payload = {}) {
 }
 
 function trackCheckoutStarted(payload = {}) {
-  const now = Date.now();
-  if (now - lastCheckoutEventAt < 1500) return;
-  lastCheckoutEventAt = now;
-
   const cart = payload.cart || null;
   const items = cartToItems(cart);
+  if (!items.length) return;
+
   const currency = getCartCurrency(cart);
   const value = getCartValue(cart);
+  const totalQuantity =
+    Number(cart?.totalQuantity || payload.cartQuantity || 0) ||
+    items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const eventKey = [
+    'InitiateCheckout',
+    cart?.id || '',
+    cart?.updatedAt || '',
+    payload.checkoutUrl || '',
+    items.map((item) => `${item.item_id}:${item.quantity}`).join(','),
+  ].join(':');
+  if (shouldSkipRecentEvent(eventKey)) return;
+
+  const contentIds = items.map((item) => item.item_id).filter(Boolean);
+  if (!contentIds.length) return;
 
   sendGtag('event', 'begin_checkout', {
     currency,
     value,
     items,
   });
-  sendFbq('track', 'InitiateCheckout', {
-    content_ids: items.map((item) => item.item_id).filter(Boolean),
+  trackMetaEvent('InitiateCheckout', {
+    content_ids: contentIds,
+    content_type: 'product',
     contents: items
       .map((item) => ({
         id: item.item_id,
@@ -149,7 +209,7 @@ function trackCheckoutStarted(payload = {}) {
       }))
       .filter((content) => content.id),
     currency,
-    num_items: Number(cart?.totalQuantity || payload.cartQuantity || 0),
+    num_items: totalQuantity,
     value,
   });
   pushDataLayer('begin_checkout', {
@@ -210,15 +270,14 @@ function cartToItems(cart) {
 function cartLineToItem(line, quantityOverride) {
   const merchandise = line?.merchandise || {};
   const product = merchandise?.product || {};
-  const variantId = compactShopifyId(merchandise.id);
-  const productId = compactShopifyId(product.id);
+  const variantId = getMetaContentIdFromVariant(merchandise);
   const price = moneyAmount(merchandise.price || line?.cost?.amountPerQuantity);
-  const quantity = Number(quantityOverride || line?.quantity || 1);
+  const quantity = normalizeQuantity(quantityOverride ?? line?.quantity ?? 1);
 
-  if (!variantId && !productId) return null;
+  if (!variantId) return null;
 
   return {
-    item_id: variantId || productId,
+    item_id: variantId,
     item_name: product.title || merchandise.title || '',
     item_variant: merchandise.title || '',
     item_brand: product.vendor || '',
@@ -261,12 +320,14 @@ function getLineCurrency(line) {
     line?.merchandise?.price?.currencyCode ||
     line?.cost?.amountPerQuantity?.currencyCode ||
     line?.cost?.totalAmount?.currencyCode ||
-    ''
+    'USD'
   );
 }
 
 function moneyAmount(money) {
-  const amount = Number.parseFloat(money?.amount || '0');
+  const rawValue =
+    money && typeof money === 'object' ? money.amount : money;
+  const amount = Number.parseFloat(String(rawValue ?? '0'));
   return Number.isFinite(amount) ? amount : 0;
 }
 
@@ -274,10 +335,9 @@ function roundCurrencyValue(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
-function compactShopifyId(id) {
-  if (!id) return '';
-  const match = String(id).match(/\/([^/]+)$/);
-  return match?.[1] || String(id);
+function normalizeQuantity(value) {
+  const quantity = Number(value);
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 }
 
 function sendGtag(...args) {
@@ -298,6 +358,17 @@ function sendFbq(...args) {
   } catch {
     // Third-party scripts should never break storefront interactions.
   }
+}
+
+function trackMetaEvent(eventName, payload) {
+  logMetaEvent(eventName, payload);
+
+  if (typeof payload === 'undefined') {
+    sendFbq('track', eventName);
+    return;
+  }
+
+  sendFbq('track', eventName, payload);
 }
 
 function pushDataLayer(event, payload = {}) {
@@ -353,7 +424,9 @@ function getCurrentHref() {
 
 function getPagePath(url) {
   try {
-    const parsedUrl = new URL(url);
+    const baseUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+    const parsedUrl = new URL(url, baseUrl);
     return `${parsedUrl.pathname}${parsedUrl.search}`;
   } catch {
     return '';
@@ -371,14 +444,57 @@ function normalizeSearchTerm(value) {
     .trim();
 }
 
-function getContentCategory(pathname) {
-  const path = String(pathname || '').toLowerCase();
+function getTrackedProduct(payload) {
+  const products = Array.isArray(payload?.products) ? payload.products : [];
+  return products.find((product) =>
+    Boolean(getMetaContentIdFromVariant({id: product?.variantId})),
+  );
+}
 
-  if (path === '/' || path === '') return 'home';
-  if (path.startsWith('/products/')) return 'product';
-  if (path.startsWith('/collections/')) return 'collection';
-  if (path.startsWith('/search')) return 'search';
-  if (path.startsWith('/cart')) return 'cart';
+function productViewToItem(product, variantId, price) {
+  return {
+    item_id: variantId,
+    item_name: product?.title || '',
+    item_variant: product?.variantTitle || '',
+    item_brand: product?.vendor || '',
+    price,
+    quantity: 1,
+    shopify_product_gid: product?.id || '',
+    shopify_variant_gid: product?.variantId || '',
+  };
+}
 
-  return 'page';
+function getTrackedProductCurrency(product, payload) {
+  return normalizeCurrencyCode(product?.currencyCode || payload?.shop?.currency || 'USD');
+}
+
+function normalizeCurrencyCode(value) {
+  const currency = String(value || '').trim().toUpperCase();
+  return currency || 'USD';
+}
+
+function shouldSkipRecentEvent(key, windowMs = RECENT_EVENT_WINDOW_MS) {
+  if (!key) return false;
+
+  const now = Date.now();
+  for (const [eventKey, timestamp] of recentEventRegistry.entries()) {
+    if (now - timestamp > windowMs) {
+      recentEventRegistry.delete(eventKey);
+    }
+  }
+
+  const lastSeenAt = recentEventRegistry.get(key);
+  if (lastSeenAt && now - lastSeenAt < windowMs) {
+    return true;
+  }
+
+  recentEventRegistry.set(key, now);
+  return false;
+}
+
+function logMetaEvent(eventName, payload) {
+  if (process.env.NODE_ENV === 'production') return;
+  if (!META_DEBUG_EVENTS.has(eventName)) return;
+
+  console.warn('[Meta Pixel]', eventName, payload);
 }
