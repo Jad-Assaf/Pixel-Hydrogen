@@ -2,10 +2,11 @@ import {Analytics} from '@shopify/hydrogen';
 import {Link, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {
-  BRANDS,
   formatBrandCollectionHandle,
   getBrandByHandle,
 } from '~/lib/brands';
+
+const BRAND_PRODUCTS_PAGE_SIZE = 100;
 
 /**
  * @type {Route.MetaFunction}
@@ -33,42 +34,21 @@ export async function loader({context, params}) {
   }
 
   const {storefront} = context;
-  let collection = null;
-
-  for (const handle of getBrandCollectionHandleCandidates(brand)) {
-    const result = await storefront
-      .query(BRAND_COLLECTION_QUERY, {
-        cache: storefront.CacheShort(),
-        variables: {handle},
-      })
-      .catch(() => null);
-
-    if (result?.collection) {
-      collection = result.collection;
-      break;
-    }
-  }
+  const collection = await loadBrandCollection(storefront, brand);
 
   return {
     brand,
-    brands: BRANDS,
     collection,
     products: collection?.products?.nodes || [],
   };
 }
 
 export default function BrandRoute() {
-  const {brand, brands, collection, products} = useLoaderData();
+  const {brand, collection, products} = useLoaderData();
   const collectionPath = collection?.handle
     ? `/collections/${collection.handle}`
     : `/search?q=${encodeURIComponent(brand.name)}`;
   const primaryActionLabel = collection ? `Shop ${brand.name}` : `Search ${brand.name}`;
-  const relatedBrands = brands
-    .filter(
-      (candidate) =>
-        candidate.family === brand.family && candidate.handle !== brand.handle,
-    )
-    .slice(0, 3);
   const style = getBrandThemeVars(brand);
 
   return (
@@ -140,7 +120,33 @@ export default function BrandRoute() {
         </div>
       </header>
 
-      {renderSections({brand, collection, products, relatedBrands, collectionPath})}
+      <section className="pz-brand-section pz-brand-products pz-brand-products-only">
+        <div className="pz-shell">
+          {products.length ? (
+            <div className="pz-card-grid">
+              {products.map((product, index) => (
+                <ProductItem
+                  key={product.id}
+                  product={product}
+                  loading={index < 4 ? 'eager' : 'lazy'}
+                  showAddToCart
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="pz-brand-empty">
+              <h3>Collection is being curated.</h3>
+              <p>
+                Products will appear here as soon as the Shopify collection is
+                populated.
+              </p>
+              <Link to={`/search?q=${encodeURIComponent(brand.name)}`} prefetch="intent">
+                Search {brand.name} products
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
 
       {collection?.id ? (
         <Analytics.CollectionView
@@ -154,6 +160,61 @@ export default function BrandRoute() {
       ) : null}
     </div>
   );
+}
+
+async function loadBrandCollection(storefront, brand) {
+  for (const handle of getBrandCollectionHandleCandidates(brand)) {
+    const collection = await fetchCollectionByHandle(storefront, handle);
+    if (collection) return collection;
+  }
+
+  return null;
+}
+
+async function fetchCollectionByHandle(storefront, handle) {
+  let after = null;
+  let collectionData = null;
+  let products = [];
+
+  do {
+    const result = await storefront
+      .query(BRAND_COLLECTION_QUERY, {
+        cache: storefront.CacheShort(),
+        variables: {
+          handle,
+          first: BRAND_PRODUCTS_PAGE_SIZE,
+          after,
+        },
+      })
+      .catch(() => null);
+
+    if (!result?.collection) {
+      return null;
+    }
+
+    const collection = result.collection;
+    const connection = collection.products;
+
+    if (!collectionData) {
+      collectionData = {
+        id: collection.id,
+        handle: collection.handle,
+        title: collection.title,
+        description: collection.description,
+        image: collection.image,
+      };
+    }
+
+    products = mergeProducts(products, connection?.nodes || []);
+    after = connection?.pageInfo?.hasNextPage ? connection.pageInfo.endCursor : null;
+  } while (after);
+
+  return {
+    ...collectionData,
+    products: {
+      nodes: products,
+    },
+  };
 }
 
 function getBrandCollectionHandleCandidates(brand) {
@@ -175,205 +236,13 @@ function getBrandCollectionHandleCandidates(brand) {
   });
 }
 
-function renderSections({brand, collection, products, relatedBrands, collectionPath}) {
-  const sections = {
-    manifesto: (
-      <BrandManifestoSection
-        key="manifesto"
-        brand={brand}
-        collection={collection}
-      />
-    ),
-    signals: <BrandSignalsSection key="signals" brand={brand} />,
-    focus: <BrandFocusSection key="focus" brand={brand} />,
-    products: (
-      <BrandProductsSection
-        key="products"
-        brand={brand}
-        collection={collection}
-        products={products}
-        collectionPath={collectionPath}
-      />
-    ),
-    related: (
-      <BrandRelatedSection
-        key="related"
-        brand={brand}
-        relatedBrands={relatedBrands}
-      />
-    ),
-  };
-
-  switch (brand.layout) {
-    case 'technical':
-      return [sections.signals, sections.products, sections.focus, sections.related];
-    case 'arena':
-      return [sections.focus, sections.signals, sections.products, sections.related];
-    case 'orbital':
-      return [sections.products, sections.manifesto, sections.focus, sections.related];
-    case 'pulse':
-      return [sections.manifesto, sections.products, sections.signals, sections.related];
-    case 'studio':
-      return [sections.manifesto, sections.focus, sections.products, sections.related];
-    case 'stack':
-      return [sections.signals, sections.focus, sections.products, sections.related];
-    case 'gallery':
-      return [sections.focus, sections.manifesto, sections.products, sections.related];
-    case 'editorial':
-    default:
-      return [sections.manifesto, sections.focus, sections.products, sections.related];
-  }
-}
-
-function BrandManifestoSection({brand, collection}) {
-  return (
-    <section className="pz-brand-section pz-brand-manifesto">
-      <div className="pz-shell pz-brand-manifesto-shell">
-        <div className="pz-brand-section-head">
-          <p className="pz-kicker">{brand.familyLabel}</p>
-          <h2>{brand.name}, framed around how people actually use it.</h2>
-        </div>
-        <div className="pz-brand-manifesto-grid">
-          <article className="pz-brand-manifesto-card">
-            <h3>Brand point of view</h3>
-            <p>{brand.summary}</p>
-          </article>
-          <article className="pz-brand-manifesto-card">
-            <h3>Collection lens</h3>
-            <p>{collection?.description || brand.productLead}</p>
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BrandSignalsSection({brand}) {
-  return (
-    <section className="pz-brand-section pz-brand-signals">
-      <div className="pz-shell">
-        <div className="pz-brand-section-head">
-          <p className="pz-kicker">Signature Traits</p>
-          <h2>What defines the {brand.name} feel.</h2>
-        </div>
-        <div className="pz-brand-signal-grid">
-          {brand.notes.map((note, index) => (
-            <article key={note} className="pz-brand-signal-card">
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <strong>{note}</strong>
-              <p>{brand.focusAreas[index]?.copy || brand.productLead}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BrandFocusSection({brand}) {
-  return (
-    <section className="pz-brand-section pz-brand-focus">
-      <div className="pz-shell">
-        <div className="pz-brand-section-head">
-          <p className="pz-kicker">Built For</p>
-          <h2>Three ways to read the {brand.name} collection.</h2>
-        </div>
-        <div className="pz-brand-focus-grid">
-          {brand.focusAreas.map((area) => (
-            <article key={area.title} className="pz-brand-focus-card">
-              <h3>{area.title}</h3>
-              <p>{area.copy}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BrandProductsSection({brand, collection, products, collectionPath}) {
-  return (
-    <section className="pz-brand-section pz-brand-products">
-      <div className="pz-shell">
-        <div className="pz-brand-section-head pz-brand-section-head--with-link">
-          <div>
-            <p className="pz-kicker">Shop the Collection</p>
-            <h2>{collection?.title || `${brand.name} picks`}</h2>
-          </div>
-          <Link to={collectionPath} prefetch="intent" className="pz-brand-inline-link">
-            View full collection
-          </Link>
-        </div>
-
-        {products.length ? (
-          <div className="pz-card-grid">
-            {products.slice(0, 8).map((product, index) => (
-              <ProductItem
-                key={product.id}
-                product={product}
-                loading={index < 4 ? 'eager' : 'lazy'}
-                showAddToCart
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="pz-brand-empty">
-            <h3>Collection is being curated.</h3>
-            <p>
-              The custom brand page is live already. Product selection will appear here as
-              soon as the Shopify collection is populated.
-            </p>
-            <Link to={`/search?q=${encodeURIComponent(brand.name)}`} prefetch="intent">
-              Search {brand.name} products
-            </Link>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function BrandRelatedSection({brand, relatedBrands}) {
-  return (
-    <section className="pz-brand-section pz-brand-related">
-      <div className="pz-shell">
-        <div className="pz-brand-section-head">
-          <p className="pz-kicker">Stay in the lane</p>
-          <h2>More from the {brand.familyLabel.toLowerCase()} world.</h2>
-        </div>
-
-        {relatedBrands.length ? (
-          <div className="pz-brand-related-grid">
-            {relatedBrands.map((relatedBrand) => (
-              <Link
-                key={relatedBrand.handle}
-                to={relatedBrand.route}
-                prefetch="intent"
-                className="pz-brand-related-card"
-                style={getBrandThemeVars(relatedBrand)}
-              >
-                <div className="pz-brand-related-logo">
-                  <img src={relatedBrand.logo} alt={relatedBrand.name} loading="lazy" />
-                </div>
-                <div className="pz-brand-related-copy">
-                  <h3>{relatedBrand.name}</h3>
-                  <p>{relatedBrand.headline}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="pz-brand-empty">
-            <h3>No adjacent brands yet.</h3>
-            <p>This route still connects directly to the full brand directory.</p>
-            <Link to="/brands" prefetch="intent">
-              Explore all brands
-            </Link>
-          </div>
-        )}
-      </div>
-    </section>
-  );
+function mergeProducts(currentProducts, nextProducts) {
+  const seen = new Set();
+  return [...(currentProducts || []), ...(nextProducts || [])].filter((product) => {
+    if (!product?.id || seen.has(product.id)) return false;
+    seen.add(product.id);
+    return true;
+  });
 }
 
 function getBrandThemeVars(brand) {
@@ -466,6 +335,8 @@ const BRAND_COLLECTION_QUERY = `#graphql
     $country: CountryCode
     $language: LanguageCode
     $handle: String!
+    $first: Int!
+    $after: String
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -479,9 +350,13 @@ const BRAND_COLLECTION_QUERY = `#graphql
         width
         height
       }
-      products(first: 8, sortKey: BEST_SELLING) {
+      products(first: $first, after: $after, sortKey: BEST_SELLING) {
         nodes {
           ...BrandCollectionProduct
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }

@@ -1541,6 +1541,8 @@ export type BrandCollectionQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   handle: StorefrontAPI.Scalars['String']['input'];
+  first: StorefrontAPI.Scalars['Int']['input'];
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
 }>;
 
 export type BrandCollectionQuery = {
@@ -1612,6 +1614,7 @@ export type BrandCollectionQuery = {
             };
           }
         >;
+        pageInfo: Pick<StorefrontAPI.PageInfo, 'hasNextPage' | 'endCursor'>;
       };
     }
   >;
@@ -2988,7 +2991,7 @@ interface GeneratedQueryTypes {
     return: BlogsQuery;
     variables: BlogsQueryVariables;
   };
-  '#graphql\n  fragment BrandCollectionMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  fragment BrandCollectionProduct on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...BrandCollectionMoney\n      }\n      maxVariantPrice {\n        ...BrandCollectionMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...BrandCollectionMoney\n      }\n      compareAtPrice {\n        ...BrandCollectionMoney\n      }\n    }\n    variants(first: 12) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandCollectionMoney\n        }\n        compareAtPrice {\n          ...BrandCollectionMoney\n        }\n      }\n    }\n  }\n\n  query BrandCollection(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...BrandCollectionProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment BrandCollectionMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  fragment BrandCollectionProduct on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...BrandCollectionMoney\n      }\n      maxVariantPrice {\n        ...BrandCollectionMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...BrandCollectionMoney\n      }\n      compareAtPrice {\n        ...BrandCollectionMoney\n      }\n    }\n    variants(first: 12) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandCollectionMoney\n        }\n        compareAtPrice {\n          ...BrandCollectionMoney\n        }\n      }\n    }\n  }\n\n  query BrandCollection(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n    $first: Int!\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      products(first: $first, after: $after, sortKey: BEST_SELLING) {\n        nodes {\n          ...BrandCollectionProduct\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
     return: BrandCollectionQuery;
     variables: BrandCollectionQueryVariables;
   };

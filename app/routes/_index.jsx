@@ -308,17 +308,24 @@ export default function Homepage() {
 
       <section className="pz-brand-strip">
         <div className="pz-shell">
-          <p>Brands</p>
+          <div className="pz-section-head pz-brand-strip-head">
+            <div>
+              <p className="pz-brand-strip-title">Brands</p>
+            </div>
+            <Link to="/brands" prefetch="intent" className="pz-inline-link">
+              View All
+            </Link>
+          </div>
           <div className="pz-brand-carousel" aria-label="Popular brands">
             <div className="pz-brand-track" role="list">
               {carouselBrands.map((brand) => (
                 <Link
                   key={`${brand.copy}-${brand.handle}`}
-                  to="/brands"
+                  to={brand.route}
                   prefetch="intent"
                   className="pz-brand-logo-link"
                   role="listitem"
-                  aria-label="Browse all brands"
+                  aria-label={`Browse ${brand.name}`}
                 >
                   <img src={brand.logo} alt={brand.name} loading="lazy" />
                 </Link>
