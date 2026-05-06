@@ -4,22 +4,7 @@ import {ProductItem} from '~/components/ProductItem';
 import {InstagramFeedSection} from '~/components/InstagramFeedSection';
 import {StoreAssistantHomeSection} from '~/components/StoreAssistantSection';
 import {ArrowIcon} from '~/components/Icons';
-import ankerLogo from '~/assets/anker-logo.webp';
-import appleLogo from '~/assets/apple-logo.webp';
-import asusLogo from '~/assets/asus-logo.webp';
-import aulumuLogo from '~/assets/aulumu.jpg';
-import beatsLogo from '~/assets/beats-logo.webp';
-import hpLogo from '~/assets/hp-logo.webp';
-import lenovoLogo from '~/assets/lenovo-logo.webp';
-import markrydenLogo from '~/assets/markryden.jpg';
-import moftLogo from '~/assets/moft.jpg';
-import msiLogo from '~/assets/msi-logo.webp';
-import nothingLogo from '~/assets/nothing.jpg';
-import philipsLogo from '~/assets/philips.jpg';
-import powerologyLogo from '~/assets/powerology.jpg';
-import razerLogo from '~/assets/razer.jpg';
-import samsungLogo from '~/assets/samsung-logo.webp';
-import xiaomiLogo from '~/assets/xiaomi.jpg';
+import {BRANDS} from '~/lib/brands';
 
 const HEADER_MENU_HANDLE = 'new-main-menu';
 
@@ -341,11 +326,11 @@ export default function Homepage() {
               {carouselBrands.map((brand) => (
                 <Link
                   key={`${brand.copy}-${brand.handle}`}
-                  to={`/collections/${formatBrandCollectionHandle(brand.handle)}`}
+                  to="/brands"
                   prefetch="intent"
                   className="pz-brand-logo-link"
                   role="listitem"
-                  aria-label={`${brand.name} collection`}
+                  aria-label="Browse all brands"
                 >
                   <img src={brand.logo} alt={brand.name} loading="lazy" />
                 </Link>
@@ -556,17 +541,6 @@ function formatCollectionTitle(collection) {
   const rawTitle =
     typeof collection?.title === 'string' ? collection.title.trim() : '';
   return rawTitle;
-}
-
-function formatBrandCollectionHandle(handle) {
-  const rawHandle = typeof handle === 'string' ? handle.trim().toLowerCase() : '';
-  if (!rawHandle || rawHandle === 'apple' || rawHandle.endsWith('-products')) {
-    return rawHandle;
-  }
-  if (rawHandle === 'markryden') {
-    return 'mark-ryden-products';
-  }
-  return `${rawHandle}-products`;
 }
 
 function buildCollectionRows(menuItems, nodes) {
@@ -936,25 +910,6 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
     }
   }
 `;
-
-const BRANDS = [
-  {name: 'Apple', handle: 'apple', logo: appleLogo},
-  {name: 'HP', handle: 'hp', logo: hpLogo},
-  {name: 'Lenovo', handle: 'lenovo', logo: lenovoLogo},
-  {name: 'MSI', handle: 'msi', logo: msiLogo},
-  {name: 'Samsung', handle: 'samsung', logo: samsungLogo},
-  {name: 'Asus', handle: 'asus', logo: asusLogo},
-  {name: 'Beats', handle: 'beats', logo: beatsLogo},
-  {name: 'Anker', handle: 'anker', logo: ankerLogo},
-  {name: 'Aulumu', handle: 'aulumu', logo: aulumuLogo},
-  {name: 'Mark Ryden', handle: 'markryden', logo: markrydenLogo},
-  {name: 'Moft', handle: 'moft', logo: moftLogo},
-  {name: 'Nothing', handle: 'nothing', logo: nothingLogo},
-  {name: 'Philips', handle: 'philips', logo: philipsLogo},
-  {name: 'Powerology', handle: 'powerology', logo: powerologyLogo},
-  {name: 'Razer', handle: 'razer', logo: razerLogo},
-  {name: 'Xiaomi', handle: 'xiaomi', logo: xiaomiLogo},
-];
 
 const HERO_SLIDES = [
   {
