@@ -8,7 +8,9 @@ import {
   Scripts,
   ScrollRestoration,
   useRouteLoaderData,
+  useNavigation,
 } from 'react-router';
+import {useEffect, useState} from 'react';
 import favicon from '~/assets/mini-logo.webp';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import resetStyles from '~/styles/reset.css?url';
@@ -133,6 +135,7 @@ async function loadCriticalData({context}) {
 
   if (collectionIds.length) {
     const {nodes} = await storefront.query(MENU_COLLECTIONS_QUERY, {
+      cache: storefront.CacheLong(),
       variables: {ids: collectionIds},
     });
 
@@ -171,6 +174,7 @@ async function loadCriticalData({context}) {
       collectionHandles.map((handle) =>
         storefront
           .query(MENU_COLLECTION_BY_HANDLE_QUERY, {
+            cache: storefront.CacheLong(),
             variables: {handle},
           })
           .catch(() => null),
@@ -302,6 +306,7 @@ export function Layout({children}) {
             />
           </noscript>
         ) : null}
+        <RouteLoadingBar />
         {children}
         {wetrackedShopDomain ? (
           <>
@@ -316,6 +321,64 @@ export function Layout({children}) {
         <Scripts nonce={nonce} />
       </body>
     </html>
+  );
+}
+
+function RouteLoadingBar() {
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== 'idle';
+  const [isVisible, setIsVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let intervalId = 0;
+    let timeoutId = 0;
+
+    if (isNavigating) {
+      setIsVisible(true);
+      setProgress((current) => (current > 8 ? current : 8));
+
+      intervalId = window.setInterval(() => {
+        setProgress((current) => {
+          if (current >= 92) return current;
+          const nextStep = current < 40 ? 12 : current < 72 ? 7 : 3;
+          return Math.min(92, current + nextStep);
+        });
+      }, 180);
+
+      return () => {
+        window.clearInterval(intervalId);
+      };
+    }
+
+    if (isVisible) {
+      setProgress(100);
+      timeoutId = window.setTimeout(() => {
+        setIsVisible(false);
+        setProgress(0);
+      }, 220);
+    }
+
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isNavigating, isVisible]);
+
+  return (
+    <div
+      className={`pz-route-loading-bar${isVisible ? ' is-visible' : ''}`}
+      aria-hidden="true"
+    >
+      <span
+        className="pz-route-loading-bar-fill"
+        style={{transform: `scaleX(${progress / 100})`}}
+      />
+    </div>
   );
 }
 
@@ -359,10 +422,11 @@ function getMenuCollectionReferences(items) {
     if (!item) continue;
     if (item.type === 'COLLECTION' && item.resourceId) {
       ids.add(item.resourceId);
-    }
-    const handle = getCollectionHandleFromMenuUrl(item.url);
-    if (handle) {
-      handles.add(handle.toLowerCase());
+    } else {
+      const handle = getCollectionHandleFromMenuUrl(item.url);
+      if (handle) {
+        handles.add(handle.toLowerCase());
+      }
     }
     if (item.items?.length) {
       stack.push(...item.items);

@@ -33,6 +33,32 @@ body {
   letter-spacing: 0.01em;
 }
 
+.pz-route-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 400;
+  width: 100%;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.pz-route-loading-bar.is-visible {
+  opacity: 1;
+}
+
+.pz-route-loading-bar-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  background: var(--pz-orange, #f97316);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.55);
+  transition: transform 180ms ease-out;
+}
+
 body.no-scroll {
   overflow: hidden;
   height: 100%;
@@ -3512,6 +3538,15 @@ body>main {
 
 .pz-home {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.pz-home-deferred {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .pz-hero {
@@ -4528,6 +4563,23 @@ body>main {
   line-height: 1.35;
 }
 
+.pz-home-chatbot-skeleton .pz-home-chatbot-intro {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.pz-home-chatbot-skeleton .pz-chatbot-shell,
+.pz-home-chatbot-skeleton .pz-chatbot-form {
+  pointer-events: none;
+}
+
+.pz-home-chatbot-skeleton .pz-chatbot-thread {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.72rem;
+  background: #ffffff;
+  padding: 0.48rem 0.45rem 0.56rem;
+}
+
 .pz-chatbot-modal {
   position: fixed;
   inset: 0;
@@ -5131,6 +5183,11 @@ body>main {
   cursor: pointer;
 }
 
+.pz-instagram-card.is-skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
 .pz-instagram-card::after {
   content: '';
   position: absolute;
@@ -5179,6 +5236,107 @@ body>main {
   text-decoration: none;
 }
 
+.pz-skeleton-block {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.7rem;
+  background: linear-gradient(180deg, #e2e8f0 0%, #f1f5f9 100%);
+}
+
+.pz-skeleton-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.58) 48%,
+    transparent 100%
+  );
+  animation: pz-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+@keyframes pz-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.pz-skeleton-title {
+  width: min(280px, 58vw);
+  height: clamp(1.7rem, 3vw, 2rem);
+}
+
+.pz-skeleton-copy {
+  width: min(420px, 72vw);
+  height: 1rem;
+}
+
+.pz-skeleton-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.pz-skeleton-button {
+  width: 152px;
+  height: 2.9rem;
+  border-radius: 0.75rem;
+}
+
+.pz-skeleton-kicker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.pz-skeleton-chatbot-title {
+  width: min(180px, 46vw);
+  height: 1.15rem;
+}
+
+.pz-skeleton-chatbot-copy {
+  width: min(360px, 72vw);
+  height: 0.92rem;
+}
+
+.pz-skeleton-panel-title {
+  width: 138px;
+  height: 1.1rem;
+}
+
+.pz-skeleton-bubble {
+  height: 2.35rem;
+  border-radius: 0.82rem;
+}
+
+.pz-skeleton-bubble.is-wide {
+  width: min(320px, 86%);
+}
+
+.pz-skeleton-bubble.is-mid {
+  width: min(250px, 72%);
+}
+
+.pz-skeleton-bubble.is-short {
+  width: min(210px, 64%);
+}
+
+.pz-skeleton-input {
+  flex: 1;
+  height: 1.1rem;
+  border-radius: 999px;
+}
+
+.pz-skeleton-send {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  flex: 0 0 2rem;
+}
+
 @media (max-width: 768px) {
   .pz-hero-dots {
     bottom: 0.6rem;
@@ -5217,6 +5375,11 @@ body>main {
     padding: 0.75rem 1.45rem;
     border-radius: 0.65rem;
     font-size: 0.84rem;
+  }
+
+  .pz-skeleton-button {
+    height: 2.65rem;
+    border-radius: 0.65rem;
   }
 
   .pz-home-chatbot {
@@ -5444,6 +5607,65 @@ body>main {
 .pz-product-card:hover {
   box-shadow: var(--card-shadow);
   transform: translateY(-5px);
+}
+
+.pz-product-card-skeleton {
+  pointer-events: none;
+}
+
+.pz-product-card-skeleton:hover {
+  transform: none;
+}
+
+.pz-skeleton-product-media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.75rem;
+}
+
+.pz-product-card-skeleton .pz-product-meta {
+  display: grid;
+  gap: 0.42rem;
+  margin-top: 0.75rem;
+}
+
+.pz-product-card-skeleton .pz-product-card-footer {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.pz-skeleton-product-vendor {
+  width: 82px;
+  height: 0.72rem;
+}
+
+.pz-skeleton-product-title {
+  width: 100%;
+  height: 0.92rem;
+}
+
+.pz-skeleton-product-title.is-secondary {
+  width: 72%;
+}
+
+.pz-skeleton-product-swatches {
+  width: 96px;
+  height: 1.55rem;
+}
+
+.pz-skeleton-product-price {
+  width: 88px;
+  height: 0.95rem;
+}
+
+.pz-skeleton-product-add {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.85rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 999px;
 }
 
 .pz-product-card-link {
