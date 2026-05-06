@@ -1,5 +1,5 @@
 import {lazy, Suspense, useEffect, useRef, useState} from 'react';
-import {Link, useFetcher, useLoaderData} from 'react-router';
+import {Await, Link, useFetcher, useLoaderData} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {ArrowIcon} from '~/components/Icons';
 import {BRANDS} from '~/lib/brands';
@@ -46,52 +46,25 @@ export async function loader({context}) {
   ]);
 
   const mainMenuCollections = getMainMenuCollections(menuData?.menu?.items);
-  let menuCollections = [];
-
-  if (mainMenuCollections.length) {
-    const itemsWithIds = mainMenuCollections.filter((item) => item.resourceId);
-    const itemsWithoutIds = mainMenuCollections.filter(
-      (item) => !item.resourceId && item.handle,
-    );
-
-    let collectionsById = [];
-    let collectionsByHandle = [];
-
-    if (itemsWithIds.length) {
-      const {nodes} = await storefront.query(MENU_COLLECTION_ROWS_QUERY, {
-        cache: storefront.CacheLong(),
-        variables: {ids: itemsWithIds.map((item) => item.resourceId)},
-      });
-      collectionsById = nodes || [];
-    }
-
-    if (itemsWithoutIds.length) {
-      const handleResults = await Promise.all(
-        itemsWithoutIds.map((item) =>
-          storefront
-            .query(COLLECTION_ROW_BY_HANDLE_QUERY, {
-              cache: storefront.CacheLong(),
-              variables: {handle: item.handle},
-            })
-            .catch(() => null),
-        ),
-      );
-
-      collectionsByHandle = handleResults
-        .map((result) => result?.collection)
-        .filter(Boolean);
-    }
-
-    menuCollections = buildCollectionRows(mainMenuCollections, [
-      ...collectionsById,
-      ...collectionsByHandle,
-    ]);
-  }
+  const menuCollectionsPromise = mainMenuCollections.length
+    ? fetchMenuCollectionNodes(storefront, mainMenuCollections, {
+        queryById: MENU_COLLECTION_META_QUERY,
+        queryByHandle: COLLECTION_META_BY_HANDLE_QUERY,
+      }).then((nodes) => buildCollectionCards(mainMenuCollections, nodes))
+    : Promise.resolve([]);
+  const deferredMenuCollectionRows = mainMenuCollections.length
+    ? fetchMenuCollectionNodes(storefront, mainMenuCollections, {
+        queryById: MENU_COLLECTION_ROWS_QUERY,
+        queryByHandle: COLLECTION_ROW_BY_HANDLE_QUERY,
+      }).then((nodes) => buildCollectionRows(mainMenuCollections, nodes))
+    : Promise.resolve([]);
+  const menuCollections = await menuCollectionsPromise;
 
   return {
     products: homeData?.products?.nodes || [],
     productsPageInfo: normalizeConnectionPageInfo(homeData?.products?.pageInfo),
     menuCollections,
+    deferredMenuCollectionRows,
   };
 }
 
@@ -100,17 +73,14 @@ export default function Homepage() {
    * @type {{
    *   products: HomeProduct[];
    *   productsPageInfo: ConnectionPageInfo;
-   *   menuCollections: HomeCollectionRow[];
+   *   menuCollections: HomeCollectionCard[];
+   *   deferredMenuCollectionRows: Promise<HomeCollectionRow[]>;
    * }}
    */
   const data = useLoaderData();
   const products = data.products || [];
   const productsPageInfo = data.productsPageInfo || EMPTY_PAGE_INFO;
   const menuCollections = data.menuCollections || [];
-  const visibleMenuCollections = menuCollections.filter(
-    (collection) =>
-      Array.isArray(collection?.products) && collection.products.length > 0,
-  );
   const carouselBrands = [
     ...BRANDS.map((brand) => ({...brand, copy: 'a'})),
     ...BRANDS.map((brand) => ({...brand, copy: 'b'})),
@@ -286,12 +256,19 @@ export default function Homepage() {
               aria-label={slide.alt}
               onClick={handleHeroSlideClick}
             >
-              <img
-                src={slide.desktop}
-                alt={slide.alt}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                draggable={false}
-              />
+              <picture>
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={withImageWidth(slide.desktop, 700)}
+                />
+                <img
+                  src={withImageWidth(slide.desktop, 1500)}
+                  alt={slide.alt}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : undefined}
+                  draggable={false}
+                />
+              </picture>
             </Link>
           ))}
 
@@ -373,9 +350,9 @@ export default function Homepage() {
             </Link> */}
           </div>
 
-          {visibleMenuCollections.length ? (
+          {menuCollections.length ? (
             <div className="pz-collection-card-row">
-              {visibleMenuCollections.map((collection) => (
+              {menuCollections.map((collection) => (
                 <Link
                   key={collection.id}
                   to={`/collections/${collection.handle}`}
@@ -416,18 +393,32 @@ export default function Homepage() {
         </div>
       </section>
 
-      {visibleMenuCollections.map((collection) => (
-        <HomeProductRowSection
-          key={`row-${collection.id}`}
-          className="pz-home-collection-products"
-          title={formatCollectionTitle(collection)}
-          linkTo={`/collections/${collection.handle}`}
-          initialProducts={collection.products}
-          initialPageInfo={collection.productsPageInfo}
-          loadSource={{handle: collection.handle}}
-          itemKeyPrefix={collection.id}
-        />
-      ))}
+      {menuCollections.length ? (
+        <Suspense fallback={<HomeCollectionRowsSkeleton collections={menuCollections} />}>
+          <Await resolve={data.deferredMenuCollectionRows}>
+            {(collectionRows) =>
+              (collectionRows || [])
+                .filter(
+                  (collection) =>
+                    Array.isArray(collection?.products) &&
+                    collection.products.length > 0,
+                )
+                .map((collection) => (
+                  <HomeProductRowSection
+                    key={`row-${collection.id}`}
+                    className="pz-home-collection-products"
+                    title={formatCollectionTitle(collection)}
+                    linkTo={`/collections/${collection.handle}`}
+                    initialProducts={collection.products}
+                    initialPageInfo={collection.productsPageInfo}
+                    loadSource={{handle: collection.handle}}
+                    itemKeyPrefix={collection.id}
+                  />
+                ))
+            }
+          </Await>
+        </Suspense>
+      ) : null}
 
       <DeferredHomeSection skeleton={<InstagramFeedSectionSkeleton />}>
         <InstagramFeedSection />
@@ -653,6 +644,55 @@ function DeferredHomeSection({children, skeleton}) {
   );
 }
 
+function HomeCollectionRowsSkeleton({collections}) {
+  return (collections || []).map((collection) => (
+    <HomeProductRowSectionSkeleton
+      key={`row-skeleton-${collection.id}`}
+      className="pz-home-collection-products"
+      title={formatCollectionTitle(collection)}
+    />
+  ));
+}
+
+function HomeProductRowSectionSkeleton({title, kicker, className = ''}) {
+  const titleWidth = `${Math.min(Math.max(title.length + 2, 12), 28)}ch`;
+
+  return (
+    <section
+      className={`pz-home-section ${className}`.trim()}
+      aria-hidden="true"
+    >
+      <div className="pz-shell">
+        <div className="pz-section-head pz-section-head-row pz-home-row-skeleton-head">
+          <div className="pz-home-row-skeleton-copy">
+            {kicker ? (
+              <span
+                className="pz-skeleton-block pz-home-row-skeleton-kicker"
+                style={{width: `${Math.min(Math.max(kicker.length + 2, 10), 20)}ch`}}
+              />
+            ) : null}
+            <span
+              className="pz-skeleton-block pz-home-row-skeleton-title"
+              style={{width: titleWidth}}
+            />
+          </div>
+          <span className="pz-skeleton-block pz-home-row-skeleton-link" />
+        </div>
+        <div className="pz-product-carousel pz-collection-product-carousel">
+          {Array.from({length: PRODUCT_ROW_INITIAL_COUNT}, (_, index) => (
+            <div
+              className="pz-product-carousel-item"
+              key={`row-skeleton-card-${title}-${index}`}
+            >
+              <ProductCardSkeleton />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function InstagramFeedSectionSkeleton() {
   return (
     <section
@@ -762,28 +802,73 @@ function getMainMenuCollections(items) {
     });
 }
 
+async function fetchMenuCollectionNodes(storefront, menuItems, queries) {
+  const itemsWithIds = menuItems.filter((item) => item.resourceId);
+  const itemsWithoutIds = menuItems.filter(
+    (item) => !item.resourceId && item.handle,
+  );
+
+  let collectionsById = [];
+  let collectionsByHandle = [];
+
+  if (itemsWithIds.length) {
+    const {nodes} = await storefront.query(queries.queryById, {
+      cache: storefront.CacheLong(),
+      variables: {ids: itemsWithIds.map((item) => item.resourceId)},
+    });
+    collectionsById = nodes || [];
+  }
+
+  if (itemsWithoutIds.length) {
+    const handleResults = await Promise.all(
+      itemsWithoutIds.map((item) =>
+        storefront
+          .query(queries.queryByHandle, {
+            cache: storefront.CacheLong(),
+            variables: {handle: item.handle},
+          })
+          .catch(() => null),
+      ),
+    );
+
+    collectionsByHandle = handleResults
+      .map((result) => result?.collection)
+      .filter(Boolean);
+  }
+
+  return [...collectionsById, ...collectionsByHandle];
+}
+
 function formatCollectionTitle(collection) {
   const rawTitle =
     typeof collection?.title === 'string' ? collection.title.trim() : '';
   return rawTitle;
 }
 
-function buildCollectionRows(menuItems, nodes) {
-  const collectionNodes = (nodes || []).filter(
-    (node) => node?.__typename === 'Collection',
-  );
-  const collectionById = new Map(collectionNodes.map((collection) => [collection.id, collection]));
-  const collectionByHandle = new Map(
-    collectionNodes
-      .filter((collection) => collection?.handle)
-      .map((collection) => [collection.handle.toLowerCase(), collection]),
-  );
+function buildCollectionCards(menuItems, nodes) {
+  const lookups = createCollectionLookups(nodes);
 
   return menuItems
     .map((item) => {
-      const collection =
-        (item.resourceId ? collectionById.get(item.resourceId) : null) ||
-        (item.handle ? collectionByHandle.get(item.handle.toLowerCase()) : null);
+      const collection = getMenuCollectionMatch(item, lookups);
+      if (!collection?.handle) return null;
+
+      return {
+        id: collection.id,
+        title: collection.title || item.title,
+        handle: collection.handle,
+        image: pickCollectionImage(collection),
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildCollectionRows(menuItems, nodes) {
+  const lookups = createCollectionLookups(nodes);
+
+  return menuItems
+    .map((item) => {
+      const collection = getMenuCollectionMatch(item, lookups);
       if (!collection?.handle) return null;
 
       return {
@@ -796,6 +881,32 @@ function buildCollectionRows(menuItems, nodes) {
       };
     })
     .filter(Boolean);
+}
+
+function createCollectionLookups(nodes) {
+  const collectionNodes = (nodes || []).filter(
+    (node) => node?.__typename === 'Collection',
+  );
+
+  return {
+    collectionById: new Map(
+      collectionNodes.map((collection) => [collection.id, collection]),
+    ),
+    collectionByHandle: new Map(
+      collectionNodes
+        .filter((collection) => collection?.handle)
+        .map((collection) => [collection.handle.toLowerCase(), collection]),
+    ),
+  };
+}
+
+function getMenuCollectionMatch(item, lookups) {
+  return (
+    (item.resourceId ? lookups.collectionById.get(item.resourceId) : null) ||
+    (item.handle
+      ? lookups.collectionByHandle.get(item.handle.toLowerCase())
+      : null)
+  );
 }
 
 function normalizeConnectionPageInfo(pageInfo) {
@@ -980,19 +1091,19 @@ const HOME_MENU_QUERY = `#graphql
   }
 `;
 
-const MENU_COLLECTION_ROWS_QUERY = `#graphql
-  query HomeMenuCollections(
+const MENU_COLLECTION_META_QUERY = `#graphql
+  query HomeMenuCollectionMeta(
     $country: CountryCode
     $language: LanguageCode
     $ids: [ID!]!
   ) @inContext(country: $country, language: $language) {
     nodes(ids: $ids) {
       __typename
-      ...HomeMenuCollectionNode
+      ...HomeMenuCollectionMetaNode
     }
   }
 
-  fragment HomeMenuCollectionNode on Collection {
+  fragment HomeMenuCollectionMetaNode on Collection {
     id
     title
     handle
@@ -1012,6 +1123,56 @@ const MENU_COLLECTION_ROWS_QUERY = `#graphql
         }
       }
     }
+  }
+`;
+
+const COLLECTION_META_BY_HANDLE_QUERY = `#graphql
+  query HomeCollectionMetaByHandle(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      __typename
+      id
+      title
+      handle
+      image {
+        url
+        altText
+        width
+        height
+      }
+      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
+        nodes {
+          featuredImage {
+            url
+            altText
+            width
+            height
+          }
+        }
+      }
+    }
+  }
+`;
+
+const MENU_COLLECTION_ROWS_QUERY = `#graphql
+  query HomeMenuCollections(
+    $country: CountryCode
+    $language: LanguageCode
+    $ids: [ID!]!
+  ) @inContext(country: $country, language: $language) {
+    nodes(ids: $ids) {
+      __typename
+      ...HomeMenuCollectionNode
+    }
+  }
+
+  fragment HomeMenuCollectionNode on Collection {
+    id
+    title
+    handle
     products(first: 6, sortKey: BEST_SELLING) {
       nodes {
         ...HomeCollectionProductCard
@@ -1104,22 +1265,6 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
       id
       title
       handle
-      image {
-        url
-        altText
-        width
-        height
-      }
-      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {
-        nodes {
-          featuredImage {
-            url
-            altText
-            width
-            height
-          }
-        }
-      }
       products(first: 6, sortKey: BEST_SELLING) {
         nodes {
           id
@@ -1237,6 +1382,19 @@ const HERO_SWIPE_THRESHOLD_PX = 46;
  *   id: string;
  *   title: string;
  *   handle: string;
+ *   image: {
+ *     url?: string;
+ *     altText?: string | null;
+ *     width?: number | null;
+ *     height?: number | null;
+ *   } | null;
+ * }} HomeCollectionCard
+ */
+/**
+ * @typedef {{
+ *   id: string;
+ *   title: string;
+  *   handle: string;
  *   image: {
  *     url?: string;
  *     altText?: string | null;

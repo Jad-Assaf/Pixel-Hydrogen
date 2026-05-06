@@ -620,7 +620,7 @@ export type HomeMenuQuery = {
   >;
 };
 
-export type HomeMenuCollectionsQueryVariables = StorefrontAPI.Exact<{
+export type HomeMenuCollectionMetaQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   ids:
@@ -628,7 +628,7 @@ export type HomeMenuCollectionsQueryVariables = StorefrontAPI.Exact<{
     | StorefrontAPI.Scalars['ID']['input'];
 }>;
 
-export type HomeMenuCollectionsQuery = {
+export type HomeMenuCollectionMetaQuery = {
   nodes: Array<
     StorefrontAPI.Maybe<
       | {
@@ -690,6 +690,110 @@ export type HomeMenuCollectionsQuery = {
                 >;
               }>;
             };
+          })
+    >
+  >;
+};
+
+export type HomeMenuCollectionMetaNodeFragment = Pick<
+  StorefrontAPI.Collection,
+  'id' | 'title' | 'handle'
+> & {
+  image?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+  >;
+  latestProduct: {
+    nodes: Array<{
+      featuredImage?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+      >;
+    }>;
+  };
+};
+
+export type HomeCollectionMetaByHandleQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type HomeCollectionMetaByHandleQuery = {
+  collection?: StorefrontAPI.Maybe<
+    {__typename: 'Collection'} & Pick<
+      StorefrontAPI.Collection,
+      'id' | 'title' | 'handle'
+    > & {
+        image?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+        >;
+        latestProduct: {
+          nodes: Array<{
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
+            >;
+          }>;
+        };
+      }
+  >;
+};
+
+export type HomeMenuCollectionsQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  ids:
+    | Array<StorefrontAPI.Scalars['ID']['input']>
+    | StorefrontAPI.Scalars['ID']['input'];
+}>;
+
+export type HomeMenuCollectionsQuery = {
+  nodes: Array<
+    StorefrontAPI.Maybe<
+      | {
+          __typename:
+            | 'AppliedGiftCard'
+            | 'Article'
+            | 'Blog'
+            | 'Cart'
+            | 'CartLine'
+            | 'Comment'
+            | 'Company'
+            | 'CompanyContact'
+            | 'CompanyLocation'
+            | 'ComponentizableCartLine'
+            | 'ExternalVideo'
+            | 'GenericFile'
+            | 'Location'
+            | 'MailingAddress'
+            | 'Market'
+            | 'MediaImage'
+            | 'MediaPresentation'
+            | 'Menu'
+            | 'MenuItem'
+            | 'Metafield';
+        }
+      | {
+          __typename:
+            | 'Metaobject'
+            | 'Model3d'
+            | 'Order'
+            | 'Page'
+            | 'Product'
+            | 'ProductOption'
+            | 'ProductOptionValue'
+            | 'ProductVariant'
+            | 'Shop'
+            | 'ShopPayInstallmentsFinancingPlan'
+            | 'ShopPayInstallmentsFinancingPlanTerm'
+            | 'ShopPayInstallmentsProductVariantPricing'
+            | 'ShopPolicy'
+            | 'TaxonomyCategory'
+            | 'UrlRedirect'
+            | 'Video';
+        }
+      | ({__typename: 'Collection'} & Pick<
+          StorefrontAPI.Collection,
+          'id' | 'title' | 'handle'
+        > & {
             products: {
               nodes: Array<
                 Pick<
@@ -772,16 +876,6 @@ export type HomeMenuCollectionNodeFragment = Pick<
   StorefrontAPI.Collection,
   'id' | 'title' | 'handle'
 > & {
-  image?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
-  >;
-  latestProduct: {
-    nodes: Array<{
-      featuredImage?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
-      >;
-    }>;
-  };
   products: {
     nodes: Array<
       Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'vendor'> & {
@@ -907,16 +1001,6 @@ export type HomeCollectionRowByHandleQuery = {
       StorefrontAPI.Collection,
       'id' | 'title' | 'handle'
     > & {
-        image?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
-        >;
-        latestProduct: {
-          nodes: Array<{
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
-            >;
-          }>;
-        };
         products: {
           nodes: Array<
             Pick<
@@ -2860,11 +2944,19 @@ interface GeneratedQueryTypes {
     return: HomeMenuQuery;
     variables: HomeMenuQueryVariables;
   };
-  '#graphql\n  query HomeMenuCollections(\n    $country: CountryCode\n    $language: LanguageCode\n    $ids: [ID!]!\n  ) @inContext(country: $country, language: $language) {\n    nodes(ids: $ids) {\n      __typename\n      ...HomeMenuCollectionNode\n    }\n  }\n\n  fragment HomeMenuCollectionNode on Collection {\n    id\n    title\n    handle\n    image {\n      url\n      altText\n      width\n      height\n    }\n    latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {\n      nodes {\n        featuredImage {\n          url\n          altText\n          width\n          height\n        }\n      }\n    }\n    products(first: 6, sortKey: BEST_SELLING) {\n      nodes {\n        ...HomeCollectionProductCard\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n\n  fragment HomeCollectionMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  fragment HomeCollectionProductCard on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeCollectionMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...HomeCollectionMoney\n      }\n      compareAtPrice {\n        ...HomeCollectionMoney\n      }\n    }\n    variants(first: 12) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...HomeCollectionMoney\n        }\n        compareAtPrice {\n          ...HomeCollectionMoney\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query HomeMenuCollectionMeta(\n    $country: CountryCode\n    $language: LanguageCode\n    $ids: [ID!]!\n  ) @inContext(country: $country, language: $language) {\n    nodes(ids: $ids) {\n      __typename\n      ...HomeMenuCollectionMetaNode\n    }\n  }\n\n  fragment HomeMenuCollectionMetaNode on Collection {\n    id\n    title\n    handle\n    image {\n      url\n      altText\n      width\n      height\n    }\n    latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {\n      nodes {\n        featuredImage {\n          url\n          altText\n          width\n          height\n        }\n      }\n    }\n  }\n': {
+    return: HomeMenuCollectionMetaQuery;
+    variables: HomeMenuCollectionMetaQueryVariables;
+  };
+  '#graphql\n  query HomeCollectionMetaByHandle(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      __typename\n      id\n      title\n      handle\n      image {\n        url\n        altText\n        width\n        height\n      }\n      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {\n        nodes {\n          featuredImage {\n            url\n            altText\n            width\n            height\n          }\n        }\n      }\n    }\n  }\n': {
+    return: HomeCollectionMetaByHandleQuery;
+    variables: HomeCollectionMetaByHandleQueryVariables;
+  };
+  '#graphql\n  query HomeMenuCollections(\n    $country: CountryCode\n    $language: LanguageCode\n    $ids: [ID!]!\n  ) @inContext(country: $country, language: $language) {\n    nodes(ids: $ids) {\n      __typename\n      ...HomeMenuCollectionNode\n    }\n  }\n\n  fragment HomeMenuCollectionNode on Collection {\n    id\n    title\n    handle\n    products(first: 6, sortKey: BEST_SELLING) {\n      nodes {\n        ...HomeCollectionProductCard\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n\n  fragment HomeCollectionMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  fragment HomeCollectionProductCard on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...HomeCollectionMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...HomeCollectionMoney\n      }\n      compareAtPrice {\n        ...HomeCollectionMoney\n      }\n    }\n    variants(first: 12) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...HomeCollectionMoney\n        }\n        compareAtPrice {\n          ...HomeCollectionMoney\n        }\n      }\n    }\n  }\n': {
     return: HomeMenuCollectionsQuery;
     variables: HomeMenuCollectionsQueryVariables;
   };
-  '#graphql\n  query HomeCollectionRowByHandle(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      __typename\n      id\n      title\n      handle\n      image {\n        url\n        altText\n        width\n        height\n      }\n      latestProduct: products(first: 1, sortKey: CREATED, reverse: true) {\n        nodes {\n          featuredImage {\n            url\n            altText\n            width\n            height\n          }\n        }\n      }\n      products(first: 6, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          handle\n          title\n          vendor\n          featuredImage {\n            id\n            altText\n            url\n            width\n            height\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            image {\n              id\n              altText\n              url\n              width\n              height\n            }\n            selectedOptions {\n              name\n              value\n            }\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 12) {\n            nodes {\n              id\n              title\n              availableForSale\n              image {\n                id\n                altText\n                url\n                width\n                height\n              }\n              selectedOptions {\n                name\n                value\n              }\n              price {\n                amount\n                currencyCode\n              }\n              compareAtPrice {\n                amount\n                currencyCode\n              }\n            }\n          }\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query HomeCollectionRowByHandle(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      __typename\n      id\n      title\n      handle\n      products(first: 6, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          handle\n          title\n          vendor\n          featuredImage {\n            id\n            altText\n            url\n            width\n            height\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            image {\n              id\n              altText\n              url\n              width\n              height\n            }\n            selectedOptions {\n              name\n              value\n            }\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 12) {\n            nodes {\n              id\n              title\n              availableForSale\n              image {\n                id\n                altText\n                url\n                width\n                height\n              }\n              selectedOptions {\n                name\n                value\n              }\n              price {\n                amount\n                currencyCode\n              }\n              compareAtPrice {\n                amount\n                currencyCode\n              }\n            }\n          }\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
     return: HomeCollectionRowByHandleQuery;
     variables: HomeCollectionRowByHandleQueryVariables;
   };

@@ -3579,6 +3579,12 @@ body>main {
   pointer-events: auto;
 }
 
+.pz-hero-slide picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .pz-hero-slide img {
   width: 100%;
   height: 100%;
@@ -5505,6 +5511,34 @@ body>main {
   margin: 0.2rem 0 0;
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   letter-spacing: -0.03em;
+}
+
+.pz-home-row-skeleton-head {
+  min-height: calc(clamp(1.6rem, 4vw, 2.2rem) + 1.35rem);
+}
+
+.pz-home-row-skeleton-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.pz-home-row-skeleton-kicker {
+  width: 11ch;
+  height: 0.72rem;
+  border-radius: 999px;
+}
+
+.pz-home-row-skeleton-title {
+  width: 18ch;
+  height: clamp(2rem, 4vw, 2.45rem);
+  border-radius: 0.9rem;
+}
+
+.pz-home-row-skeleton-link {
+  width: 74px;
+  height: 1.15rem;
+  border-radius: 999px;
+  align-self: center;
 }
 
 .pz-carousel-controls {
