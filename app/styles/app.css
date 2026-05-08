@@ -4161,10 +4161,6 @@ body>main {
   padding-top: 1.1rem;
 }
 
-.pz-brand-products-only {
-  padding-top: 1.8rem;
-}
-
 .pz-brand-section-head {
   margin-bottom: 0.95rem;
 }
@@ -4446,6 +4442,7 @@ body>main {
   .pz-brand-related-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
 }
 
 @media (max-width: 720px) {
@@ -4494,6 +4491,7 @@ body>main {
   .pz-brand-strip-head {
     align-items: end;
   }
+
 }
 
 @media (max-width: 520px) {

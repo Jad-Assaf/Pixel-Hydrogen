@@ -1,0 +1,134 @@
+.pz-main:has(.pz-brand-page) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.pz-brand-page--beats {
+  padding-top: 0;
+  background: transparent;
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  overflow-x: clip;
+}
+
+.pz-brand-page--beats .pz-shell {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pz-brand-banner-section {
+  width: 100%;
+  max-width: 100%;
+  padding-top: 0;
+}
+
+.pz-brand-feature-block + .pz-brand-feature-block {
+  margin-top: 1.8rem;
+}
+
+.pz-brand-banner-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.4rem;
+}
+
+.pz-brand-banner-card picture {
+  display: block;
+}
+
+.pz-brand-banner-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+}
+
+.pz-brand-banner-copy {
+  position: absolute;
+  top: clamp(1rem, 3vw, 2.2rem);
+  left: clamp(1rem, 3vw, 2.2rem);
+  z-index: 1;
+  max-width: min(30rem, 78vw);
+}
+
+.pz-brand-banner-copy p {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(0.84rem, 1vw, 0.98rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pz-brand-banner-copy h1 {
+  margin: 0.4rem 0 0;
+  color: #fff;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  line-height: 0.94;
+  letter-spacing: -0.05em;
+}
+
+.pz-brand-banner-copy--dark p,
+.pz-brand-banner-copy--dark h1 {
+  color: #111;
+}
+
+.pz-brand-banner-copy--bottom {
+  top: auto;
+  bottom: clamp(1rem, 3vw, 2.2rem);
+  transform: none;
+}
+
+.pz-brand-products-only {
+  padding-top: 1.8rem;
+}
+
+.pz-brand-variant-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pz-brand-variant-card .pz-product-meta {
+  gap: 0.4rem;
+}
+
+.pz-brand-variant-label {
+  margin: 0;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 1080px) {
+  .pz-brand-variant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .pz-brand-banner-card {
+    border-radius: 1rem;
+  }
+
+  .pz-brand-banner-copy {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    max-width: none;
+  }
+
+  .pz-brand-banner-copy--bottom {
+    top: auto;
+    bottom: 1rem;
+  }
+
+  .pz-brand-banner-copy h1 {
+    font-size: clamp(1.6rem, 8vw, 2.6rem);
+  }
+
+  .pz-brand-variant-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
