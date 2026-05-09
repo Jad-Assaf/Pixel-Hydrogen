@@ -24,17 +24,17 @@ const BEATS_SECTIONS = [
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/power.jpg?v=1778219364',
     eyebrow: 'Powerbeats Pro 2',
     headline: 'Built for athletes.',
+    splitVariantsBy: 'color',
     productHandles: ['beats-powerbeats-pro-2-high-performance-earbuds'],
   },
   {
     id: 'beats-headphones',
     bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/beats_1a9104d9-317a-4720-b590-f889e319f2ec.jpg?v=1778181616',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/beats-heaphones.jpg?v=1778320522',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/beats-head_2ec3f205-f800-40bb-b138-568b12d06b8f.jpg?v=1778219855',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/beats-headphones-mob.jpg?v=1778320596',
     headline: 'Lifestyle Headphones',
-    copyTone: 'dark',
-    copyPosition: 'bottom',
+    splitVariantsBy: 'color',
     productHandles: [
       'beats-solo-4-on-ear-wireless-headphones',
       'beats-studio-pro-wireless-headphones',
@@ -49,6 +49,7 @@ const BEATS_SECTIONS = [
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/pill-beats_af08eb8f-8231-4115-b603-0c79ab7a3a93.jpg?v=1778219855',
     headline: 'More Than Just A Speaker',
     copyTone: 'dark',
+    splitVariantsBy: 'color',
     productHandles: [
       'beats-pill-wireless-bluetooth-speaker-powerful-portable-audio-24-hour-battery-ip67-water-dust-resistance',
     ],
@@ -61,8 +62,10 @@ const BEATS_SECTIONS = [
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ear-beats_80164eb2-d6e6-41bb-ba3b-0aa85a2e5d99.jpg?v=1778219855',
     headline: 'Power Your Workouts',
     copyTone: 'dark',
+    splitVariantsBy: 'color',
     productHandles: [
       'beats-solo-buds-true-wireless-earbuds',
+      'beats-solo-buds-festive-special-edition-true-wireless-earbuds',
       'beats-powerbeats-fit-wireless-fitness-earbuds-with-secure-fit',
       'beats-studio-buds-plus-transparent',
     ],
@@ -74,6 +77,8 @@ const BEATS_SECTIONS = [
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/beats-cover_0210734e-f67f-41d8-9af0-1d8652086f07.jpg?v=1778219855',
     headline: 'Style and Durability',
+    splitVariantsBy: 'none',
+    showVariantLabel: false,
     productHandles: [
       'beats-iphone-17-rugged-case-with-magsafe-and-camera-control-sierra-orange',
       'beats-iphone-17-and-iphone-17-air-rugged-case-with-magsafe-alpine-gray',
@@ -169,9 +174,10 @@ function BeatsBrandRoute({brand, products}) {
           .map((handle) => productsByHandle.get(handle))
           .filter(Boolean);
         const sectionVariants = sectionProducts.flatMap((product) =>
-          (product?.variants?.nodes || [])
-            .filter((variant) => variant?.id)
-            .map((variant) => ({product, variant})),
+          getProductCardEntries(product, section.splitVariantsBy).map((variant) => ({
+            product,
+            variant,
+          })),
         );
 
         return (
@@ -223,6 +229,7 @@ function BeatsBrandRoute({brand, products}) {
                         brand={brand}
                         product={product}
                         variant={variant}
+                        showVariantLabel={section.showVariantLabel !== false}
                         loading={sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'}
                       />
                     ))}
@@ -242,7 +249,13 @@ function BeatsBrandRoute({brand, products}) {
   );
 }
 
-function BeatsVariantCard({brand, product, variant, loading}) {
+function BeatsVariantCard({
+  brand,
+  product,
+  variant,
+  loading,
+  showVariantLabel = true,
+}) {
   const variantUrl = useVariantUrl(product.handle, variant.selectedOptions || []);
   const displayImage = variant.image || product.featuredImage;
   const imageUrl = displayImage?.url ? withImageWidth(displayImage.url, 600) : null;
@@ -272,7 +285,9 @@ function BeatsVariantCard({brand, product, variant, loading}) {
             <span>{(brand.name || product.vendor || 'TECH').toUpperCase()}</span>
           </div>
           <h3>{product.title}</h3>
-          <p className="pz-brand-variant-label">{label}</p>
+          {showVariantLabel ? (
+            <p className="pz-brand-variant-label">{label}</p>
+          ) : null}
         </div>
       </Link>
 
@@ -530,6 +545,40 @@ function getVariantLabel(variant) {
   if (colorOption?.value) return colorOption.value;
   if (variant?.title && variant.title !== 'Default Title') return variant.title;
   return 'Variant';
+}
+
+function getColorOptionValue(variant) {
+  return (
+    (variant?.selectedOptions || []).find((option) =>
+      /colou?r/i.test(option?.name || ''),
+    )?.value || null
+  );
+}
+
+function getProductCardEntries(product, splitVariantsBy = 'color') {
+  const variants = (product?.variants?.nodes || []).filter((variant) => variant?.id);
+  const fallbackVariant =
+    product?.selectedOrFirstAvailableVariant || variants[0] || null;
+
+  if (splitVariantsBy !== 'color') {
+    return fallbackVariant ? [fallbackVariant] : [];
+  }
+
+  const seenColors = new Set();
+  const colorVariants = variants.filter((variant) => {
+    const colorValue = getColorOptionValue(variant);
+    if (!colorValue) return false;
+    const colorKey = colorValue.toLowerCase();
+    if (seenColors.has(colorKey)) return false;
+    seenColors.add(colorKey);
+    return true;
+  });
+
+  if (colorVariants.length) {
+    return colorVariants;
+  }
+
+  return fallbackVariant ? [fallbackVariant] : [];
 }
 
 function mergeProducts(currentProducts, nextProducts) {
