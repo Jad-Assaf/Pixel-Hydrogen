@@ -84,6 +84,10 @@ const BEATS_SECTIONS = [
       'beats-iphone-17-and-iphone-17-air-rugged-case-with-magsafe-alpine-gray',
       'beats-iphone-17-rugged-case-with-magsafe-and-camera-control-everest-black',
       'beats-iphone-17-rugged-case-with-magsafe-and-camera-control-rocky-blue',
+      'beats-iphone-17-series-case-magsafe-and-camera-control-granite-gray',
+      'beats-iphone-17-series-case-with-magsafe-and-camera-control-bedrock-blue',
+      'beats-iphone-17-series-case-with-magsafe-and-camera-control-lime-stone',
+      'beats-iphone-17-series-case-with-magsafe-and-camera-control-pebble-pink',
     ],
   },
 ];
