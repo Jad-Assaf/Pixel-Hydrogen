@@ -3720,6 +3720,7 @@ body>main {
   filter: grayscale(1);
   opacity: 1;
   transition: filter 220ms ease, transform 220ms ease;
+  border-radius: 1rem;
 }
 
 .pz-brand-logo-link:hover img {
@@ -4461,7 +4462,18 @@ body>main {
   }
 
   .pz-brand-directory-grid--logos {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .pz-brand-directory-logo-card {
+    min-height: clamp(4.9rem, 18vw, 6.6rem);
+    padding: 0;
+    border-radius: 0.8rem;
+  }
+
+  .pz-brand-directory-grid--logos .pz-brand-directory-logo {
+    min-height: clamp(3.5rem, 15vw, 4.8rem);
   }
 
   .pz-brand-hero-shell {
@@ -4496,7 +4508,8 @@ body>main {
 
 @media (max-width: 520px) {
   .pz-brand-directory-grid--logos {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
   }
 }
 
