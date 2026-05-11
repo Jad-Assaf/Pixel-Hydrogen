@@ -4329,6 +4329,10 @@ body>main {
     linear-gradient(145deg, rgba(3, 14, 9, 0.96), rgba(10, 22, 16, 0.94));
 }
 
+.pz-brand-page--arena .pz-brand-hero :is(h1, p) {
+  color: #000;
+}
+
 .pz-brand-page--arena .pz-brand-summary,
 .pz-brand-page--arena .pz-brand-headline,
 .pz-brand-page--arena .pz-brand-stage-card p,
@@ -4346,7 +4350,7 @@ body>main {
 .pz-brand-page--arena .pz-brand-focus-card h3,
 .pz-brand-page--arena .pz-brand-related-copy h3,
 .pz-brand-page--arena .pz-brand-empty h3 {
-  color: #f8fafc;
+  color: #000;
 }
 
 .pz-brand-page--arena .pz-brand-stage-panel,
@@ -4358,6 +4362,11 @@ body>main {
 .pz-brand-page--arena .pz-brand-empty {
   background: rgba(10, 22, 16, 0.72);
   border-color: rgba(51, 65, 85, 0.4);
+}
+
+.pz-brand-page--arena .pz-brand-stage-panel {
+  background: #fff;
+  border-color: #fff;
 }
 
 .pz-brand-page--arena .pz-brand-cta--ghost {
