@@ -264,26 +264,6 @@ function BlackSharkBrandRoute({brand, collection, sections}) {
         </nav>
       </div>
 
-      <header className="pz-brand-hero">
-        <div className="pz-shell pz-brand-hero-shell">
-          <div className="pz-brand-hero-copy">
-            <p className="pz-brand-eyebrow">{brand.eyebrow}</p>
-            <h1>{brand.name}</h1>
-            <p className="pz-brand-headline">{brand.headline}</p>
-            <p className="pz-brand-summary">{brand.summary}</p>
-          </div>
-
-          <div className="pz-brand-stage" aria-hidden="true">
-            <div className="pz-brand-stage-panel">
-              <div className="pz-brand-stage-grid" />
-              <div className="pz-brand-stage-logo">
-                <img src={brand.logo} alt="" loading="eager" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {sections.map((section, sectionIndex) => {
         const sectionVariants = (section.products || []).flatMap((product) =>
           getProductCardEntries(product, 'color').map((variant) => ({
