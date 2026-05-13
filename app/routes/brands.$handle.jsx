@@ -20,7 +20,10 @@ const BEATS_SECTIONS = [
     eyebrow: 'Powerbeats Pro 2',
     headline: 'Built for athletes.',
     splitVariantsBy: 'color',
-    productHandles: ['beats-powerbeats-pro-2-high-performance-earbuds'],
+    productHandles: [
+      'beats-powerbeats-pro-2-high-performance-earbuds',
+      'beats-powerbeats-pro-2-nike-edition',
+    ],
   },
   {
     id: 'beats-headphones',
@@ -62,6 +65,7 @@ const BEATS_SECTIONS = [
       'beats-solo-buds-true-wireless-earbuds',
       'beats-solo-buds-festive-special-edition-true-wireless-earbuds',
       'beats-powerbeats-fit-wireless-fitness-earbuds-with-secure-fit',
+      'beats-powerbeats-pro-2-nike-edition',
       'beats-studio-buds-plus-transparent',
     ],
   },
