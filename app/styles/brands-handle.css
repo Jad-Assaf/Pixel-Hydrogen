@@ -114,6 +114,7 @@
 }
 
 .pz-torras-banner-card {
+  isolation: isolate;
   border: 1px solid rgba(148, 163, 184, 0.16);
   background: #fff;
   box-shadow: 0 24px 58px -50px rgba(15, 23, 42, 0.32);
@@ -122,6 +123,48 @@
 .pz-torras-banner-copy {
   top: clamp(1.35rem, 3.8vw, 3.1rem);
   max-width: min(27rem, 58vw);
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.85rem;
+  color: #fff;
+  overflow: hidden;
+}
+
+.pz-torras-banner-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 18px 40px -30px rgba(15, 23, 42, 0.65);
+  -webkit-backdrop-filter: blur(24px) saturate(1.45);
+  backdrop-filter: blur(24px) saturate(1.45);
+  pointer-events: none;
+}
+
+.pz-torras-banner-text {
+  position: relative;
+  z-index: 1;
+}
+
+.pz-torras-banner-text p,
+.pz-torras-banner-text h1,
+.pz-torras-banner-copy.pz-brand-banner-copy--dark .pz-torras-banner-text p,
+.pz-torras-banner-copy.pz-brand-banner-copy--dark .pz-torras-banner-text h1 {
+  position: relative;
+  z-index: 1;
+  color: #000;
+  mix-blend-mode: difference;
+  /* filter: invert(0.1) brightness(1.2); */
+}
+
+.pz-torras-banner-copy--black-text .pz-torras-banner-text p,
+.pz-torras-banner-copy--black-text .pz-torras-banner-text h1 {
+  color: #050505;
+  mix-blend-mode: normal;
+  filter: none;
 }
 
 .pz-torras-banner-copy h1 {
@@ -451,6 +494,11 @@
   .pz-torras-banner-copy {
     top: 1.5rem;
     max-width: min(22rem, 88vw);
+  }
+
+  .pz-torras-banner-copy.pz-brand-banner-copy--bottom {
+    top: auto;
+    bottom: 1rem;
   }
 
   .pz-torras-banner-copy h1 {

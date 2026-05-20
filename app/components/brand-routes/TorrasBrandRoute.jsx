@@ -21,8 +21,10 @@ export const TORRAS_SECTIONS = [
       'torras-x-france-ostand-q3-air-football-limited-for-iphone-17-pro-iphone-17-pro-max-horizon',
       'torras-portuguese-football-federation-fpf-limited-edition-for-iphone-17-pro-iphone-17-pro-max',
       'torras-x-usa-ostand-q3-air-football-limited-for-iphone-17-pro-iphone-17-pro-max-starlight',
-      'torras-portuguese-football-federation-fpf-limited-edition-for-iphone-16-pro-wave-of-passion',
       'torras-x-germany-ostand-q3-air-football-limited-for-iphone-17-pro-iphone-17-pro-max-iron',
+      'torras-x-argentina-ostand-q3-air-football-limited-for-iphone-17-pro-iphone-17-pro-max-pampas-eagle',
+      'torras-portuguese-football-federation-fpf-limited-edition-for-iphone-16-pro-wave-of-passion',
+      'torras-x-germany-ostand-q3-air-football-limited-for-iphone-16-max-iron',
     ],
   },
   {
@@ -40,12 +42,16 @@ export const TORRAS_SECTIONS = [
       'torras-ostand-o3-air-for-iphone-17-pro-max-shadow-black',
       'torras-ostand-q3-silicone-for-iphone-17-pro-max-black',
       'torras-ostand-o3-air-classic-for-iphone-17-pro-max-violet-purple',
-      'torras-ostand-q3-air-for-iphone-16-pro-iphone-16-pro-max',
       'torras-ostand-q3-air-for-iphone-17-pro-iphone-17-pro-max-neon-pink',
       'torras-ostand-q3-air-for-iphone-17-pro-horizon-orange',
       'torras-ostand-q3-air-for-iphone-17-pro-iphone-17-pro-max-glacier-sprint',
       'torras-ostand-q3-air-for-iphone-17-pro-iphone-17-pro-max-shadow-black',
       'torras-ostand-q3-air-for-iphone-17-pro-iphone-17-pro-max',
+      'torras-guardian-mag-for-iphone-17-pro-max',
+      'torras-pstand-for-iphone-17-pro-max-with-built-in-kickstand',
+      'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-shadow-black',
+      'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-glacier-sprint',
+      'torras-ostand-q3-air-for-iphone-16-pro-iphone-16-pro-max',
     ],
   },
   {
@@ -54,6 +60,8 @@ export const TORRAS_SECTIONS = [
     bannerEyebrow: 'Galaxy S26 Ultra',
     bannerHeadline: 'Magnetic grip. Cleaner everyday defense.',
     copyTone: 'dark',
+    copyPosition: 'bottom',
+    copyColor: 'black',
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/torras-samsung-case-desk.jpg?v=1779218789',
     mobileBannerUrl:
@@ -63,6 +71,7 @@ export const TORRAS_SECTIONS = [
       'torras-guardian-mag-case-for-galaxy-s26-ultra-black',
       'torras-guardian-mag-case-for-galaxy-s26-ultra-clear',
       'torras-ostand-spin-q3-air-for-samsung-s26-ultra-violet-surge',
+      'torras-ostand-spin-q3-air-for-samsung-s26-ultra-shadow-black',
     ],
   },
   {
@@ -141,14 +150,28 @@ export function TorrasBrandRoute({brand, collection, sections}) {
                         section.copyTone === 'dark'
                           ? ' pz-brand-banner-copy--dark'
                           : ''
+                      }${
+                        section.copyPosition === 'bottom'
+                          ? ' pz-brand-banner-copy--bottom'
+                          : ''
+                      }${
+                        section.copyColor === 'black'
+                          ? ' pz-torras-banner-copy--black-text'
+                          : ''
                       }`}
                     >
-                      {section.bannerEyebrow ? (
-                        <p>{section.bannerEyebrow}</p>
-                      ) : null}
-                      {section.bannerHeadline ? (
-                        <h1>{section.bannerHeadline}</h1>
-                      ) : null}
+                      <div
+                        className="pz-torras-banner-backdrop"
+                        aria-hidden="true"
+                      />
+                      <div className="pz-torras-banner-text">
+                        {section.bannerEyebrow ? (
+                          <p>{section.bannerEyebrow}</p>
+                        ) : null}
+                        {section.bannerHeadline ? (
+                          <h1>{section.bannerHeadline}</h1>
+                        ) : null}
+                      </div>
                     </div>
                   ) : null}
                 </div>
