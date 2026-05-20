@@ -15,8 +15,7 @@ export const TORRAS_SECTIONS = [
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/torras-world-cup-desk.jpg?v=1779218764',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/IMG_7717.webp?v=1779259943',
-    mobileBannerHeadline: 'BUILT FOR IMPACT',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/IMG_7717_1.jpg?v=1779267721',
     productHandles: [
       'torras-torras-portuguese-football-federation-fpf-limited-edition-for-iphone-17-pro-iphone-17-pro-max-glory-slash',
       'torras-x-france-ostand-q3-air-football-limited-for-iphone-17-pro-iphone-17-pro-max-horizon',
@@ -150,11 +149,6 @@ export function TorrasBrandRoute({brand, collection, sections}) {
                       {section.bannerHeadline ? (
                         <h1>{section.bannerHeadline}</h1>
                       ) : null}
-                    </div>
-                  ) : null}
-                  {section.mobileBannerHeadline ? (
-                    <div className="pz-torras-mobile-impact-copy">
-                      <h1>{section.mobileBannerHeadline}</h1>
                     </div>
                   ) : null}
                 </div>
