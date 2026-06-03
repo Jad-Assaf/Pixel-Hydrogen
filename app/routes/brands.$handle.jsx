@@ -10,6 +10,10 @@ import {
   BlackSharkBrandRoute,
 } from '~/components/brand-routes/BlackSharkBrandRoute';
 import {
+  MOFT_SECTIONS,
+  MoftBrandRoute,
+} from '~/components/brand-routes/MoftBrandRoute';
+import {
   TORRAS_SECTIONS,
   TorrasBrandRoute,
 } from '~/components/brand-routes/TorrasBrandRoute';
@@ -93,6 +97,19 @@ export async function loader({context, params}) {
     };
   }
 
+  if (brand.handle === 'moft') {
+    const moftSections = await loadConfiguredBrandSections(
+      storefront,
+      MOFT_SECTIONS,
+    );
+
+    return {
+      brand,
+      collection,
+      moftSections,
+    };
+  }
+
   return {
     brand,
     collection,
@@ -123,6 +140,16 @@ export default function BrandRoute() {
         brand={data.brand}
         collection={data.collection}
         sections={data.torrasSections || []}
+      />
+    );
+  }
+
+  if (data.brand.handle === 'moft') {
+    return (
+      <MoftBrandRoute
+        brand={data.brand}
+        collection={data.collection}
+        sections={data.moftSections || []}
       />
     );
   }

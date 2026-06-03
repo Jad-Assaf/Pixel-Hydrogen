@@ -43,23 +43,34 @@ export async function loadConfiguredBrandSections(storefront, sections) {
 
 async function loadBrandSearchProducts(storefront, queries) {
   const results = await Promise.all(
-    (queries || []).filter(Boolean).map((query) =>
-      storefront
-        .query(BRAND_SEARCH_PRODUCTS_QUERY, {
-          cache: storefront.CacheShort(),
-          variables: {
-            query,
-            first: 24,
-          },
-        })
-        .catch(() => null),
-    ),
+    (queries || []).filter(Boolean).map(async (query) => {
+      let after = null;
+      let products = [];
+
+      do {
+        const result = await storefront
+          .query(BRAND_SEARCH_PRODUCTS_QUERY, {
+            cache: storefront.CacheShort(),
+            variables: {
+              query,
+              first: BRAND_PRODUCTS_PAGE_SIZE,
+              after,
+            },
+          })
+          .catch(() => null);
+
+        const connection = result?.products;
+        products = mergeProducts(products, connection?.nodes || []);
+        after = connection?.pageInfo?.hasNextPage
+          ? connection.pageInfo.endCursor
+          : null;
+      } while (after);
+
+      return products;
+    }),
   );
 
-  return mergeProducts(
-    [],
-    results.flatMap((result) => result?.products?.nodes || []),
-  );
+  return mergeProducts([], results.flat());
 }
 
 export async function loadBrandCollection(storefront, brand) {
@@ -226,14 +237,20 @@ const BRAND_SEARCH_PRODUCTS_QUERY = `#graphql
     $language: LanguageCode
     $query: String!
     $first: Int!
+    $after: String
   ) @inContext(country: $country, language: $language) {
     products: search(
       query: $query,
       first: $first,
+      after: $after,
       sortKey: RELEVANCE,
       types: [PRODUCT],
       unavailableProducts: HIDE
     ) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
       nodes {
         ...on Product {
           ...BrandVariantProduct

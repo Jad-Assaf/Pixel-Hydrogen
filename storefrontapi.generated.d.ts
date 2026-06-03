@@ -62,10 +62,12 @@ export type BrandSearchProductsQueryVariables = StorefrontAPI.Exact<{
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   query: StorefrontAPI.Scalars['String']['input'];
   first: StorefrontAPI.Scalars['Int']['input'];
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
 }>;
 
 export type BrandSearchProductsQuery = {
   products: {
+    pageInfo: Pick<StorefrontAPI.PageInfo, 'hasNextPage' | 'endCursor'>;
     nodes: Array<
       Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'vendor'> & {
         featuredImage?: StorefrontAPI.Maybe<
@@ -3098,7 +3100,7 @@ export type WishlistProductCardFragment = Pick<
 };
 
 interface GeneratedQueryTypes {
-  '#graphql\n  #graphql\n  fragment BrandMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  #graphql\n  fragment BrandVariantProduct on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...BrandMoney\n      }\n      maxVariantPrice {\n        ...BrandMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...BrandMoney\n      }\n      compareAtPrice {\n        ...BrandMoney\n      }\n    }\n    variants(first: 50) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandMoney\n        }\n        compareAtPrice {\n          ...BrandMoney\n        }\n      }\n    }\n  }\n\n\n  query BrandSearchProducts(\n    $country: CountryCode\n    $language: LanguageCode\n    $query: String!\n    $first: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $query,\n      first: $first,\n      sortKey: RELEVANCE,\n      types: [PRODUCT],\n      unavailableProducts: HIDE\n    ) {\n      nodes {\n        ...on Product {\n          ...BrandVariantProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment BrandMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n  #graphql\n  fragment BrandVariantProduct on Product {\n    id\n    handle\n    title\n    vendor\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...BrandMoney\n      }\n      maxVariantPrice {\n        ...BrandMoney\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      image {\n        id\n        altText\n        url\n        width\n        height\n      }\n      selectedOptions {\n        name\n        value\n      }\n      price {\n        ...BrandMoney\n      }\n      compareAtPrice {\n        ...BrandMoney\n      }\n    }\n    variants(first: 50) {\n      nodes {\n        id\n        title\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandMoney\n        }\n        compareAtPrice {\n          ...BrandMoney\n        }\n      }\n    }\n  }\n\n\n  query BrandSearchProducts(\n    $country: CountryCode\n    $language: LanguageCode\n    $query: String!\n    $first: Int!\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $query,\n      first: $first,\n      after: $after,\n      sortKey: RELEVANCE,\n      types: [PRODUCT],\n      unavailableProducts: HIDE\n    ) {\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n      nodes {\n        ...on Product {\n          ...BrandVariantProduct\n        }\n      }\n    }\n  }\n': {
     return: BrandSearchProductsQuery;
     variables: BrandSearchProductsQueryVariables;
   };
