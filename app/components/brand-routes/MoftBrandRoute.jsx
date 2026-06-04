@@ -54,6 +54,27 @@ export const MOFT_SECTIONS = [
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_3_2026_10_10_01_PM_2.png?v=1780514751',
     searchQueries: ['vendor:MOFT title:Snap-on', 'vendor:Moft title:Snap-on'],
   },
+  {
+    id: 'adhesive',
+    headline: 'MOFT adhesive',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_14_59_PM_1.png?v=1780596914',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_14_59_PM_2.png?v=1780596914',
+    searchQueries: ['vendor:MOFT title:adhesive', 'vendor:Moft title:adhesive'],
+  },
+  {
+    id: 'tripod-stand',
+    headline: 'MOFT tripod stand',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_17_24_PM_1.png?v=1780597056',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_17_25_PM_2.png?v=1780597057',
+    searchQueries: [
+      'vendor:MOFT title:"tripod stand"',
+      'vendor:Moft title:"tripod stand"',
+    ],
+  },
 ];
 
 export function MoftBrandRoute({brand, collection, sections}) {

@@ -19,7 +19,7 @@ export function BrandVariantCard({
   );
   const displayImage = variant.image || product.featuredImage;
   const imageUrl = displayImage?.url
-    ? withImageWidth(displayImage.url, 600)
+    ? withImageWidth(displayImage.url, 300)
     : null;
   const label = getVariantLabel(variant);
   const {open} = useAside();
@@ -34,8 +34,8 @@ export function BrandVariantCard({
               className="pz-product-image"
               loading={loading}
               src={imageUrl}
-              width={500}
-              height={500}
+              width={300}
+              height={300}
             />
           ) : (
             <div className="pz-image-placeholder" aria-hidden="true" />

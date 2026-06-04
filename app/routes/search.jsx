@@ -206,7 +206,7 @@ export const SEARCH_QUERY = `#graphql
       query: $term,
       sortKey: RELEVANCE,
       types: [PRODUCT],
-      unavailableProducts: HIDE,
+      unavailableProducts: SHOW,
     ) {
       nodes {
         ...on Product {
@@ -237,7 +237,7 @@ export const SEARCH_PRODUCTS_PAGE_QUERY = `#graphql
       query: $term,
       sortKey: RELEVANCE,
       types: [PRODUCT],
-      unavailableProducts: HIDE,
+      unavailableProducts: SHOW,
     ) {
       nodes {
         ...on Product {
@@ -270,7 +270,10 @@ async function regularSearch({request, context}) {
     PREFETCH_PRODUCT_COUNT,
     requestedPage * PRODUCTS_PER_PAGE,
   );
-  const initialBatchSize = Math.min(MAX_CONNECTION_FETCH, requestedProductCount);
+  const initialBatchSize = Math.min(
+    MAX_CONNECTION_FETCH,
+    requestedProductCount,
+  );
 
   // Search articles and products for the `q` term
   const {errors, ...items} = await storefront.query(SEARCH_QUERY, {
@@ -359,7 +362,12 @@ async function regularSearch({request, context}) {
     ? errors.map(({message}) => message).join(', ')
     : undefined;
 
-  return {type: 'regular', term, error, result: {total, items: normalizedItems}};
+  return {
+    type: 'regular',
+    term,
+    error,
+    result: {total, items: normalizedItems},
+  };
 }
 
 function getRequestedPage(value) {
@@ -477,7 +485,7 @@ const PREDICTIVE_PRODUCTS_ONLY_QUERY = `#graphql
       first: $limit,
       sortKey: RELEVANCE,
       types: [PRODUCT],
-      unavailableProducts: HIDE
+      unavailableProducts: SHOW
     ) {
       nodes {
         ...on Product {

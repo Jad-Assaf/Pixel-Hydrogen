@@ -388,7 +388,9 @@ export async function action({request, context}) {
     try {
       const toolResult = await runStoreToolLoop({
         apiKey,
-        model: sanitizeText(context?.env?.OPENAI_CHATBOT_MODEL) || TOOL_MODEL_DEFAULT,
+        model:
+          sanitizeText(context?.env?.OPENAI_CHATBOT_MODEL) ||
+          TOOL_MODEL_DEFAULT,
         messages: [...history, {role: 'user', content: message}],
         toolContext: {
           context,
@@ -409,10 +411,15 @@ export async function action({request, context}) {
   if (toolBasedProducts.length) {
     contextualProducts = toolBasedProducts;
   } else if (shouldLookupProducts) {
-    contextualProducts = await fetchProductMatches(context, productLookupTerm, history, {
-      requestedCount: extractRequestedProductCount(message),
-      listCatalog: isListRequest,
-    });
+    contextualProducts = await fetchProductMatches(
+      context,
+      productLookupTerm,
+      history,
+      {
+        requestedCount: extractRequestedProductCount(message),
+        listCatalog: isListRequest,
+      },
+    );
     usedFallbackProductLookup = contextualProducts.length > 0;
   }
 
@@ -606,15 +613,17 @@ async function runStoreToolLoop({apiKey, model, messages, toolContext}) {
     const toolOutputs = [];
     for (const call of functionCalls) {
       const args = safeParseJson(call.arguments) || {};
-      const output = await runStoreToolByName(call.name, args, toolContext).catch(
-        (error) => ({
-          ok: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : 'Tool execution failed unexpectedly.',
-        }),
-      );
+      const output = await runStoreToolByName(
+        call.name,
+        args,
+        toolContext,
+      ).catch((error) => ({
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Tool execution failed unexpectedly.',
+      }));
 
       updateToolUiState(uiState, call.name, output);
 
@@ -650,7 +659,8 @@ async function createOpenAiResponse(apiKey, payload) {
   const data = await response.json().catch(() => null);
   if (!response.ok) {
     const message =
-      data?.error?.message || `OpenAI chat request failed (${response.status}).`;
+      data?.error?.message ||
+      `OpenAI chat request failed (${response.status}).`;
     throw new Error(message);
   }
 
@@ -694,7 +704,10 @@ function registerToolProducts(state, products) {
 
 function finalizeToolUiState(state) {
   return {
-    products: Array.from(state.products.values()).slice(0, SHOPIFY_MCP_MAX_RESULTS),
+    products: Array.from(state.products.values()).slice(
+      0,
+      SHOPIFY_MCP_MAX_RESULTS,
+    ),
   };
 }
 
@@ -763,8 +776,13 @@ async function searchStoreCatalogTool(args, toolContext) {
     return {ok: false, error: 'Missing query.'};
   }
 
-  const intentProfile = getCatalogIntentProfile(`${query} ${shoppingContext}`.trim());
-  const searchQueries = buildProductSearchQueries(query, intentProfile).slice(0, 5);
+  const intentProfile = getCatalogIntentProfile(
+    `${query} ${shoppingContext}`.trim(),
+  );
+  const searchQueries = buildProductSearchQueries(query, intentProfile).slice(
+    0,
+    5,
+  );
   const deduped = new Map();
 
   for (const searchQuery of searchQueries) {
@@ -796,7 +814,10 @@ async function searchStoreCatalogTool(args, toolContext) {
     products = filterProductsByCatalogFamily(products, requestedFamily);
   }
 
-  products = rankProductsForMessage(products, query).slice(0, SHOPIFY_MCP_MAX_RESULTS);
+  products = rankProductsForMessage(products, query).slice(
+    0,
+    SHOPIFY_MCP_MAX_RESULTS,
+  );
 
   return {
     ok: true,
@@ -957,7 +978,11 @@ function getRequestedCatalogFamily(query) {
   if (/\b(computer|desktop|gaming pc|pc build|tower|pc)\b/.test(normalized))
     return 'computer';
   if (/\b(monitor|display)\b/.test(normalized)) return 'monitor';
-  if (/\b(ip phone|voip|sip|dect|grandstream|desk phone|office phone|conference phone)\b/.test(normalized))
+  if (
+    /\b(ip phone|voip|sip|dect|grandstream|desk phone|office phone|conference phone)\b/.test(
+      normalized,
+    )
+  )
     return 'ipPhone';
   if (/\b(phone|smartphone|iphone|mobile|galaxy)\b/.test(normalized))
     return 'smartphone';
@@ -982,20 +1007,17 @@ function matchesRequestedCatalogFamily(product, family) {
     case 'laptop':
       return isComputerLikeText(haystack);
     case 'computer':
-      return (
-        isComputerLikeText(haystack) && !isAccessoryLikeText(haystack)
-      );
+      return isComputerLikeText(haystack) && !isAccessoryLikeText(haystack);
     case 'monitor':
       return /\b(monitor|display)\b/.test(haystack);
     case 'ipPhone':
-      return (
-        isIpPhoneLikeText(haystack) &&
-        !isAccessoryLikeText(haystack)
-      );
+      return isIpPhoneLikeText(haystack) && !isAccessoryLikeText(haystack);
     case 'smartphone':
       return isSmartphoneLikeText(haystack) && !isAccessoryLikeText(haystack);
     case 'tablet':
-      return /\b(tablet|ipad|tab)\b/.test(haystack) && !isAccessoryLikeText(haystack);
+      return (
+        /\b(tablet|ipad|tab)\b/.test(haystack) && !isAccessoryLikeText(haystack)
+      );
     default:
       return true;
   }
@@ -1017,7 +1039,11 @@ function isAccessoryLikeText(text) {
 function isSmartphoneLikeText(text) {
   const normalized = String(text || '').toLowerCase();
   if (isIpPhoneLikeText(normalized)) return false;
-  if (/\b(smartphone printer|mobile wifi|wifi router|router|printer)\b/.test(normalized))
+  if (
+    /\b(smartphone printer|mobile wifi|wifi router|router|printer)\b/.test(
+      normalized,
+    )
+  )
     return false;
 
   return /\b(iphone|smartphone|mobile phone|cell phone|samsung galaxy|galaxy s\d*|galaxy a\d*|galaxy z|xiaomi|redmi|poco|huawei|oppo|oneplus|google pixel)\b/.test(
@@ -1346,13 +1372,15 @@ function isClearCartIntent(message) {
 function isProductPageNavigationIntent(message) {
   const normalized = sanitizeText(message).toLowerCase();
   if (!normalized) return false;
-  if (isCheckoutIntent(normalized) || isAddToCartIntent(normalized)) return false;
+  if (isCheckoutIntent(normalized) || isAddToCartIntent(normalized))
+    return false;
   if (extractSearchPageNavigationTerm(normalized)) return false;
   if (/\bcart\b/i.test(normalized)) return false;
 
   return (
     /\b(open|go to|take me to|navigate to|bring me to)\b/i.test(normalized) &&
-    (/\b(page|product|details?)\b/i.test(normalized) || hasProductIntent(normalized))
+    (/\b(page|product|details?)\b/i.test(normalized) ||
+      hasProductIntent(normalized))
   );
 }
 
@@ -1413,8 +1441,8 @@ function pickBestAgentProduct(products, message) {
 
   const preference = getAgentSelectionPreference(message);
   const ranked = rankProductsForMessage(products, message);
-  const availableRanked = ranked.filter(
-    (product) => getAgentProductAvailability(product),
+  const availableRanked = ranked.filter((product) =>
+    getAgentProductAvailability(product),
   );
   const rankedWithVariants = ranked.filter((product) =>
     getAgentProductVariantId(product),
@@ -1992,7 +2020,10 @@ function buildSearchSeedMessages(message, history) {
   return seeds;
 }
 
-function isStoreScopedQuestion(message, {hasProductMatch, isLikelyProductIntent}) {
+function isStoreScopedQuestion(
+  message,
+  {hasProductMatch, isLikelyProductIntent},
+) {
   if (hasProductMatch || isLikelyProductIntent) return true;
 
   // Hard guard: product/cart/navigation intents are always in scope,
@@ -2014,7 +2045,12 @@ function isStoreScopedQuestion(message, {hasProductMatch, isLikelyProductIntent}
   return STORE_SCOPE_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
-async function fetchProductMatches(context, message, history = [], options = {}) {
+async function fetchProductMatches(
+  context,
+  message,
+  history = [],
+  options = {},
+) {
   const maxResults = Math.min(
     Math.max(options.requestedCount || 10, 1),
     SHOPIFY_MCP_MAX_RESULTS,
@@ -2209,12 +2245,18 @@ async function searchShopCatalogViaStorefrontApi(context, {query, limit = 10}) {
   if (!normalizedQuery || !context?.storefront?.query) return [];
 
   try {
-    const result = await context.storefront.query(CHATBOT_PRODUCT_SEARCH_QUERY, {
-      variables: {
-        term: normalizedQuery,
-        first: Math.max(1, Math.min(Number(limit) || 10, SHOPIFY_MCP_MAX_RESULTS)),
+    const result = await context.storefront.query(
+      CHATBOT_PRODUCT_SEARCH_QUERY,
+      {
+        variables: {
+          term: normalizedQuery,
+          first: Math.max(
+            1,
+            Math.min(Number(limit) || 10, SHOPIFY_MCP_MAX_RESULTS),
+          ),
+        },
       },
-    });
+    );
 
     const nodes = Array.isArray(result?.products?.nodes)
       ? result.products.nodes
@@ -2251,7 +2293,10 @@ function normalizeStorefrontProductForChatbot(product) {
     tags: Array.isArray(product.tags) ? product.tags : [],
     onlineStoreUrl: product.onlineStoreUrl || '',
     featuredImage:
-      product.featuredImage || selectedVariant?.image || product.images?.nodes?.[0] || null,
+      product.featuredImage ||
+      selectedVariant?.image ||
+      product.images?.nodes?.[0] ||
+      null,
     priceRange: selectedPrice
       ? {
           minVariantPrice: selectedPrice,
@@ -2293,7 +2338,10 @@ async function callStorefrontMcp(context, {method, params}) {
 
   const endpoint = `https://${domain}/api/mcp`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), SHOPIFY_MCP_TIMEOUT_MS);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    SHOPIFY_MCP_TIMEOUT_MS,
+  );
 
   try {
     const response = await fetch(endpoint, {
@@ -2431,7 +2479,10 @@ function buildPrimaryDeviceFallbackQuery(message, intentProfile = {}) {
   }
 
   const cleanMessage = sanitizeText(message)
-    .replace(/\b(case|cover|charger|cable|accessories?|screen protector|protector)\b/gi, '')
+    .replace(
+      /\b(case|cover|charger|cable|accessories?|screen protector|protector)\b/gi,
+      '',
+    )
     .trim();
   if (cleanMessage) {
     parts.push(cleanMessage);
@@ -2585,7 +2636,11 @@ function normalizeMcpProductCandidate(candidate) {
       ]) || `${handle || title.toLowerCase()}-${variantInfo.id || 'default'}`,
     title,
     handle: handle || '',
-    vendor: pickFirstString([candidate?.vendor, candidate?.brand, candidate?.manufacturer]),
+    vendor: pickFirstString([
+      candidate?.vendor,
+      candidate?.brand,
+      candidate?.manufacturer,
+    ]),
     productType: pickFirstString([
       candidate?.productType,
       candidate?.product_type,
@@ -2597,7 +2652,9 @@ function normalizeMcpProductCandidate(candidate) {
     featuredImage: imageUrl
       ? {
           url: imageUrl,
-          altText: pickFirstString([candidate?.imageAlt, candidate?.image_alt]) || title,
+          altText:
+            pickFirstString([candidate?.imageAlt, candidate?.image_alt]) ||
+            title,
         }
       : null,
     priceRange: priceInfo.amount
@@ -2668,7 +2725,8 @@ function extractMcpAvailability(candidate, variantInfo) {
   if (typeof availabilityCandidate === 'string') {
     const lower = availabilityCandidate.toLowerCase();
     if (['true', 'yes', 'in stock', 'available'].includes(lower)) return true;
-    if (['false', 'no', 'out of stock', 'sold out'].includes(lower)) return false;
+    if (['false', 'no', 'out of stock', 'sold out'].includes(lower))
+      return false;
   }
 
   return true;
@@ -2703,7 +2761,10 @@ function extractMcpPrice(candidate, variantInfo) {
     return {amount, currencyCode};
   }
 
-  if (typeof priceCandidate === 'number' || typeof priceCandidate === 'string') {
+  if (
+    typeof priceCandidate === 'number' ||
+    typeof priceCandidate === 'string'
+  ) {
     const amount = normalizeMcpAmount(priceCandidate);
     const currencyCode = pickFirstString([
       candidate?.currencyCode,
@@ -2800,7 +2861,10 @@ function parseJsonLikeValue(value) {
 
   const attempts = [
     normalized,
-    normalized.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim(),
+    normalized
+      .replace(/^```(?:json)?/i, '')
+      .replace(/```$/i, '')
+      .trim(),
     extractFirstJsonBlock(normalized),
   ].filter(Boolean);
 
@@ -3007,9 +3071,7 @@ function extractSearchTerms(message) {
     .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
     .split(/\s+/)
     .map((token) => token.trim())
-    .filter(
-      (token) => token.length > 1 && !PRODUCT_STOP_WORDS.has(token),
-    )
+    .filter((token) => token.length > 1 && !PRODUCT_STOP_WORDS.has(token))
     .slice(0, 10);
 }
 
@@ -3043,7 +3105,9 @@ function isAccessoryProduct(product) {
 
 function hasCatalogKeyword(value, keyword) {
   const normalizedValue = String(value || '').toLowerCase();
-  const normalizedKeyword = String(keyword || '').toLowerCase().trim();
+  const normalizedKeyword = String(keyword || '')
+    .toLowerCase()
+    .trim();
   if (!normalizedValue || !normalizedKeyword) return false;
 
   const pattern = normalizedKeyword
@@ -3130,7 +3194,8 @@ function formatProductContext(products) {
   return products
     .map((product, index) => {
       const minPrice = product?.priceRange?.minVariantPrice;
-      const availability = product?.selectedOrFirstAvailableVariant?.availableForSale
+      const availability = product?.selectedOrFirstAvailableVariant
+        ?.availableForSale
         ? 'In stock'
         : 'Out of stock';
       const price = formatMoney(minPrice?.amount, minPrice?.currencyCode);
@@ -3281,7 +3346,7 @@ const CHATBOT_PRODUCT_SEARCH_QUERY = `#graphql
       query: $term
       types: [PRODUCT]
       first: $first
-      unavailableProducts: HIDE
+      unavailableProducts: SHOW
     ) {
       nodes {
         __typename
