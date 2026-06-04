@@ -75,6 +75,15 @@ export const MOFT_SECTIONS = [
       'vendor:Moft title:"tripod stand"',
     ],
   },
+  {
+    id: 'lanyard',
+    headline: 'MOFT lanyard',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_35_50_PM_1.png?v=1780598160',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_4_2026_09_35_50_PM_2.png?v=1780598161',
+    searchQueries: ['vendor:MOFT title:lanyard', 'vendor:Moft title:lanyard'],
+  },
 ];
 
 export function MoftBrandRoute({brand, collection, sections}) {
