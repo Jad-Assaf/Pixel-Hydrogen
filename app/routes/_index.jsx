@@ -257,12 +257,9 @@ export default function Homepage() {
               onClick={handleHeroSlideClick}
             >
               <picture>
-                <source
-                  media="(max-width: 767px)"
-                  srcSet={withImageWidth(slide.desktop, 700)}
-                />
+                <source media="(max-width: 767px)" srcSet={slide.desktop} />
                 <img
-                  src={withImageWidth(slide.desktop, 1500)}
+                  src={slide.desktop}
                   alt={slide.alt}
                   loading={index === 0 ? 'eager' : 'lazy'}
                   fetchPriority={index === 0 ? 'high' : undefined}
@@ -273,7 +270,11 @@ export default function Homepage() {
           ))}
 
           {HERO_SLIDES.length > 1 ? (
-            <div className="pz-hero-dots" role="tablist" aria-label="Hero slides">
+            <div
+              className="pz-hero-dots"
+              role="tablist"
+              aria-label="Hero slides"
+            >
               {HERO_SLIDES.map((slide, index) => (
                 <button
                   key={slide.desktop}
@@ -401,7 +402,11 @@ export default function Homepage() {
       </section>
 
       {menuCollections.length ? (
-        <Suspense fallback={<HomeCollectionRowsSkeleton collections={menuCollections} />}>
+        <Suspense
+          fallback={
+            <HomeCollectionRowsSkeleton collections={menuCollections} />
+          }
+        >
           <Await resolve={data.deferredMenuCollectionRows}>
             {(collectionRows) =>
               (collectionRows || [])
@@ -434,7 +439,10 @@ export default function Homepage() {
         <StoreAssistantHomeSection />
       </DeferredHomeSection>
 
-      <section className="pz-home-section pz-home-customers" ref={customersSectionRef}>
+      <section
+        className="pz-home-section pz-home-customers"
+        ref={customersSectionRef}
+      >
         <div className="pz-shell">
           <p className="pz-home-customers-count">
             {customersServed.toLocaleString()}+
@@ -481,10 +489,7 @@ function HomeProductRowSection({
 
     const remaining = PRODUCT_ROW_MAX_COUNT - productsRef.current.length;
     const params = new URLSearchParams();
-    params.set(
-      'limit',
-      String(Math.min(PRODUCT_ROW_BATCH_SIZE, remaining)),
-    );
+    params.set('limit', String(Math.min(PRODUCT_ROW_BATCH_SIZE, remaining)));
 
     if (pageInfoRef.current?.endCursor) {
       params.set('cursor', pageInfoRef.current.endCursor);
@@ -509,7 +514,9 @@ function HomeProductRowSection({
 
   useEffect(() => {
     if (!fetcher.data) return;
-    setProducts((current) => mergeProducts(current, fetcher.data.products || []));
+    setProducts((current) =>
+      mergeProducts(current, fetcher.data.products || []),
+    );
     setPageInfo(normalizeConnectionPageInfo(fetcher.data.pageInfo));
   }, [fetcher.data]);
 
@@ -544,12 +551,11 @@ function HomeProductRowSection({
   }
 
   return (
-    <section
-      ref={sectionRef}
-      className={`pz-home-section ${className}`.trim()}
-    >
+    <section ref={sectionRef} className={`pz-home-section ${className}`.trim()}>
       <div className="pz-shell">
-        <div className={`pz-section-head${showControls ? '' : ' pz-section-head-row'}`}>
+        <div
+          className={`pz-section-head${showControls ? '' : ' pz-section-head-row'}`}
+        >
           <div>
             {kicker ? <p className="pz-kicker">{kicker}</p> : null}
             <h2>{title}</h2>
@@ -574,20 +580,12 @@ function HomeProductRowSection({
                 <ArrowIcon direction="right" />
                 <span className="sr-only">Next</span>
               </button>
-              <Link
-                to={linkTo}
-                prefetch="intent"
-                className="pz-inline-link"
-              >
+              <Link to={linkTo} prefetch="intent" className="pz-inline-link">
                 View All
               </Link>
             </div>
           ) : (
-            <Link
-              to={linkTo}
-              prefetch="intent"
-              className="pz-inline-link"
-            >
+            <Link to={linkTo} prefetch="intent" className="pz-inline-link">
               View All
             </Link>
           )}
@@ -646,7 +644,11 @@ function DeferredHomeSection({children, skeleton}) {
 
   return (
     <div ref={sectionRef} className="pz-home-deferred">
-      {shouldLoad ? <Suspense fallback={skeleton}>{children}</Suspense> : skeleton}
+      {shouldLoad ? (
+        <Suspense fallback={skeleton}>{children}</Suspense>
+      ) : (
+        skeleton
+      )}
     </div>
   );
 }
@@ -675,7 +677,9 @@ function HomeProductRowSectionSkeleton({title, kicker, className = ''}) {
             {kicker ? (
               <span
                 className="pz-skeleton-block pz-home-row-skeleton-kicker"
-                style={{width: `${Math.min(Math.max(kicker.length + 2, 10), 20)}ch`}}
+                style={{
+                  width: `${Math.min(Math.max(kicker.length + 2, 10), 20)}ch`,
+                }}
               />
             ) : null}
             <span
@@ -884,7 +888,9 @@ function buildCollectionRows(menuItems, nodes) {
         handle: collection.handle,
         image: pickCollectionImage(collection),
         products: collection.products?.nodes || [],
-        productsPageInfo: normalizeConnectionPageInfo(collection.products?.pageInfo),
+        productsPageInfo: normalizeConnectionPageInfo(
+          collection.products?.pageInfo,
+        ),
       };
     })
     .filter(Boolean);
@@ -925,11 +931,13 @@ function normalizeConnectionPageInfo(pageInfo) {
 
 function mergeProducts(currentProducts, nextProducts) {
   const seen = new Set();
-  return [...(currentProducts || []), ...(nextProducts || [])].filter((product) => {
-    if (!product?.id || seen.has(product.id)) return false;
-    seen.add(product.id);
-    return true;
-  });
+  return [...(currentProducts || []), ...(nextProducts || [])].filter(
+    (product) => {
+      if (!product?.id || seen.has(product.id)) return false;
+      seen.add(product.id);
+      return true;
+    },
+  );
 }
 
 function useNearViewport(ref, rootMargin = '320px') {
@@ -1352,23 +1360,27 @@ const COLLECTION_ROW_BY_HANDLE_QUERY = `#graphql
 
 const HERO_SLIDES = [
   {
-    href: '/collections/aulumu-products',
-    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/aulumu-desktop.jpg?v=1773951906',
-    alt: 'Aulumu banner',
+    href: '/brands/torras',
+    desktop:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_5_2026_10_48_32_PM.png?v=1780689976',
+    alt: 'Torras banner',
   },
   {
-    href: '/products/nothing-headphone-1-headphones',
-    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/nothing-desk.jpg?v=1773951906',
-    alt: 'Nothing banner',
+    href: '/brands/beats',
+    desktop:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_5_2026_10_55_34_PM.png?v=1780689976',
+    alt: 'Beats banner',
   },
   {
-    href: '/collections/moft-products',
-    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/moft-desk.jpg?v=1773951906',
+    href: '/brands/moft',
+    desktop:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_5_2026_11_33_58_PM.png?v=1780691674',
     alt: 'Moft banner',
   },
   {
-    href: '/collections/dji-products',
-    desktop: 'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/dji-desk.jpg?v=1773951907',
+    href: '/products/dji-mic-mini-2-2-tx-1-rx-charging-case?Title=Default+Title',
+    desktop:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_5_2026_11_05_45_PM.png?v=1780689977',
     alt: 'DJI banner',
   },
 ];
@@ -1401,7 +1413,7 @@ const HERO_SWIPE_THRESHOLD_PX = 46;
  * @typedef {{
  *   id: string;
  *   title: string;
-  *   handle: string;
+ *   handle: string;
  *   image: {
  *     url?: string;
  *     altText?: string | null;
