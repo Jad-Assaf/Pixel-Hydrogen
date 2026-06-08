@@ -23,7 +23,9 @@ import {AddToCartButton} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 import {useWishlist} from '~/hooks/useWishlist';
 import {StoreAssistantProductDropdown} from '~/components/StoreAssistantSection';
+import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {canonicalUrl} from '~/lib/canonical';
+import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
 /* eslint-disable react/no-unknown-property */
 
 /**
@@ -45,7 +47,11 @@ export const meta = ({data}) => {
 
   const seoTitle = product.seo?.title?.trim() || product.title || '';
   const title = seoTitle ? `Pixel Zones | ${seoTitle}` : 'Pixel Zones';
-  const description = (product.seo?.description || product.description || '').trim();
+  const description = (
+    product.seo?.description ||
+    product.description ||
+    ''
+  ).trim();
   const url = canonicalUrl(`/products/${product.handle}`);
   const firstProductImage = product.images?.nodes?.[0] || null;
   const metaTags = [
@@ -204,24 +210,28 @@ export default function Product() {
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [isAvailabilityVisible, setIsAvailabilityVisible] = useState(false);
   const [showMobileStickyCart, setShowMobileStickyCart] = useState(false);
-  const [isStoreOpenNow, setIsStoreOpenNow] = useState(() => getBeirutStoreStatus());
+  const [isStoreOpenNow, setIsStoreOpenNow] = useState(() =>
+    getBeirutStoreStatus(),
+  );
   const [quantity, setQuantity] = useState(1);
   const relatedCarouselRef = useRef(null);
   const mainMediaRef = useRef(null);
   const mainTouchStartX = useRef(null);
   const lightboxTouchStartX = useRef(null);
   const isWishlisted = hasHandle(product.handle);
-  const showMobileCompareAtPrice = hasCompareAtPrice(
-    selectedVariant?.price,
-    selectedVariant?.compareAtPrice,
-  );
+  const shouldAskForPrice = isZeroPrice(selectedVariant?.price);
+  const showMobileCompareAtPrice =
+    !shouldAskForPrice &&
+    hasCompareAtPrice(selectedVariant?.price, selectedVariant?.compareAtPrice);
 
   useEffect(() => {
     if (!variantImageId) return;
 
     const matchIndex = images.findIndex((image) => image.id === variantImageId);
     if (matchIndex >= 0) {
-      setActiveIndex((current) => (current === matchIndex ? current : matchIndex));
+      setActiveIndex((current) =>
+        current === matchIndex ? current : matchIndex,
+      );
     }
   }, [variantImageId, images]);
 
@@ -346,7 +356,10 @@ export default function Product() {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    document.body.classList.toggle('pz-mobile-cart-active', showMobileStickyCart);
+    document.body.classList.toggle(
+      'pz-mobile-cart-active',
+      showMobileStickyCart,
+    );
 
     return () => {
       document.body.classList.remove('pz-mobile-cart-active');
@@ -517,6 +530,7 @@ export default function Product() {
           <h1>{product.title}</h1>
 
           <ProductForm
+            productHandle={product.handle}
             productOptions={productOptions}
             selectedVariant={selectedVariant}
             quantity={quantity}
@@ -527,7 +541,9 @@ export default function Product() {
             <div className="pz-product-quantity-control">
               <button
                 type="button"
-                onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                onClick={() =>
+                  setQuantity((current) => Math.max(1, current - 1))
+                }
                 aria-label="Decrease quantity"
                 disabled={quantity <= 1}
               >
@@ -536,7 +552,9 @@ export default function Product() {
               <span aria-live="polite">{quantity}</span>
               <button
                 type="button"
-                onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+                onClick={() =>
+                  setQuantity((current) => Math.min(99, current + 1))
+                }
                 aria-label="Increase quantity"
                 disabled={quantity >= 99}
               >
@@ -563,7 +581,9 @@ export default function Product() {
                 isWishlisted ? ' is-active' : ''
               }`}
               onClick={() => toggleHandle(product.handle)}
-              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-label={
+                isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'
+              }
               aria-pressed={isWishlisted}
             >
               {isWishlisted ? (
@@ -571,7 +591,9 @@ export default function Product() {
               ) : (
                 <WishlistAddIcon className="pz-product-page-wishlist-icon" />
               )}
-              <span>{isWishlisted ? 'Added to Wishlist' : 'Add to Wishlist'}</span>
+              <span>
+                {isWishlisted ? 'Added to Wishlist' : 'Add to Wishlist'}
+              </span>
             </button>
           ) : null}
 
@@ -598,7 +620,7 @@ export default function Product() {
             >
               <span>Check availability</span>
               <PlusIcon className="pz-product-availability-toggle-icon" />
-              </button>
+            </button>
           </div>
 
           <section
@@ -662,8 +684,8 @@ export default function Product() {
                 <h3>How to Check Availability</h3>
               </div>
               <p className="pz-product-help-copy">
-                Tap &quot;Check availability&quot; to confirm whether this item is
-                in stock at our showroom or available exclusively online.
+                Tap &quot;Check availability&quot; to confirm whether this item
+                is in stock at our showroom or available exclusively online.
               </p>
             </section>
 
@@ -948,7 +970,9 @@ export default function Product() {
             <span aria-live="polite">{quantity}</span>
             <button
               type="button"
-              onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+              onClick={() =>
+                setQuantity((current) => Math.min(99, current + 1))
+              }
               aria-label="Increase quantity"
               disabled={quantity >= 99}
             >
@@ -956,7 +980,16 @@ export default function Product() {
             </button>
           </div>
 
-          {selectedVariant?.id ? (
+          {shouldAskForPrice ? (
+            <AskForPriceLink
+              className="pz-product-mobile-cart-btn"
+              productHandle={product.handle}
+            >
+              <span className="pz-product-mobile-cart-label">
+                {ASK_FOR_PRICE_LABEL}
+              </span>
+            </AskForPriceLink>
+          ) : selectedVariant?.id ? (
             <AddToCartButton
               disabled={!selectedVariant.availableForSale}
               onClick={() => open('cart')}

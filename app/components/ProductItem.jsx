@@ -2,9 +2,11 @@ import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router';
 import {useVariantUrl} from '~/lib/variants';
 import {AddToCartButton} from '~/components/AddToCartButton';
+import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {useAside} from '~/components/Aside';
 import {PlusIcon} from '~/components/Icons';
 import {ProductPrice} from '~/components/ProductPrice';
+import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
 
 /**
  * @param {{
@@ -39,7 +41,10 @@ export function ProductItem({product, loading, showAddToCart = false}) {
     return unique;
   }, [product?.variants?.nodes]);
   const initialVariantId = useMemo(() => {
-    if (selectedVariant?.id && variantSwatches.some((variant) => variant.id === selectedVariant.id)) {
+    if (
+      selectedVariant?.id &&
+      variantSwatches.some((variant) => variant.id === selectedVariant.id)
+    ) {
       return selectedVariant.id;
     }
 
@@ -61,7 +66,9 @@ export function ProductItem({product, loading, showAddToCart = false}) {
   }, [activeVariantId, selectedVariant, variantSwatches]);
   const displayVariant = activeVariant || selectedVariant;
   const displayImage = displayVariant?.image || product.featuredImage;
-  const imageUrl = displayImage?.url ? withImageWidth(displayImage.url, 300) : null;
+  const imageUrl = displayImage?.url
+    ? withImageWidth(displayImage.url, 300)
+    : null;
   const displayPrice =
     displayVariant?.price || product.priceRange?.minVariantPrice || null;
   const displayCompareAtPrice =
@@ -70,6 +77,7 @@ export function ProductItem({product, loading, showAddToCart = false}) {
       ? selectedVariant?.compareAtPrice || null
       : null);
   const cartVariant = displayVariant || selectedVariant;
+  const shouldAskForPrice = isZeroPrice(displayPrice);
   const {open} = useAside();
 
   return (
@@ -101,7 +109,10 @@ export function ProductItem({product, loading, showAddToCart = false}) {
       <div className="pz-product-card-footer">
         <div className="pz-product-variant-slot">
           {variantSwatches.length > 1 ? (
-            <div className="pz-product-variant-swatches" aria-label="Variant images">
+            <div
+              className="pz-product-variant-swatches"
+              aria-label="Variant images"
+            >
               {variantSwatches.map((variant) => {
                 const swatchImage = variant.image;
                 const colorValue = getColorOptionValue(variant);
@@ -124,7 +135,9 @@ export function ProductItem({product, loading, showAddToCart = false}) {
                   >
                     <img
                       src={withImageWidth(swatchImage.url, 80)}
-                      alt={swatchImage.altText || variant.title || product.title}
+                      alt={
+                        swatchImage.altText || variant.title || product.title
+                      }
                       loading="lazy"
                       width={24}
                       height={24}
@@ -147,7 +160,14 @@ export function ProductItem({product, loading, showAddToCart = false}) {
         </div>
       </div>
 
-      {showAddToCart && cartVariant?.id ? (
+      {showAddToCart && shouldAskForPrice ? (
+        <AskForPriceLink
+          className="pz-card-cart-btn pz-card-cart-btn--ask"
+          productHandle={product.handle}
+        >
+          {ASK_FOR_PRICE_LABEL}
+        </AskForPriceLink>
+      ) : showAddToCart && cartVariant?.id ? (
         <AddToCartButton
           disabled={!cartVariant.availableForSale}
           onClick={() => open('cart')}

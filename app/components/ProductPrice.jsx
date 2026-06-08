@@ -1,4 +1,5 @@
 import {Money} from '@shopify/hydrogen';
+import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
 
 /**
  * @param {{
@@ -8,12 +9,18 @@ import {Money} from '@shopify/hydrogen';
  * }}
  */
 export function ProductPrice({price, compareAtPrice, suffix = ''}) {
-  const showCompareAtPrice = hasCompareAtPrice(price, compareAtPrice);
+  const shouldAskForPrice = isZeroPrice(price);
+  const showCompareAtPrice =
+    !shouldAskForPrice && hasCompareAtPrice(price, compareAtPrice);
   const normalizedSuffix = String(suffix || '').trim();
 
   return (
     <div className={`product-price${showCompareAtPrice ? ' is-on-sale' : ''}`}>
-      {price ? (
+      {shouldAskForPrice ? (
+        <span className="product-price-current product-price-current--ask">
+          {ASK_FOR_PRICE_LABEL}
+        </span>
+      ) : price ? (
         <span className="product-price-current">
           <Money data={price} />
           {normalizedSuffix ? (

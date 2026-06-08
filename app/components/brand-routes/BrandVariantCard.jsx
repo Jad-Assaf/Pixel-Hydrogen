@@ -1,10 +1,12 @@
 import {Link} from 'react-router';
 import {AddToCartButton} from '~/components/AddToCartButton';
+import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {PlusIcon} from '~/components/Icons';
 import {ProductPrice} from '~/components/ProductPrice';
 import {useAside} from '~/components/Aside';
 import {useVariantUrl} from '~/lib/variants';
 import {getVariantLabel, withImageWidth} from '~/lib/brand-routes/utils';
+import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
 
 export function BrandVariantCard({
   brand,
@@ -22,6 +24,7 @@ export function BrandVariantCard({
     ? withImageWidth(displayImage.url, 300)
     : null;
   const label = getVariantLabel(variant);
+  const shouldAskForPrice = isZeroPrice(variant.price);
   const {open} = useAside();
 
   return (
@@ -69,7 +72,14 @@ export function BrandVariantCard({
         </div>
       </div>
 
-      {variant.id ? (
+      {shouldAskForPrice ? (
+        <AskForPriceLink
+          className="pz-card-cart-btn pz-card-cart-btn--ask"
+          productHandle={product.handle}
+        >
+          {ASK_FOR_PRICE_LABEL}
+        </AskForPriceLink>
+      ) : variant.id ? (
         <AddToCartButton
           disabled={!variant.availableForSale}
           onClick={() => open('cart')}

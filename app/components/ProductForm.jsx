@@ -1,20 +1,29 @@
 import {Link, useNavigate} from 'react-router';
 import {AddToCartButton} from './AddToCartButton';
+import {AskForPriceLink} from './AskForPriceLink';
 import {useAside} from './Aside';
+import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
 
 /**
  * @param {{
  *   productOptions: MappedProductOptions[];
  *   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+ *   productHandle?: string;
  *   quantity?: number;
  * }}
  */
-export function ProductForm({productOptions, selectedVariant, quantity = 1}) {
+export function ProductForm({
+  productOptions,
+  selectedVariant,
+  productHandle,
+  quantity = 1,
+}) {
   const navigate = useNavigate();
   const {open} = useAside();
   const safeQuantity = Number.isFinite(quantity)
     ? Math.min(99, Math.max(1, Math.trunc(quantity)))
     : 1;
+  const shouldAskForPrice = isZeroPrice(selectedVariant?.price);
 
   return (
     <div className="pz-product-form">
@@ -101,26 +110,35 @@ export function ProductForm({productOptions, selectedVariant, quantity = 1}) {
         );
       })}
 
-      <AddToCartButton
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
-        onClick={() => {
-          open('cart');
-        }}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: safeQuantity,
-                  selectedVariant,
-                },
-              ]
-            : []
-        }
-        className="pz-btn pz-btn-primary pz-product-cart-btn"
-      >
-        {selectedVariant?.availableForSale ? 'Add to Cart' : 'Sold out'}
-      </AddToCartButton>
+      {shouldAskForPrice ? (
+        <AskForPriceLink
+          className="pz-btn pz-btn-primary pz-product-cart-btn"
+          productHandle={productHandle}
+        >
+          {ASK_FOR_PRICE_LABEL}
+        </AskForPriceLink>
+      ) : (
+        <AddToCartButton
+          disabled={!selectedVariant || !selectedVariant.availableForSale}
+          onClick={() => {
+            open('cart');
+          }}
+          lines={
+            selectedVariant
+              ? [
+                  {
+                    merchandiseId: selectedVariant.id,
+                    quantity: safeQuantity,
+                    selectedVariant,
+                  },
+                ]
+              : []
+          }
+          className="pz-btn pz-btn-primary pz-product-cart-btn"
+        >
+          {selectedVariant?.availableForSale ? 'Add to Cart' : 'Sold out'}
+        </AddToCartButton>
+      )}
     </div>
   );
 }
