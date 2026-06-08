@@ -2,11 +2,10 @@ import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router';
 import {useVariantUrl} from '~/lib/variants';
 import {AddToCartButton} from '~/components/AddToCartButton';
-import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {useAside} from '~/components/Aside';
 import {PlusIcon} from '~/components/Icons';
 import {ProductPrice} from '~/components/ProductPrice';
-import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
+import {isZeroPrice} from '~/lib/pricing';
 
 /**
  * @param {{
@@ -160,14 +159,7 @@ export function ProductItem({product, loading, showAddToCart = false}) {
         </div>
       </div>
 
-      {showAddToCart && shouldAskForPrice ? (
-        <AskForPriceLink
-          className="pz-card-cart-btn pz-card-cart-btn--ask"
-          productHandle={product.handle}
-        >
-          {ASK_FOR_PRICE_LABEL}
-        </AskForPriceLink>
-      ) : showAddToCart && cartVariant?.id ? (
+      {showAddToCart && !shouldAskForPrice && cartVariant?.id ? (
         <AddToCartButton
           disabled={!cartVariant.availableForSale}
           onClick={() => open('cart')}

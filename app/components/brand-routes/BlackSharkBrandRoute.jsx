@@ -1,11 +1,10 @@
 import {Analytics} from '@shopify/hydrogen';
 import {Link} from 'react-router';
 import {AddToCartButton} from '~/components/AddToCartButton';
-import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {ProductPrice} from '~/components/ProductPrice';
 import {useAside} from '~/components/Aside';
 import {useVariantUrl} from '~/lib/variants';
-import {ASK_FOR_PRICE_LABEL, isZeroPrice} from '~/lib/pricing';
+import {isZeroPrice} from '~/lib/pricing';
 import {BrandVariantCard} from '~/components/brand-routes/BrandVariantCard';
 import {
   BRAND_BANNER_IMAGE_HEIGHT,
@@ -260,14 +259,7 @@ function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
           )}
         </div>
 
-        {shouldAskForPrice ? (
-          <AskForPriceLink
-            className="pz-black-shark-tablet-cart"
-            productHandle={product.handle}
-          >
-            {ASK_FOR_PRICE_LABEL}
-          </AskForPriceLink>
-        ) : variant.id ? (
+        {!shouldAskForPrice && variant.id ? (
           <AddToCartButton
             disabled={!variant.availableForSale}
             onClick={() => open('cart')}
