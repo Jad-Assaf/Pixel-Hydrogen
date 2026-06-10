@@ -41,7 +41,7 @@ export async function loadConfiguredBrandSections(storefront, sections) {
   return loadedSections;
 }
 
-async function loadBrandSearchProducts(storefront, queries) {
+export async function loadBrandSearchProducts(storefront, queries) {
   const results = await Promise.all(
     (queries || []).filter(Boolean).map(async (query) => {
       let after = null;
@@ -201,7 +201,7 @@ const PRODUCT_VARIANT_CARD_FRAGMENT = `#graphql
         ...BrandMoney
       }
     }
-    variants(first: 50) {
+    variants(first: 250) {
       nodes {
         id
         title
@@ -245,7 +245,7 @@ const BRAND_SEARCH_PRODUCTS_QUERY = `#graphql
       after: $after,
       sortKey: RELEVANCE,
       types: [PRODUCT],
-      unavailableProducts: HIDE
+      unavailableProducts: SHOW
     ) {
       pageInfo {
         hasNextPage

@@ -21,9 +21,24 @@ export const meta = ({data}) => {
 
 const SORT_OPTIONS = [
   {value: 'new-to-old', label: 'New to Old', sortKey: 'CREATED', reverse: true},
-  {value: 'old-to-new', label: 'Old to New', sortKey: 'CREATED', reverse: false},
-  {value: 'price-asc', label: 'Price: Low to High', sortKey: 'PRICE', reverse: false},
-  {value: 'price-desc', label: 'Price: High to Low', sortKey: 'PRICE', reverse: true},
+  {
+    value: 'old-to-new',
+    label: 'Old to New',
+    sortKey: 'CREATED',
+    reverse: false,
+  },
+  {
+    value: 'price-asc',
+    label: 'Price: Low to High',
+    sortKey: 'PRICE',
+    reverse: false,
+  },
+  {
+    value: 'price-desc',
+    label: 'Price: High to Low',
+    sortKey: 'PRICE',
+    reverse: true,
+  },
 ];
 const MAIN_MENU_HANDLE = 'new-main-menu';
 const PRODUCTS_PER_PAGE = 30;
@@ -50,19 +65,24 @@ export async function loader({context, params, request}) {
 
   const sortParam = url.searchParams.get('sort') || 'new-to-old';
   const selectedSort =
-    SORT_OPTIONS.find((option) => option.value === sortParam) || SORT_OPTIONS[0];
+    SORT_OPTIONS.find((option) => option.value === sortParam) ||
+    SORT_OPTIONS[0];
   const requestedPage = getRequestedPage(url.searchParams.get('page'));
   const requestedProductCount = Math.max(
     PREFETCH_PRODUCT_COUNT,
     requestedPage * PRODUCTS_PER_PAGE,
   );
-  const initialBatchSize = Math.min(MAX_CONNECTION_FETCH, requestedProductCount);
+  const initialBatchSize = Math.min(
+    MAX_CONNECTION_FETCH,
+    requestedProductCount,
+  );
 
   if (!handle) {
     throw redirect('/collections');
   }
 
   const collectionResult = await storefront.query(COLLECTION_QUERY, {
+    cache: storefront.CacheNone(),
     variables: {
       handle,
       first: initialBatchSize,
@@ -89,16 +109,20 @@ export async function loader({context, params, request}) {
       Math.max(PRODUCTS_PER_PAGE, remaining),
     );
 
-    const {collection: nextCollectionPage} = await storefront.query(COLLECTION_QUERY, {
-      variables: {
-        handle,
-        first: nextBatchSize,
-        endCursor,
-        filters: selectedFilters,
-        sortKey: selectedSort.sortKey,
-        reverse: selectedSort.reverse,
+    const {collection: nextCollectionPage} = await storefront.query(
+      COLLECTION_QUERY,
+      {
+        cache: storefront.CacheNone(),
+        variables: {
+          handle,
+          first: nextBatchSize,
+          endCursor,
+          filters: selectedFilters,
+          sortKey: selectedSort.sortKey,
+          reverse: selectedSort.reverse,
+        },
       },
-    });
+    );
 
     const nextNodes = nextCollectionPage?.products?.nodes || [];
     if (!nextNodes.length) {
@@ -276,7 +300,10 @@ export default function CollectionRoute() {
       </div>
 
       {menuCollectionCards.length ? (
-        <section className="pz-collection-menu-strip" aria-label="Browse collections">
+        <section
+          className="pz-collection-menu-strip"
+          aria-label="Browse collections"
+        >
           <div className="pz-collection-menu-carousel">
             {menuCollectionCards.map((menuCollection) => (
               <Link
@@ -284,7 +311,8 @@ export default function CollectionRoute() {
                 to={`/collections/${menuCollection.handle}`}
                 prefetch="intent"
                 className={`pz-collection-card pz-collection-menu-card${
-                  menuCollection.handle.toLowerCase() === collection.handle.toLowerCase()
+                  menuCollection.handle.toLowerCase() ===
+                  collection.handle.toLowerCase()
                     ? ' is-active'
                     : ''
                 }`}
@@ -315,7 +343,10 @@ export default function CollectionRoute() {
         className="pz-collection-controls"
         aria-label="Collection filters and sorting"
       >
-        <Form method="get" className="pz-collection-sort-form pz-collection-sort-form--inline">
+        <Form
+          method="get"
+          className="pz-collection-sort-form pz-collection-sort-form--inline"
+        >
           {selectedFilterValues.map((value) => (
             <input key={value} type="hidden" name="filter" value={value} />
           ))}
@@ -389,7 +420,10 @@ export default function CollectionRoute() {
         </div>
 
         {pagination.totalPages > 1 ? (
-          <nav className="pagination pz-page-pagination" aria-label="Products pagination">
+          <nav
+            className="pagination pz-page-pagination"
+            aria-label="Products pagination"
+          >
             {hasPreviousPage ? (
               <button
                 type="button"
@@ -615,10 +649,7 @@ async function loadMenuCollectionCards(storefront, items) {
   const menuItems = getMenuCollectionItems(items);
   if (!menuItems.length) return [];
 
-  const {
-    collectionIds,
-    collectionHandles,
-  } = getMenuCollectionReferences(items);
+  const {collectionIds, collectionHandles} = getMenuCollectionReferences(items);
   let menuCollectionAvailability = {};
   let menuCollectionMedia = {};
 
@@ -660,27 +691,34 @@ async function loadMenuCollectionCards(storefront, items) {
     {},
   );
 
-  menuCollectionMedia = (collectionNodesResult?.nodes || []).reduce((acc, node) => {
-    if (node?.__typename !== 'Collection') return acc;
+  menuCollectionMedia = (collectionNodesResult?.nodes || []).reduce(
+    (acc, node) => {
+      if (node?.__typename !== 'Collection') return acc;
 
-    const image = pickCollectionMenuImage(node);
-    if (!image?.url) return acc;
+      const image = pickCollectionMenuImage(node);
+      if (!image?.url) return acc;
 
-    if (node.id) {
-      acc[node.id] = image;
-      acc[`id:${node.id}`] = image;
-    }
-    if (node.handle) {
-      acc[`handle:${node.handle.toLowerCase()}`] = image;
-    }
+      if (node.id) {
+        acc[node.id] = image;
+        acc[`id:${node.id}`] = image;
+      }
+      if (node.handle) {
+        acc[`handle:${node.handle.toLowerCase()}`] = image;
+      }
 
-    return acc;
-  }, {});
+      return acc;
+    },
+    {},
+  );
 
   collectionHandleResults.forEach((result, index) => {
     const requestedHandle = collectionHandles[index];
     const collection = result?.collection;
-    const resolvedHandle = (collection?.handle || requestedHandle || '').toLowerCase();
+    const resolvedHandle = (
+      collection?.handle ||
+      requestedHandle ||
+      ''
+    ).toLowerCase();
     if (!resolvedHandle) return;
 
     const hasProducts = Boolean(collection?.products?.nodes?.length);
@@ -763,7 +801,8 @@ function resolveMenuCollectionImage(item, mediaMap) {
 
   if (handleKey && mediaMap[handleKey]) return mediaMap[handleKey];
   if (idKey && mediaMap[idKey]) return mediaMap[idKey];
-  if (item.resourceId && mediaMap[item.resourceId]) return mediaMap[item.resourceId];
+  if (item.resourceId && mediaMap[item.resourceId])
+    return mediaMap[item.resourceId];
 
   return null;
 }

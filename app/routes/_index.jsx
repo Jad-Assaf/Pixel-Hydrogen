@@ -38,7 +38,9 @@ export async function loader({context}) {
   const {storefront} = context;
 
   const [homeData, menuData] = await Promise.all([
-    storefront.query(HOME_QUERY),
+    storefront.query(HOME_QUERY, {
+      cache: storefront.CacheNone(),
+    }),
     storefront.query(HOME_MENU_QUERY, {
       cache: storefront.CacheLong(),
       variables: {menuHandle: HEADER_MENU_HANDLE},
@@ -477,6 +479,8 @@ function HomeProductRowSection({
   const rowStateKey = `${loadSource.mode || 'collection'}:${loadSource.handle || ''}:${itemKeyPrefix}`;
   const isNearView = useNearViewport(sectionRef, '320px');
   const isLoadingMore = fetcher.state !== 'idle';
+  const viewAllPrefetch =
+    linkTo === '/collections/new-arrivals' ? undefined : 'intent';
 
   productsRef.current = products;
   pageInfoRef.current = pageInfo;
@@ -580,12 +584,20 @@ function HomeProductRowSection({
                 <ArrowIcon direction="right" />
                 <span className="sr-only">Next</span>
               </button>
-              <Link to={linkTo} prefetch="intent" className="pz-inline-link">
+              <Link
+                to={linkTo}
+                prefetch={viewAllPrefetch}
+                className="pz-inline-link"
+              >
                 View All
               </Link>
             </div>
           ) : (
-            <Link to={linkTo} prefetch="intent" className="pz-inline-link">
+            <Link
+              to={linkTo}
+              prefetch={viewAllPrefetch}
+              className="pz-inline-link"
+            >
               View All
             </Link>
           )}

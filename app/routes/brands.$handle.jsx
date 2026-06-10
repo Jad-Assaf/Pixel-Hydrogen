@@ -10,6 +10,10 @@ import {
   BlackSharkBrandRoute,
 } from '~/components/brand-routes/BlackSharkBrandRoute';
 import {
+  DECODED_PRODUCT_SEARCH_QUERIES,
+  DecodedBrandRoute,
+} from '~/components/brand-routes/DecodedBrandRoute';
+import {
   MOFT_SECTIONS,
   MoftBrandRoute,
 } from '~/components/brand-routes/MoftBrandRoute';
@@ -21,9 +25,10 @@ import {getBrandByHandle} from '~/lib/brands';
 import {
   loadBrandCollection,
   loadBrandProducts,
+  loadBrandSearchProducts,
   loadConfiguredBrandSections,
 } from '~/lib/brand-routes/data.server';
-import {getBrandThemeVars} from '~/lib/brand-routes/utils';
+import {getBrandThemeVars, mergeProducts} from '~/lib/brand-routes/utils';
 import brandRouteStyles from '~/styles/brands-handle.css?url';
 
 export function links() {
@@ -110,6 +115,23 @@ export async function loader({context, params}) {
     };
   }
 
+  if (brand.handle === 'decoded') {
+    const decodedSearchProducts = await loadBrandSearchProducts(
+      storefront,
+      DECODED_PRODUCT_SEARCH_QUERIES,
+    );
+    const decodedProducts = mergeProducts(
+      decodedSearchProducts,
+      collection?.products?.nodes || [],
+    );
+
+    return {
+      brand,
+      collection,
+      decodedProducts,
+    };
+  }
+
   return {
     brand,
     collection,
@@ -150,6 +172,16 @@ export default function BrandRoute() {
         brand={data.brand}
         collection={data.collection}
         sections={data.moftSections || []}
+      />
+    );
+  }
+
+  if (data.brand.handle === 'decoded') {
+    return (
+      <DecodedBrandRoute
+        brand={data.brand}
+        collection={data.collection}
+        products={data.decodedProducts || []}
       />
     );
   }

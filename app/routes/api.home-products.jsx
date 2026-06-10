@@ -9,11 +9,14 @@ export async function loader({context, request}) {
   const handle = url.searchParams.get('handle') || '';
   const mode = url.searchParams.get('mode') || '';
   const cursor = url.searchParams.get('cursor') || null;
-  const requestedLimit = Number(url.searchParams.get('limit') || MAX_PRODUCTS_PER_REQUEST);
+  const requestedLimit = Number(
+    url.searchParams.get('limit') || MAX_PRODUCTS_PER_REQUEST,
+  );
   const limit = Math.max(1, Math.min(MAX_PRODUCTS_PER_REQUEST, requestedLimit));
 
   if (mode === 'latest') {
     const data = await storefront.query(HOME_PRODUCTS_QUERY, {
+      cache: storefront.CacheNone(),
       variables: {
         first: limit,
         endCursor: cursor,

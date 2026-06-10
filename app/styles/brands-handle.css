@@ -183,6 +183,71 @@
     var(--brand-surface);
 }
 
+.pz-brand-page--decoded {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(139, 94, 60, 0.08) 0%,
+      transparent 30%
+    ),
+    linear-gradient(180deg, #fbfaf8 0%, #fff 45%, #f8fafc 100%);
+}
+
+.pz-decoded-route-head {
+  padding: 0.4rem 0 0.75rem;
+}
+
+.pz-decoded-banner-card {
+  border: 1px solid rgba(139, 94, 60, 0.18);
+  background: #201814;
+  box-shadow: 0 24px 58px -50px rgba(32, 24, 20, 0.42);
+}
+
+.pz-decoded-banner-card::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(32, 24, 20, 0.52) 0%,
+    rgba(32, 24, 20, 0.18) 44%,
+    transparent 72%
+  );
+}
+
+.pz-decoded-banner-copy {
+  top: auto;
+  bottom: clamp(1.1rem, 3vw, 2.4rem);
+  z-index: 1;
+  max-width: min(42rem, 78vw);
+}
+
+.pz-decoded-banner-copy p,
+.pz-decoded-banner-copy h1 {
+  color: #fff;
+  text-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
+}
+
+.pz-decoded-banner-copy h1 {
+  max-width: 16ch;
+  font-size: clamp(2.1rem, 4.6vw, 4.2rem);
+  font-weight: 850;
+  line-height: 0.96;
+}
+
+.pz-decoded-section-head {
+  margin-bottom: 1rem;
+}
+
+.pz-decoded-section-head h2 {
+  margin: 0;
+  color: #201814;
+  font-size: clamp(1.45rem, 2.8vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
 .pz-moft-banner-card {
   overflow: hidden;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -570,6 +635,26 @@
   .pz-moft-banner-copy h1 {
     max-width: 12ch;
     font-size: clamp(1.7rem, 9vw, 2.75rem);
+  }
+
+  .pz-decoded-banner-card::after {
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(32, 24, 20, 0.08) 42%,
+      rgba(32, 24, 20, 0.58) 100%
+    );
+  }
+
+  .pz-decoded-banner-copy {
+    right: 1rem;
+    bottom: 1.1rem;
+    max-width: none;
+  }
+
+  .pz-decoded-banner-copy h1 {
+    max-width: 13ch;
+    font-size: clamp(1.65rem, 8.3vw, 2.7rem);
   }
 
   .pz-brand-variant-grid {
