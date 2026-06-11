@@ -222,10 +222,6 @@ export function DecodedBrandRoute({brand, collection, products}) {
                       loading={sectionIndex === 0 ? 'eager' : 'lazy'}
                     />
                   </picture>
-                  <div className="pz-brand-banner-copy pz-decoded-banner-copy">
-                    <p>{section.bannerEyebrow}</p>
-                    <h1>{section.bannerHeadline}</h1>
-                  </div>
                 </div>
               </div>
             </section>
@@ -271,8 +267,8 @@ export function DecodedBrandRoute({brand, collection, products}) {
 
 function getDecodedSectionEntries(products, section) {
   if (section.modelPatterns?.length) {
-    return sortDecodedSectionEntries(
-      dedupeVariantEntries(
+    return dedupeDecodedPhoneEntriesByColor(
+      sortDecodedSectionEntries(
         (products || []).flatMap((product) =>
           getDecodedProductVariants(product)
             .filter((variant) =>
@@ -280,8 +276,8 @@ function getDecodedSectionEntries(products, section) {
             )
             .map((variant) => ({product, variant})),
         ),
+        section,
       ),
-      section,
     );
   }
 
@@ -384,4 +380,24 @@ function dedupeVariantEntries(entries) {
     seen.add(key);
     return true;
   });
+}
+
+function dedupeDecodedPhoneEntriesByColor(entries) {
+  const seen = new Set();
+  return entries.filter(({product, variant}) => {
+    const key = `${product?.id || product?.handle}:${getDecodedVariantColorKey(
+      variant,
+    )}`;
+    if (!variant?.id || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getDecodedVariantColorKey(variant) {
+  const colorValue = (variant?.selectedOptions || []).find((option) =>
+    /colou?r/i.test(option?.name || ''),
+  )?.value;
+
+  return colorValue ? colorValue.toLowerCase() : 'default';
 }
