@@ -51,6 +51,7 @@ export const TORRAS_SECTIONS = [
       'torras-pstand-for-iphone-17-pro-max-with-built-in-kickstand',
       'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-shadow-black',
       'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-glacier-sprint',
+      'torras-magnetic-slim-fit-for-iphone-17-case-ultra-thin-compatible-with-magsafe',
       'torras-ostand-q3-air-for-iphone-16-pro-iphone-16-pro-max',
     ],
   },
