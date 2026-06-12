@@ -2,21 +2,83 @@ export const BRAND_BANNER_IMAGE_WIDTH = 1600;
 export const BRAND_BANNER_IMAGE_HEIGHT = 520;
 
 export function getVariantLabel(variant) {
-  const colorOption = (variant?.selectedOptions || []).find((option) =>
-    /colou?r/i.test(option?.name || ''),
-  );
+  const colorOption = getVariantColorOption(variant);
 
   if (colorOption?.value) return colorOption.value;
   if (variant?.title && variant.title !== 'Default Title') return variant.title;
   return 'Variant';
 }
 
-function getColorOptionValue(variant) {
-  return (
-    (variant?.selectedOptions || []).find((option) =>
-      /colou?r/i.test(option?.name || ''),
-    )?.value || null
+export function getVariantColorLabel(variant) {
+  return getVariantColorOption(variant)?.value || null;
+}
+
+export function getProductModelLabels(product, variant) {
+  const variants = (product?.variants?.nodes || []).filter((node) => node?.id);
+  const modelOptionName = getModelOptionName(
+    variants.length ? variants : variant ? [variant] : [],
   );
+
+  if (modelOptionName) {
+    return uniqueLabels(
+      variants
+        .map((node) =>
+          (node.selectedOptions || []).find(
+            (option) => option?.name === modelOptionName,
+          ),
+        )
+        .map((option) => option?.value)
+        .filter(isDisplayableVariantLabel),
+    );
+  }
+
+  if (
+    !getVariantColorOption(variant) &&
+    isDisplayableVariantLabel(variant?.title)
+  ) {
+    return [variant.title];
+  }
+
+  return [];
+}
+
+function getVariantColorOption(variant) {
+  return (variant?.selectedOptions || []).find((option) =>
+    /colou?r/i.test(option?.name || ''),
+  );
+}
+
+function getModelOptionName(variants) {
+  const optionNames = uniqueLabels(
+    variants.flatMap((variant) =>
+      (variant?.selectedOptions || []).map((option) => option?.name),
+    ),
+  );
+
+  return (
+    optionNames.find((name) => /model|device|compatib|series/i.test(name)) ||
+    optionNames.find((name) => !/colou?r|title/i.test(name)) ||
+    null
+  );
+}
+
+function isDisplayableVariantLabel(value) {
+  return Boolean(value && value !== 'Default Title' && value !== 'Title');
+}
+
+function uniqueLabels(labels) {
+  const seen = new Set();
+  return (labels || []).filter((label) => {
+    const value = typeof label === 'string' ? label.trim() : '';
+    const key = value.toLowerCase();
+    if (!value || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getColorOptionValue(variant) {
+  return getVariantColorOption(variant)?.value || null;
 }
 
 export function getProductCardEntries(product, splitVariantsBy = 'color') {

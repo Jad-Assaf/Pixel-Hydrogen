@@ -49,6 +49,9 @@ import torrasLogo from '~/assets/torras-logo.jpg';
 import ugreenLogo from '~/assets/ugreen-logo.jpg';
 import xiaomiLogo from '~/assets/xiaomi.jpg';
 
+const whoopLogo =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"%3E%3Crect width="600" height="600" rx="120" fill="%23070a0f"/%3E%3Cpath d="M95 390 150 210h58l-28 94 66-94h50l9 95 55-95h58L302 390h-52l-10-96-68 96H95Zm326 0c-35 0-58-22-58-56 0-69 43-125 104-125 36 0 59 22 59 57 0 68-43 124-105 124Zm7-49c24 0 42-35 42-66 0-12-5-18-15-18-24 0-42 35-42 66 0 12 5 18 15 18Z" fill="%23d7ff00"/%3E%3C/svg%3E';
+
 const FAMILY_ORDER = [
   'minimal',
   'performance',
@@ -97,7 +100,11 @@ const FAMILY_PROFILES = {
     familyLabel: 'Performance Computing',
     layout: 'technical',
     eyebrow: 'Built to keep pace',
-    notes: ['Productivity headroom', 'Confident thermals', 'Desk-first ergonomics'],
+    notes: [
+      'Productivity headroom',
+      'Confident thermals',
+      'Desk-first ergonomics',
+    ],
     focusAreas: [
       {
         title: 'Deep work',
@@ -161,7 +168,11 @@ const FAMILY_PROFILES = {
     familyLabel: 'Mobile Ecosystems',
     layout: 'orbital',
     eyebrow: 'Always in motion',
-    notes: ['Pocket-first design', 'Battery-minded choices', 'Connected daily loops'],
+    notes: [
+      'Pocket-first design',
+      'Battery-minded choices',
+      'Connected daily loops',
+    ],
     focusAreas: [
       {
         title: 'Everyday carry',
@@ -193,7 +204,11 @@ const FAMILY_PROFILES = {
     familyLabel: 'Sound with Identity',
     layout: 'pulse',
     eyebrow: 'Tuned for feeling',
-    notes: ['Signature voicing', 'Long-session comfort', 'Mood-setting presence'],
+    notes: [
+      'Signature voicing',
+      'Long-session comfort',
+      'Mood-setting presence',
+    ],
     focusAreas: [
       {
         title: 'Commute lift',
@@ -307,14 +322,14 @@ const FAMILY_PROFILES = {
     productLead:
       'Browse the selection that fits everyday routines best: lighter carry, calmer homes, and smoother travel.',
     palette: {
-      accent: '#a16207',
-      accentSoft: 'rgba(161, 98, 7, 0.18)',
-      ink: '#1f2937',
-      surface: '#fffbeb',
-      card: 'rgba(255, 255, 255, 0.86)',
-      glow: 'rgba(161, 98, 7, 0.14)',
-      meshA: 'rgba(254, 243, 199, 0.95)',
-      meshB: 'rgba(255, 251, 235, 0.98)',
+      // accent: '#a16207',
+      // accentSoft: 'rgba(161, 98, 7, 0.18)',
+      // ink: '#1f2937',
+      // surface: '#fffbeb',
+      // card: 'rgba(255, 255, 255, 0.86)',
+      // glow: 'rgba(161, 98, 7, 0.14)',
+      // meshA: 'rgba(254, 243, 199, 0.95)',
+      // meshB: 'rgba(255, 251, 235, 0.98)',
     },
   },
 };
@@ -410,7 +425,8 @@ export const BRANDS = [
     handle: 'samsung',
     logo: samsungLogo,
     family: 'mobile',
-    headline: 'A future-facing ecosystem that moves from pocket to living room.',
+    headline:
+      'A future-facing ecosystem that moves from pocket to living room.',
     summary:
       'Samsung spans phones, wearables, displays, and accessories with a design language that stays sleek and high-function.',
     palette: {accent: '#1d4ed8', accentSoft: 'rgba(29, 78, 216, 0.18)'},
@@ -450,7 +466,8 @@ export const BRANDS = [
     handle: 'aulumu',
     logo: aulumuLogo,
     family: 'minimal',
-    headline: 'Industrial accessories with sculpted materials and collector energy.',
+    headline:
+      'Industrial accessories with sculpted materials and collector energy.',
     summary:
       'Aulumu lives in the space between tool and object, where metal, silhouette, and detail all need to feel intentional.',
     palette: {accent: '#b45309', accentSoft: 'rgba(180, 83, 9, 0.18)'},
@@ -589,7 +606,8 @@ export const BRANDS = [
     handle: 'belkin',
     logo: belkinLogo,
     family: 'utility',
-    headline: 'Dependable connections across charging, cables, and daily networking.',
+    headline:
+      'Dependable connections across charging, cables, and daily networking.',
     summary:
       'Belkin fits the user who wants calm, trustworthy accessory choices that integrate neatly into work and home setups.',
     palette: {accent: '#059669', accentSoft: 'rgba(5, 150, 105, 0.18)'},
@@ -653,7 +671,8 @@ export const BRANDS = [
     handle: 'dji',
     logo: djiLogo,
     family: 'creator',
-    headline: 'Flight, stabilization, and camera tools built to unlock movement.',
+    headline:
+      'Flight, stabilization, and camera tools built to unlock movement.',
     summary:
       'DJI turns mobility into image-making power, whether the goal is smoother capture, aerial perspective, or faster production flow.',
     palette: {accent: '#111827', accentSoft: 'rgba(17, 24, 39, 0.18)'},
@@ -673,7 +692,8 @@ export const BRANDS = [
     handle: 'fantech',
     logo: fantechLogo,
     family: 'gaming',
-    headline: 'Gaming peripherals with bold styling and accessible performance.',
+    headline:
+      'Gaming peripherals with bold styling and accessible performance.',
     summary:
       'Fantech makes sense for users building an expressive gaming setup without aiming only at the highest price tier.',
     palette: {
@@ -687,7 +707,8 @@ export const BRANDS = [
     handle: 'fujifilm',
     logo: fujifilmLogo,
     family: 'creator',
-    headline: 'Imaging gear where color science and tactile control still matter.',
+    headline:
+      'Imaging gear where color science and tactile control still matter.',
     summary:
       'Fujifilm attracts photographers and filmmakers who care about both image character and the feel of the tool in hand.',
     palette: {accent: '#dc2626', accentSoft: 'rgba(220, 38, 38, 0.18)'},
@@ -697,7 +718,8 @@ export const BRANDS = [
     handle: 'google',
     logo: googleLogo,
     family: 'mobile',
-    headline: 'AI-shaped devices that keep search, photos, and life in one loop.',
+    headline:
+      'AI-shaped devices that keep search, photos, and life in one loop.',
     summary:
       'Google makes sense when software intelligence, fast capture, and seamless account-level continuity are the real priorities.',
     palette: {accent: '#34a853', accentSoft: 'rgba(52, 168, 83, 0.18)'},
@@ -727,7 +749,8 @@ export const BRANDS = [
     handle: 'hoco',
     logo: hocoLogo,
     family: 'utility',
-    headline: 'Fast-moving accessory basics for charging, audio, and daily use.',
+    headline:
+      'Fast-moving accessory basics for charging, audio, and daily use.',
     summary:
       'Hoco works for shoppers who want broad, practical options across the small essentials that keep devices moving.',
     palette: {accent: '#0ea5e9', accentSoft: 'rgba(14, 165, 233, 0.18)'},
@@ -821,7 +844,8 @@ export const BRANDS = [
     handle: 'nintendo',
     logo: nintendoLogo,
     family: 'gaming',
-    headline: 'Playful systems built around character, surprise, and shared moments.',
+    headline:
+      'Playful systems built around character, surprise, and shared moments.',
     summary:
       'Nintendo stands apart by prioritizing delight, portability, and memorable worlds over spec-sheet aggression.',
     palette: {
@@ -835,7 +859,8 @@ export const BRANDS = [
     handle: 'porodo',
     logo: porodoLogo,
     family: 'utility',
-    headline: 'Everyday electronics and accessories built for broad practical needs.',
+    headline:
+      'Everyday electronics and accessories built for broad practical needs.',
     summary:
       'Porodo is about coverage: the useful tools and gadgets that keep a modern setup filled in without overcomplication.',
     palette: {accent: '#0ea5e9', accentSoft: 'rgba(14, 165, 233, 0.18)'},
@@ -889,10 +914,21 @@ export const BRANDS = [
     handle: 'ugreen',
     logo: ugreenLogo,
     family: 'utility',
-    headline: 'No-nonsense connectivity and charging gear that overdelivers on utility.',
+    headline:
+      'No-nonsense connectivity and charging gear that overdelivers on utility.',
     summary:
       'UGREEN is what you buy when the setup problem is obvious and you want a compact, capable solution without drama.',
     palette: {accent: '#16a34a', accentSoft: 'rgba(22, 163, 74, 0.18)'},
+  }),
+  createBrand({
+    name: 'WHOOP',
+    handle: 'whoop',
+    logo: whoopLogo,
+    family: 'lifestyle',
+    headline: 'Wearable performance gear built around recovery and readiness.',
+    summary:
+      'WHOOP fits users who want health tracking to feel focused, durable, and easy to wear every day.',
+    palette: {accent: '#d7ff00', accentSoft: 'rgba(215, 255, 0, 0.18)'},
   }),
 ];
 

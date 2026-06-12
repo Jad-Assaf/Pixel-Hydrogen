@@ -1,20 +1,6 @@
 import {Analytics} from '@shopify/hydrogen';
 import {Link} from 'react-router';
 import {BrandVariantCard} from '~/components/brand-routes/BrandVariantCard';
-import airpods3Desktop from '~/assets/airpods 3 desktop.png';
-import airpods3Mobile from '~/assets/airpods 3 mobile.png';
-import airpods4Desktop from '~/assets/airpods 4 desktop.png';
-import airpods4Mobile from '~/assets/airpods 4 mobile.png';
-import cardholdersDesktop from '~/assets/cardholders desktop.png';
-import cardholdersMobile from '~/assets/cardholders mobile.png';
-import decoded15Desktop from '~/assets/decoded 15 desktop.png';
-import decoded15Mobile from '~/assets/decoded 15 mobile.png';
-import decoded16Desktop from '~/assets/decoded 16 desktop.png';
-import decoded16Mobile from '~/assets/decoded 16 mobile.png';
-import decoded17Desktop from '~/assets/decoded 17 desktop.png';
-import decoded17Mobile from '~/assets/decoded 17 mobile.png';
-import watchBandsDesktop from '~/assets/watch bands desktop.png';
-import watchBandsMobile from '~/assets/watch bands mobile.png';
 import {
   BRAND_BANNER_IMAGE_HEIGHT,
   BRAND_BANNER_IMAGE_WIDTH,
@@ -26,6 +12,34 @@ const DECODED_PLACEHOLDER_DESKTOP =
   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" x2="1" y1="0" y2="1"%3E%3Cstop offset="0" stop-color="%23201814"/%3E%3Cstop offset=".54" stop-color="%238b5e3c"/%3E%3Cstop offset="1" stop-color="%23e8dacb"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="1600" height="520" fill="url(%23g)"/%3E%3Ccircle cx="1310" cy="110" r="250" fill="%23ffffff" opacity=".13"/%3E%3Ccircle cx="1210" cy="420" r="190" fill="%23000000" opacity=".12"/%3E%3Crect x="76" y="78" width="610" height="364" rx="34" fill="%23ffffff" opacity=".13"/%3E%3Crect x="112" y="116" width="320" height="32" rx="16" fill="%23ffffff" opacity=".34"/%3E%3Crect x="112" y="176" width="466" height="112" rx="20" fill="%23ffffff" opacity=".2"/%3E%3Crect x="112" y="328" width="238" height="30" rx="15" fill="%23ffffff" opacity=".28"/%3E%3C/svg%3E';
 const DECODED_PLACEHOLDER_MOBILE =
   'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100"%3E%3Cdefs%3E%3ClinearGradient id="g" x1="0" x2="1" y1="0" y2="1"%3E%3Cstop offset="0" stop-color="%23201814"/%3E%3Cstop offset=".58" stop-color="%238b5e3c"/%3E%3Cstop offset="1" stop-color="%23eadccb"/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="900" height="1100" fill="url(%23g)"/%3E%3Ccircle cx="760" cy="180" r="220" fill="%23ffffff" opacity=".13"/%3E%3Ccircle cx="120" cy="930" r="180" fill="%23000000" opacity=".12"/%3E%3Crect x="66" y="92" width="650" height="490" rx="36" fill="%23ffffff" opacity=".13"/%3E%3Crect x="106" y="140" width="330" height="34" rx="17" fill="%23ffffff" opacity=".34"/%3E%3Crect x="106" y="214" width="480" height="156" rx="22" fill="%23ffffff" opacity=".2"/%3E%3Crect x="106" y="424" width="260" height="32" rx="16" fill="%23ffffff" opacity=".28"/%3E%3C/svg%3E';
+const airpods3Desktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/airpods_3_desktop.png?v=1781198563';
+const airpods3Mobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/airpods_3_mobile.png?v=1781198563';
+const airpods4Desktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/airpods_4_desktop.png?v=1781198563';
+const airpods4Mobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/airpods_4_mobile.png?v=1781198563';
+const cardholdersDesktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/cardholders_desktop.png?v=1781198563';
+const cardholdersMobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/cardholders_mobile.png?v=1781198564';
+const decoded15Desktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_15_desktop.png?v=1781198564';
+const decoded15Mobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_15_mobile.png?v=1781198564';
+const decoded16Desktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_16_desktop.png?v=1781198564';
+const decoded16Mobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_16_mobile.png?v=1781198563';
+const decoded17Desktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_17_desktop.png?v=1781198564';
+const decoded17Mobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/decoded_17_mobile.png?v=1781198564';
+const watchBandsDesktop =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/watch_bands_desktop.png?v=1781198566';
+const watchBandsMobile =
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/watch_bands_mobile.png?v=1781198564';
 
 export const DECODED_SECTIONS = [
   {

@@ -1,98 +1,83 @@
 import {Analytics} from '@shopify/hydrogen';
 import {Link} from 'react-router';
 import {AddToCartButton} from '~/components/AddToCartButton';
-import {ProductPrice} from '~/components/ProductPrice';
 import {useAside} from '~/components/Aside';
-import {useVariantUrl} from '~/lib/variants';
-import {isZeroPrice} from '~/lib/pricing';
 import {BrandVariantCard} from '~/components/brand-routes/BrandVariantCard';
+import {PlusIcon} from '~/components/Icons';
+import {ProductPrice} from '~/components/ProductPrice';
 import {
   BRAND_BANNER_IMAGE_HEIGHT,
   BRAND_BANNER_IMAGE_WIDTH,
-  getProductModelLabels,
   getBrandThemeVars,
   getProductCardEntries,
+  getProductModelLabels,
   getVariantColorLabel,
   withImageWidth,
 } from '~/lib/brand-routes/utils';
+import {isZeroPrice} from '~/lib/pricing';
+import {useVariantUrl} from '~/lib/variants';
 
-export const BLACK_SHARK_SECTIONS = [
+export const WHOOP_SECTIONS = [
   {
-    id: 'bsg1-gaming-tablet',
-    headline: 'Black Shark BSG1 gaming tablet',
+    id: 'mg-and-life',
+    headline: 'WHOOP Life MG and 5.0',
     bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-gaming-tab-desk.jpg?v=1778528358',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_Desktop.png?v=1781297568',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-gaming-tab-mob.jpg?v=1778528355',
-    productHandles: ['black-shark-gaming-tablet-12gb-ram-512gb-storage'],
-  },
-  {
-    id: 'fan-coolers',
-    headline: 'Black Shark fan coolers',
-    bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-cooler.jpg?v=1778528358',
-    mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-cooler-mob.jpg?v=1778528356',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_Mobile.png?v=1781297545',
     productHandles: [
-      'black-shark-phone-cooler-5-pro',
-      'black-shark-funcooler-5-magnetic-phone-cooler',
-      'black-shark-funcooler-5-neo-phone-cooler',
+      'whoop-life-mg-advanced-health-and-fitness-tracker-mg',
+      'whoop-5-0-peak-advanced-health-tracking-wearable',
     ],
   },
   {
-    id: 'lifestyle-tablets',
-    headline: 'Black Shark lifestyle tablets',
+    id: 'mg-straps',
+    headline: 'WHOOP MG Straps',
     bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-pad-desk.jpg?v=1778528609',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_MG_Straps_Desktop.png?v=1781297592',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-pad-mob.jpg?v=1778528608',
-    productHandles: [
-      'black-shark-pad-se-6gb-ram-128gb-storage',
-      'black-shark-pad-7-6gb-ram-128gb-storage',
-    ],
-  },
-  {
-    id: 'smart-watches',
-    headline: 'Black Shark smart watches',
-    bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-watch-desk.jpg?v=1778528358',
-    mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-watch-mob.jpg?v=1778528355',
-    searchQueries: ['vendor:"Black Shark" tag:"Smart Watch"'],
-  },
-  {
-    id: 'lifestyle-headphones',
-    headline: 'Black Shark lifestyle headphones',
-    bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-ear-desk.jpg?v=1778528357',
-    mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-ear-mob.jpg?v=1778528355',
-    searchQueries: ['vendor:"Black Shark" tag:audio'],
-  },
-  {
-    id: 'gaming-gear',
-    headline: 'Black Shark gaming gear',
-    bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/gs-gaming.jpg?v=1778528358',
-    mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/bs-gaming-mob.jpg?v=1778528355',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_MG_Straps_Mobile.png?v=1781297640',
     searchQueries: [
-      'vendor:"Black Shark" tag:"Gaming Keyboards"',
-      'vendor:"Black Shark" tag:"Gaming Mouse"',
+      'vendor:WHOOP title:MG title:Strap',
+      'vendor:WHOOP title:MG title:Band',
+      'vendor:Whoop title:MG title:Strap',
+      'vendor:Whoop title:MG title:Band',
     ],
+    productPatternGroups: [
+      [/\blife\s*mg\b/i, /\bmg\b/i],
+      [/\bstrap\b/i, /\bband\b/i],
+    ],
+  },
+  {
+    id: '5-straps',
+    headline: 'WHOOP 5.0 Straps',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_5.0_Straps_Desktop.png?v=1781297691',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/WHOOP_5.0_Straps_Mobile.png?v=1781297676',
+    searchQueries: [
+      'vendor:WHOOP title:"5.0" title:Strap',
+      'vendor:WHOOP title:"5.0" title:Band',
+      'vendor:Whoop title:"5.0" title:Strap',
+      'vendor:Whoop title:"5.0" title:Band',
+    ],
+    productPatternGroups: [[/\b5\.?0\b/i], [/\bstrap\b/i, /\bband\b/i]],
   },
 ];
 
-export function BlackSharkBrandRoute({brand, collection, sections}) {
+export function WhoopBrandRoute({brand, collection, sections}) {
   const style = getBrandThemeVars(brand);
 
   return (
     <div
-      className={`pz-brand-page pz-brand-page--${brand.layout} pz-brand-page--black-shark pz-brand-family--${brand.family}`}
+      className={`pz-brand-page pz-brand-page--whoop pz-brand-family--${brand.family}`}
       style={style}
     >
       <div className="pz-shell">
-        <nav className="pz-breadcrumbs" aria-label="Breadcrumb">
+        <nav
+          className="pz-breadcrumbs pz-whoop-route-head"
+          aria-label="Breadcrumb"
+        >
           <Link to="/" prefetch="intent">
             Home
           </Link>
@@ -106,26 +91,28 @@ export function BlackSharkBrandRoute({brand, collection, sections}) {
       </div>
 
       {sections.map((section, sectionIndex) => {
-        const sectionVariants = (section.products || []).flatMap((product) =>
+        const sectionProducts = filterWhoopSectionProducts(
+          section.products || [],
+          section,
+        );
+        const sectionVariants = sectionProducts.flatMap((product) =>
           getProductCardEntries(product, 'color').map((variant) => ({
             product,
             variant,
           })),
         );
-        const isGamingTabletSection = section.id === 'bsg1-gaming-tablet';
+        const isDeviceSection = section.id === 'mg-and-life';
 
         return (
           <section key={section.id} className="pz-brand-feature-block">
             <section className="pz-brand-banner-section">
               <div className="pz-shell">
-                <div className="pz-brand-banner-card">
+                <div className="pz-brand-banner-card pz-whoop-banner-card">
                   <picture>
-                    {section.mobileBannerUrl ? (
-                      <source
-                        media="(max-width: 767px)"
-                        srcSet={section.mobileBannerUrl}
-                      />
-                    ) : null}
+                    <source
+                      media="(max-width: 767px)"
+                      srcSet={section.mobileBannerUrl}
+                    />
                     <img
                       src={section.bannerUrl}
                       alt={`${section.headline} banner`}
@@ -141,22 +128,28 @@ export function BlackSharkBrandRoute({brand, collection, sections}) {
 
             <section className="pz-brand-section pz-brand-products-only">
               <div className="pz-shell">
+                <div className="pz-decoded-section-head">
+                  <h2>{section.headline}</h2>
+                </div>
+
                 {sectionVariants.length ? (
-                  isGamingTabletSection ? (
-                    <div className="pz-black-shark-tablet-grid">
-                      {sectionVariants.map(({product, variant}, index) => (
-                        <BlackSharkTabletVariantCard
+                  <div
+                    className={
+                      isDeviceSection
+                        ? 'pz-whoop-device-grid'
+                        : 'pz-card-grid pz-brand-variant-grid'
+                    }
+                  >
+                    {sectionVariants.map(({product, variant}, index) =>
+                      isDeviceSection ? (
+                        <WhoopDeviceVariantCard
                           key={variant.id}
                           brand={brand}
                           product={product}
                           variant={variant}
                           loading={index < 2 ? 'eager' : 'lazy'}
                         />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="pz-card-grid pz-brand-variant-grid">
-                      {sectionVariants.map(({product, variant}, index) => (
+                      ) : (
                         <BrandVariantCard
                           key={variant.id}
                           brand={brand}
@@ -166,15 +159,15 @@ export function BlackSharkBrandRoute({brand, collection, sections}) {
                             sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'
                           }
                         />
-                      ))}
-                    </div>
-                  )
+                      ),
+                    )}
+                  </div>
                 ) : (
                   <div className="pz-brand-empty">
-                    <h3>Products are being prepared.</h3>
+                    <h3>{section.headline} products are being prepared.</h3>
                     <p>
-                      This Black Shark section will appear as soon as matching
-                      products are available.
+                      Matching WHOOP products will appear here as soon as they
+                      are available.
                     </p>
                   </div>
                 )}
@@ -198,14 +191,14 @@ export function BlackSharkBrandRoute({brand, collection, sections}) {
   );
 }
 
-function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
+function WhoopDeviceVariantCard({brand, product, variant, loading}) {
   const variantUrl = useVariantUrl(
     product.handle,
     variant.selectedOptions || [],
   );
   const displayImage = variant.image || product.featuredImage;
   const imageUrl = displayImage?.url
-    ? withImageWidth(displayImage.url, 900)
+    ? withImageWidth(displayImage.url, 520)
     : null;
   const colorLabel = getVariantColorLabel(variant);
   const modelLabels = colorLabel ? [] : getProductModelLabels(product, variant);
@@ -213,13 +206,9 @@ function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
   const {open} = useAside();
 
   return (
-    <article className="pz-black-shark-tablet-card">
-      <Link
-        className="pz-black-shark-tablet-link"
-        prefetch="intent"
-        to={variantUrl}
-      >
-        <div className="pz-black-shark-tablet-media">
+    <article className="pz-whoop-device-card">
+      <Link className="pz-whoop-device-link" prefetch="intent" to={variantUrl}>
+        <div className="pz-whoop-device-media">
           {imageUrl ? (
             <img
               alt={
@@ -228,18 +217,18 @@ function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
               }
               loading={loading}
               src={imageUrl}
-              width={900}
-              height={900}
+              width={520}
+              height={520}
             />
           ) : (
             <div className="pz-image-placeholder" aria-hidden="true" />
           )}
         </div>
 
-        <div className="pz-black-shark-tablet-copy">
+        <div className="pz-whoop-device-copy">
           <div className="pz-product-topline">
             <span>
-              {(brand.name || product.vendor || 'TECH').toUpperCase()}
+              {(brand.name || product.vendor || 'WHOOP').toUpperCase()}
             </span>
           </div>
           <h3>{product.title}</h3>
@@ -252,16 +241,16 @@ function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
               ))}
             </ul>
           ) : null}
-          <div className="pz-black-shark-tablet-specs" aria-label="Highlights">
-            <span>12GB RAM</span>
-            <span>512GB Storage</span>
-            <span>Gaming Display</span>
+          <div className="pz-whoop-device-pills" aria-label="Highlights">
+            <span>Health tracking</span>
+            <span>Recovery insights</span>
+            <span>24/7 wear</span>
           </div>
         </div>
       </Link>
 
-      <div className="pz-black-shark-tablet-actions">
-        <div className="pz-product-price-row">
+      <div className="pz-whoop-device-actions">
+        <div className="pz-whoop-device-price">
           {variant.price ? (
             <ProductPrice
               price={variant.price}
@@ -283,12 +272,30 @@ function BlackSharkTabletVariantCard({brand, product, variant, loading}) {
                 selectedVariant: variant,
               },
             ]}
-            className="pz-black-shark-tablet-cart"
+            className="pz-whoop-device-cart"
           >
-            {variant.availableForSale ? 'Add to cart' : 'Unavailable'}
+            {variant.availableForSale ? (
+              <>
+                <PlusIcon className="pz-card-cart-icon" />
+                <span>Add</span>
+              </>
+            ) : (
+              'Sold out'
+            )}
           </AddToCartButton>
         ) : null}
       </div>
     </article>
   );
+}
+
+function filterWhoopSectionProducts(products, section) {
+  if (!section.productPatternGroups?.length) return products;
+
+  return products.filter((product) => {
+    const text = `${product?.title || ''} ${product?.vendor || ''}`;
+    return section.productPatternGroups.every((patterns) =>
+      patterns.some((pattern) => pattern.test(text)),
+    );
+  });
 }

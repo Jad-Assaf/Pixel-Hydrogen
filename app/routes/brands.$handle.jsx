@@ -21,6 +21,10 @@ import {
   TORRAS_SECTIONS,
   TorrasBrandRoute,
 } from '~/components/brand-routes/TorrasBrandRoute';
+import {
+  WHOOP_SECTIONS,
+  WhoopBrandRoute,
+} from '~/components/brand-routes/WhoopBrandRoute';
 import {getBrandByHandle} from '~/lib/brands';
 import {
   loadBrandCollection,
@@ -132,6 +136,19 @@ export async function loader({context, params}) {
     };
   }
 
+  if (brand.handle === 'whoop') {
+    const whoopSections = await loadConfiguredBrandSections(
+      storefront,
+      WHOOP_SECTIONS,
+    );
+
+    return {
+      brand,
+      collection,
+      whoopSections,
+    };
+  }
+
   return {
     brand,
     collection,
@@ -182,6 +199,16 @@ export default function BrandRoute() {
         brand={data.brand}
         collection={data.collection}
         products={data.decodedProducts || []}
+      />
+    );
+  }
+
+  if (data.brand.handle === 'whoop') {
+    return (
+      <WhoopBrandRoute
+        brand={data.brand}
+        collection={data.collection}
+        sections={data.whoopSections || []}
       />
     );
   }

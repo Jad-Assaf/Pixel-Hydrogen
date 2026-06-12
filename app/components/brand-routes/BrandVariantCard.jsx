@@ -4,7 +4,11 @@ import {PlusIcon} from '~/components/Icons';
 import {ProductPrice} from '~/components/ProductPrice';
 import {useAside} from '~/components/Aside';
 import {useVariantUrl} from '~/lib/variants';
-import {getVariantLabel, withImageWidth} from '~/lib/brand-routes/utils';
+import {
+  getProductModelLabels,
+  getVariantColorLabel,
+  withImageWidth,
+} from '~/lib/brand-routes/utils';
 import {isZeroPrice} from '~/lib/pricing';
 
 export function BrandVariantCard({
@@ -22,7 +26,8 @@ export function BrandVariantCard({
   const imageUrl = displayImage?.url
     ? withImageWidth(displayImage.url, 300)
     : null;
-  const label = getVariantLabel(variant);
+  const colorLabel = getVariantColorLabel(variant);
+  const modelLabels = colorLabel ? [] : getProductModelLabels(product, variant);
   const shouldAskForPrice = isZeroPrice(variant.price);
   const {open} = useAside();
 
@@ -32,7 +37,10 @@ export function BrandVariantCard({
         <div className="pz-product-media">
           {imageUrl ? (
             <img
-              alt={displayImage.altText || `${product.title} ${label}`}
+              alt={
+                displayImage.altText ||
+                `${product.title} ${colorLabel || ''}`.trim()
+              }
               className="pz-product-image"
               loading={loading}
               src={imageUrl}
@@ -51,8 +59,14 @@ export function BrandVariantCard({
             </span>
           </div>
           <h3>{product.title}</h3>
-          {showVariantLabel ? (
-            <p className="pz-brand-variant-label">{label}</p>
+          {showVariantLabel && colorLabel ? (
+            <p className="pz-brand-variant-label">{colorLabel}</p>
+          ) : showVariantLabel && modelLabels.length ? (
+            <ul className="pz-brand-variant-label pz-brand-variant-models">
+              {modelLabels.map((model) => (
+                <li key={model}>{model}</li>
+              ))}
+            </ul>
           ) : null}
         </div>
       </Link>
