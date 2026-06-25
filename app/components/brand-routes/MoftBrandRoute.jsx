@@ -16,6 +16,10 @@ export const MOFT_SECTIONS = [
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_3_2026_09_54_18_PM.png?v=1780514682',
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_3_2026_09_54_25_PM.png?v=1780514682',
+    productHandles: [
+      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-soothing-mist-x-sunrise',
+      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-misty-cove-x-cement',
+    ],
     searchQueries: [
       'vendor:MOFT tag:"iphone covers"',
       'vendor:Moft tag:"iphone covers"',
