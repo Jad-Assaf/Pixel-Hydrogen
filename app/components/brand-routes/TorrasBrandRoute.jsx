@@ -52,6 +52,7 @@ export const TORRAS_SECTIONS = [
       'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-shadow-black',
       'torras-ostand-q3-air-for-iphone-17-case-with-360-magnetic-stand-glacier-sprint',
       'torras-magnetic-slim-fit-for-iphone-17-case-ultra-thin-compatible-with-magsafe',
+      'torras-diamond-mag-case-for-iphone-16-pro-max-clear',
       'torras-ostand-q3-air-for-iphone-16-pro-iphone-16-pro-max',
     ],
   },
@@ -73,6 +74,7 @@ export const TORRAS_SECTIONS = [
       'torras-guardian-mag-case-for-galaxy-s26-ultra-clear',
       'torras-ostand-spin-q3-air-for-samsung-s26-ultra-violet-surge',
       'torras-ostand-spin-q3-air-for-samsung-s26-ultra-shadow-black',
+      'torras-guardian-series-case-for-samsung-galaxy-s26-ultra',
     ],
   },
   {

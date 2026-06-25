@@ -166,7 +166,11 @@ export const DECODED_SECTIONS = [
     bannerHeadline: 'Straps that sharpen the watch without adding bulk.',
     bannerUrl: watchBandsDesktop,
     mobileBannerUrl: watchBandsMobile,
-    productPatterns: [/\btitanium\b/i, /\bares\s*splice\s*band\b/i],
+    productPatterns: [
+      /\btitanium\b/i,
+      /\bares\s*splice\s*band\b/i,
+      /\bdecoded\s*silicone\s*ares\b/i,
+    ],
   },
   {
     id: 'mag-card-holder',

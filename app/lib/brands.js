@@ -19,7 +19,6 @@ import eufyLogo from '~/assets/eufy-logo.jpg';
 import fantechLogo from '~/assets/fantech-logo.jpg';
 import fujifilmLogo from '~/assets/fujifilm-logo.jpg';
 import googleLogo from '~/assets/google-logo.jpg';
-import greenLionLogo from '~/assets/green-lion-logo.jpg';
 import harmanLogo from '~/assets/harman-logo.jpg';
 import hocoLogo from '~/assets/hoco-logo.jpg';
 import hollylandLogo from '~/assets/hollyland-logo.jpg';
@@ -50,7 +49,7 @@ import ugreenLogo from '~/assets/ugreen-logo.jpg';
 import xiaomiLogo from '~/assets/xiaomi.jpg';
 
 const whoopLogo =
-  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"%3E%3Crect width="600" height="600" rx="120" fill="%23070a0f"/%3E%3Cpath d="M95 390 150 210h58l-28 94 66-94h50l9 95 55-95h58L302 390h-52l-10-96-68 96H95Zm326 0c-35 0-58-22-58-56 0-69 43-125 104-125 36 0 59 22 59 57 0 68-43 124-105 124Zm7-49c24 0 42-35 42-66 0-12-5-18-15-18-24 0-42 35-42 66 0 12 5 18 15 18Z" fill="%23d7ff00"/%3E%3C/svg%3E';
+  'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/whoop-logo.jpg?v=1782419794';
 
 const FAMILY_ORDER = [
   'minimal',
@@ -723,16 +722,6 @@ export const BRANDS = [
     summary:
       'Google makes sense when software intelligence, fast capture, and seamless account-level continuity are the real priorities.',
     palette: {accent: '#34a853', accentSoft: 'rgba(52, 168, 83, 0.18)'},
-  }),
-  createBrand({
-    name: 'Green Lion',
-    handle: 'green-lion',
-    logo: greenLionLogo,
-    family: 'utility',
-    headline: 'Accessory essentials built for broad everyday digital routines.',
-    summary:
-      'Green Lion is strongest when the goal is practical coverage across many daily-use categories instead of one hero product.',
-    palette: {accent: '#65a30d', accentSoft: 'rgba(101, 163, 13, 0.18)'},
   }),
   createBrand({
     name: 'Harman',
