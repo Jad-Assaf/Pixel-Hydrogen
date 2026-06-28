@@ -14,6 +14,10 @@ import {
   DecodedBrandRoute,
 } from '~/components/brand-routes/DecodedBrandRoute';
 import {
+  HUAWEI_SECTIONS,
+  HuaweiBrandRoute,
+} from '~/components/brand-routes/HuaweiBrandRoute';
+import {
   MOFT_SECTIONS,
   MoftBrandRoute,
 } from '~/components/brand-routes/MoftBrandRoute';
@@ -119,6 +123,19 @@ export async function loader({context, params}) {
     };
   }
 
+  if (brand.handle === 'huawei') {
+    const huaweiSections = await loadConfiguredBrandSections(
+      storefront,
+      HUAWEI_SECTIONS,
+    );
+
+    return {
+      brand,
+      collection,
+      huaweiSections,
+    };
+  }
+
   if (brand.handle === 'decoded') {
     const decodedSearchProducts = await loadBrandSearchProducts(
       storefront,
@@ -189,6 +206,16 @@ export default function BrandRoute() {
         brand={data.brand}
         collection={data.collection}
         sections={data.moftSections || []}
+      />
+    );
+  }
+
+  if (data.brand.handle === 'huawei') {
+    return (
+      <HuaweiBrandRoute
+        brand={data.brand}
+        collection={data.collection}
+        sections={data.huaweiSections || []}
       />
     );
   }
