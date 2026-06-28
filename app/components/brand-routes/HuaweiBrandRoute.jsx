@@ -19,8 +19,8 @@ export const HUAWEI_SECTIONS = [
     searchQueries: [
       'vendor:Huawei title:WATCH',
       'vendor:HUAWEI title:WATCH',
-      'vendor:Huawei title:Band',
-      'vendor:HUAWEI title:Band',
+      'vendor:Huawei tag:"Smart Watch"',
+      'vendor:HUAWEI tag:"Smart Watch"',
     ],
   },
   {
