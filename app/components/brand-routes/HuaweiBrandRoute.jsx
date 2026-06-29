@@ -17,10 +17,12 @@ export const HUAWEI_SECTIONS = [
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_55_PM.png?v=1782670906',
     searchQueries: [
-      'vendor:Huawei title:WATCH',
-      'vendor:HUAWEI title:WATCH',
+      'vendor:Huawei tag:fitness',
+      'vendor:HUAWEI tag:fitness',
       'vendor:Huawei tag:"Smart Watch"',
       'vendor:HUAWEI tag:"Smart Watch"',
+      'vendor:Huawei tag:"Fitness Band"',
+      'vendor:HUAWEI tag:"Fitness Band"',
     ],
   },
   {
