@@ -10,28 +10,68 @@ import {
 
 export const HUAWEI_SECTIONS = [
   {
-    id: 'wearables',
-    label: 'Huawei wearables',
+    id: 'watch-fit-5-pro',
+    label: 'Huawei Watch Fit 5 Pro',
     bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_57_PM.png?v=1782670905',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/fit_5_pro_desk.png?v=1782797789',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_55_PM.png?v=1782670906',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/fit_5_pro_mob.png?v=1782797779',
+    titleIncludes: ['watch fit 5 pro'],
     searchQueries: [
-      'vendor:Huawei tag:fitness',
-      'vendor:HUAWEI tag:fitness',
-      'vendor:Huawei tag:"Smart Watch"',
-      'vendor:HUAWEI tag:"Smart Watch"',
-      'vendor:Huawei tag:"Fitness Band"',
-      'vendor:HUAWEI tag:"Fitness Band"',
+      'vendor:Huawei title:Watch title:Fit title:5 title:Pro',
+      'vendor:HUAWEI title:Watch title:Fit title:5 title:Pro',
+    ],
+  },
+  {
+    id: 'watch-fit-4-pro',
+    label: 'Huawei Watch Fit 4 Pro',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/fit_4_pro_desk.png?v=1782797766',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/fit_4_pro_mob.png?v=1782797756',
+    titleIncludes: ['fit 4 pro'],
+    searchQueries: [
+      'vendor:Huawei title:Fit title:4 title:Pro',
+      'vendor:HUAWEI title:Fit title:4 title:Pro',
+    ],
+  },
+  {
+    id: 'band-11',
+    label: 'Huawei Band 11',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_pro_desk.png?v=1782797743',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_pro_mob.png?v=1782797729',
+    titleIncludes: ['band 11'],
+    titleExcludes: ['aloy', 'alloy'],
+    searchQueries: [
+      'vendor:Huawei title:Band title:11',
+      'vendor:HUAWEI title:Band title:11',
+    ],
+  },
+  {
+    id: 'band-11-alloy',
+    label: 'Huawei Band 11 Alloy',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_desk.png?v=1782797715',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_mob.png?v=1782797703',
+    titleIncludes: ['band 11'],
+    titleContainsAny: ['aloy', 'alloy'],
+    searchQueries: [
+      'vendor:Huawei title:Band title:11',
+      'vendor:HUAWEI title:Band title:11',
     ],
   },
   {
     id: 'tablets',
-    label: 'Huawei tablets',
+    label: 'Huawei MatePad',
     bannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_52_PM.png?v=1782670893',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/matepad_desk.png?v=1782797678',
     mobileBannerUrl:
-      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_49_PM.png?v=1782670893',
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/matepad_mob.png?v=1782797691',
+    titleIncludes: ['matepad'],
+    titleExcludes: ['m-pencil'],
     searchQueries: [
       'vendor:Huawei title:MatePad',
       'vendor:HUAWEI title:MatePad',
@@ -40,8 +80,8 @@ export const HUAWEI_SECTIONS = [
     ],
   },
   {
-    id: 'audio',
-    label: 'Huawei audio',
+    id: 'earbuds',
+    label: 'Huawei earbuds',
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_28_2026_09_20_46_PM.png?v=1782670880',
     mobileBannerUrl:
@@ -83,7 +123,10 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
       </div>
 
       {sections.map((section, sectionIndex) => {
-        const sectionVariants = (section.products || []).flatMap((product) =>
+        const sectionProducts = (section.products || []).filter((product) =>
+          productMatchesSectionTitle(product, section),
+        );
+        const sectionVariants = sectionProducts.flatMap((product) =>
           getProductCardEntries(product, 'color').map((variant) => ({
             product,
             variant,
@@ -158,4 +201,19 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
       ) : null}
     </div>
   );
+}
+
+function productMatchesSectionTitle(product, section) {
+  const title = (product?.title || '').toLowerCase();
+  const includes = section.titleIncludes || [];
+  const excludes = section.titleExcludes || [];
+  const containsAny = section.titleContainsAny || [];
+
+  if (includes.some((term) => !title.includes(term))) return false;
+  if (excludes.some((term) => title.includes(term))) return false;
+  if (containsAny.length && !containsAny.some((term) => title.includes(term))) {
+    return false;
+  }
+
+  return true;
 }
