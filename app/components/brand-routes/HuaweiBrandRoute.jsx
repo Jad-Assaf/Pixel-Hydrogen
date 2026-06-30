@@ -1,12 +1,21 @@
 import {Analytics} from '@shopify/hydrogen';
 import {Link} from 'react-router';
+import {AddToCartButton} from '~/components/AddToCartButton';
+import {useAside} from '~/components/Aside';
 import {BrandVariantCard} from '~/components/brand-routes/BrandVariantCard';
+import {PlusIcon} from '~/components/Icons';
+import {ProductPrice} from '~/components/ProductPrice';
 import {
   BRAND_BANNER_IMAGE_HEIGHT,
   BRAND_BANNER_IMAGE_WIDTH,
   getBrandThemeVars,
   getProductCardEntries,
+  getProductModelLabels,
+  getVariantColorLabel,
+  withImageWidth,
 } from '~/lib/brand-routes/utils';
+import {isZeroPrice} from '~/lib/pricing';
+import {useVariantUrl} from '~/lib/variants';
 
 export const HUAWEI_SECTIONS = [
   {
@@ -132,6 +141,7 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
             variant,
           })),
         );
+        const isTabletSection = section.id === 'tablets';
 
         return (
           <section key={section.id} className="pz-brand-feature-block">
@@ -161,18 +171,34 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
             <section className="pz-brand-section pz-brand-products-only">
               <div className="pz-shell">
                 {sectionVariants.length ? (
-                  <div className="pz-card-grid pz-brand-variant-grid pz-huawei-grid">
-                    {sectionVariants.map(({product, variant}, index) => (
-                      <BrandVariantCard
-                        key={variant.id}
-                        brand={brand}
-                        product={product}
-                        variant={variant}
-                        loading={
-                          sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'
-                        }
-                      />
-                    ))}
+                  <div
+                    className={
+                      isTabletSection
+                        ? 'pz-huawei-tablet-grid'
+                        : 'pz-card-grid pz-brand-variant-grid pz-huawei-grid'
+                    }
+                  >
+                    {sectionVariants.map(({product, variant}, index) =>
+                      isTabletSection ? (
+                        <HuaweiTabletVariantCard
+                          key={variant.id}
+                          brand={brand}
+                          product={product}
+                          variant={variant}
+                          loading={index < 2 ? 'eager' : 'lazy'}
+                        />
+                      ) : (
+                        <BrandVariantCard
+                          key={variant.id}
+                          brand={brand}
+                          product={product}
+                          variant={variant}
+                          loading={
+                            sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'
+                          }
+                        />
+                      ),
+                    )}
                   </div>
                 ) : (
                   <div className="pz-brand-empty pz-huawei-empty">
@@ -200,6 +226,104 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
         />
       ) : null}
     </div>
+  );
+}
+
+function HuaweiTabletVariantCard({brand, product, variant, loading}) {
+  const variantUrl = useVariantUrl(
+    product.handle,
+    variant.selectedOptions || [],
+  );
+  const displayImage = variant.image || product.featuredImage;
+  const imageUrl = displayImage?.url
+    ? withImageWidth(displayImage.url, 520)
+    : null;
+  const colorLabel = getVariantColorLabel(variant);
+  const modelLabels = colorLabel ? [] : getProductModelLabels(product, variant);
+  const shouldAskForPrice = isZeroPrice(variant.price);
+  const {open} = useAside();
+
+  return (
+    <article className="pz-huawei-tablet-card">
+      <Link className="pz-huawei-tablet-link" prefetch="intent" to={variantUrl}>
+        <div className="pz-huawei-tablet-media">
+          {imageUrl ? (
+            <img
+              alt={
+                displayImage.altText ||
+                `${product.title} ${colorLabel || ''}`.trim()
+              }
+              loading={loading}
+              src={imageUrl}
+              width={520}
+              height={520}
+            />
+          ) : (
+            <div className="pz-image-placeholder" aria-hidden="true" />
+          )}
+        </div>
+
+        <div className="pz-huawei-tablet-copy">
+          <div className="pz-product-topline">
+            <span>
+              {(brand.name || product.vendor || 'HUAWEI').toUpperCase()}
+            </span>
+          </div>
+          <h3>{product.title}</h3>
+          {colorLabel ? (
+            <p className="pz-brand-variant-label">{colorLabel}</p>
+          ) : modelLabels.length ? (
+            <ul className="pz-brand-variant-label pz-brand-variant-models">
+              {modelLabels.map((model) => (
+                <li key={model}>{model}</li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="pz-huawei-tablet-pills" aria-label="Highlights">
+            <span>MatePad</span>
+            <span>Productivity</span>
+            <span>Portable</span>
+          </div>
+        </div>
+      </Link>
+
+      <div className="pz-huawei-tablet-actions">
+        <div className="pz-huawei-tablet-price">
+          {variant.price ? (
+            <ProductPrice
+              price={variant.price}
+              compareAtPrice={variant.compareAtPrice || null}
+            />
+          ) : (
+            <span className="pz-product-price-unavailable">N/A</span>
+          )}
+        </div>
+
+        {!shouldAskForPrice && variant.id ? (
+          <AddToCartButton
+            disabled={!variant.availableForSale}
+            onClick={() => open('cart')}
+            lines={[
+              {
+                merchandiseId: variant.id,
+                quantity: 1,
+                selectedVariant: variant,
+              },
+            ]}
+            className="pz-huawei-tablet-cart"
+          >
+            {variant.availableForSale ? (
+              <>
+                <PlusIcon className="pz-card-cart-icon" />
+                <span>Add</span>
+              </>
+            ) : (
+              'Sold out'
+            )}
+          </AddToCartButton>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
