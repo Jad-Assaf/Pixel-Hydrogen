@@ -45,28 +45,28 @@ export const HUAWEI_SECTIONS = [
     ],
   },
   {
-    id: 'band-11',
-    label: 'Huawei Band 11',
+    id: 'band-11-pro',
+    label: 'Huawei Band 11 Pro',
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_pro_desk.png?v=1782797743',
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_pro_mob.png?v=1782797729',
-    titleIncludes: ['band 11'],
-    titleExcludes: ['aloy', 'alloy'],
+    titleIncludes: ['band 11 pro'],
     searchQueries: [
-      'vendor:Huawei title:Band title:11',
-      'vendor:HUAWEI title:Band title:11',
+      'vendor:Huawei title:Band title:11 title:Pro',
+      'vendor:HUAWEI title:Band title:11 title:Pro',
     ],
   },
   {
-    id: 'band-11-alloy',
-    label: 'Huawei Band 11 Alloy',
+    id: 'band-11',
+    label: 'Huawei Band 11',
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_desk.png?v=1782797715',
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/band_11_mob.png?v=1782797703',
     titleIncludes: ['band 11'],
-    titleContainsAny: ['aloy', 'alloy'],
+    titleExcludes: ['pro'],
+    distinguishBand11Versions: true,
     searchQueries: [
       'vendor:Huawei title:Band title:11',
       'vendor:HUAWEI title:Band title:11',
@@ -142,6 +142,7 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
           })),
         );
         const isTabletSection = section.id === 'tablets';
+        const isBandVersionSection = section.distinguishBand11Versions;
 
         return (
           <section key={section.id} className="pz-brand-feature-block">
@@ -170,7 +171,13 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
 
             <section className="pz-brand-section pz-brand-products-only">
               <div className="pz-shell">
-                {sectionVariants.length ? (
+                {sectionVariants.length && isBandVersionSection ? (
+                  <HuaweiBandVersionGroups
+                    brand={brand}
+                    sectionIndex={sectionIndex}
+                    sectionVariants={sectionVariants}
+                  />
+                ) : sectionVariants.length ? (
                   <div
                     className={
                       isTabletSection
@@ -225,6 +232,50 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
           }}
         />
       ) : null}
+    </div>
+  );
+}
+
+function HuaweiBandVersionGroups({brand, sectionIndex, sectionVariants}) {
+  const regularVariants = sectionVariants.filter(
+    ({product}) => !isAluminumAlloyProduct(product),
+  );
+  const alloyVariants = sectionVariants.filter(({product}) =>
+    isAluminumAlloyProduct(product),
+  );
+  const groups = [
+    {
+      id: 'regular',
+      title: 'Regular version',
+      variants: regularVariants,
+    },
+    {
+      id: 'alloy',
+      title: 'Aluminum Alloy version',
+      variants: alloyVariants,
+    },
+  ].filter((group) => group.variants.length);
+
+  return (
+    <div className="pz-huawei-version-groups">
+      {groups.map((group) => (
+        <div key={group.id} className="pz-huawei-version-group">
+          <div className="pz-huawei-version-label">
+            <h3>{group.title}</h3>
+          </div>
+          <div className="pz-card-grid pz-brand-variant-grid pz-huawei-grid">
+            {group.variants.map(({product, variant}, index) => (
+              <BrandVariantCard
+                key={variant.id}
+                brand={brand}
+                product={product}
+                variant={variant}
+                loading={sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -324,6 +375,15 @@ function HuaweiTabletVariantCard({brand, product, variant, loading}) {
         ) : null}
       </div>
     </article>
+  );
+}
+
+function isAluminumAlloyProduct(product) {
+  const title = (product?.title || '').toLowerCase();
+  return (
+    title.includes('aloy') ||
+    title.includes('alloy') ||
+    title.includes('aluminum')
   );
 }
 
