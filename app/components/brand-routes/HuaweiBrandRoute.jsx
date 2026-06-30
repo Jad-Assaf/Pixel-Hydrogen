@@ -193,6 +193,7 @@ export function HuaweiBrandRoute({brand, collection, sections}) {
                           product={product}
                           variant={variant}
                           loading={index < 2 ? 'eager' : 'lazy'}
+                          pills={['MatePad', 'Productivity', 'Portable']}
                         />
                       ) : (
                         <BrandVariantCard
@@ -263,14 +264,15 @@ function HuaweiBandVersionGroups({brand, sectionIndex, sectionVariants}) {
           <div className="pz-huawei-version-label">
             <h3>{group.title}</h3>
           </div>
-          <div className="pz-card-grid pz-brand-variant-grid pz-huawei-grid">
+          <div className="pz-huawei-tablet-grid">
             {group.variants.map(({product, variant}, index) => (
-              <BrandVariantCard
+              <HuaweiTabletVariantCard
                 key={variant.id}
                 brand={brand}
                 product={product}
                 variant={variant}
                 loading={sectionIndex === 0 && index < 4 ? 'eager' : 'lazy'}
+                pills={['Band 11', group.title, 'Wearable']}
               />
             ))}
           </div>
@@ -280,7 +282,7 @@ function HuaweiBandVersionGroups({brand, sectionIndex, sectionVariants}) {
   );
 }
 
-function HuaweiTabletVariantCard({brand, product, variant, loading}) {
+function HuaweiTabletVariantCard({brand, product, variant, loading, pills}) {
   const variantUrl = useVariantUrl(
     product.handle,
     variant.selectedOptions || [],
@@ -330,11 +332,13 @@ function HuaweiTabletVariantCard({brand, product, variant, loading}) {
               ))}
             </ul>
           ) : null}
-          <div className="pz-huawei-tablet-pills" aria-label="Highlights">
-            <span>MatePad</span>
-            <span>Productivity</span>
-            <span>Portable</span>
-          </div>
+          {pills?.length ? (
+            <div className="pz-huawei-tablet-pills" aria-label="Highlights">
+              {pills.map((pill) => (
+                <span key={pill}>{pill}</span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </Link>
 
