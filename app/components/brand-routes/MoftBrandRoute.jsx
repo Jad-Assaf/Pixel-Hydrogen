@@ -10,16 +10,24 @@ import {
 
 export const MOFT_SECTIONS = [
   {
+    id: 'movas-frame-cases',
+    headline: 'MOFT MOVAS frame cases',
+    bannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/movas_desk.png?v=1783014545',
+    mobileBannerUrl:
+      'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/movas_mobile.png?v=1783014529',
+    productHandles: [
+      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-soothing-mist-x-sunrise',
+      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-misty-cove-x-cement',
+    ],
+  },
+  {
     id: 'iphone-covers',
     headline: 'MOFT iPhone covers',
     bannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_3_2026_09_54_18_PM.png?v=1780514682',
     mobileBannerUrl:
       'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/ChatGPT_Image_Jun_3_2026_09_54_25_PM.png?v=1780514682',
-    productHandles: [
-      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-soothing-mist-x-sunrise',
-      'moft-frame-case-movas\u2122-for-iphone-17-pro-pro-max-misty-cove-x-cement',
-    ],
     searchQueries: [
       'vendor:MOFT tag:"iphone covers"',
       'vendor:Moft tag:"iphone covers"',
@@ -121,6 +129,7 @@ export function MoftBrandRoute({brand, collection, sections}) {
         );
         const hasProductFeed =
           section.productHandles?.length || section.searchQueries?.length;
+        const isMovasSection = section.id === 'movas-frame-cases';
 
         return (
           <section key={section.id} className="pz-brand-feature-block">
@@ -162,7 +171,13 @@ export function MoftBrandRoute({brand, collection, sections}) {
               <section className="pz-brand-section pz-brand-products-only">
                 <div className="pz-shell">
                   {sectionVariants.length ? (
-                    <div className="pz-card-grid pz-brand-variant-grid">
+                    <div
+                      className={
+                        isMovasSection
+                          ? 'pz-moft-movas-grid'
+                          : 'pz-card-grid pz-brand-variant-grid'
+                      }
+                    >
                       {sectionVariants.map(({product, variant}, index) => (
                         <BrandVariantCard
                           key={variant.id}

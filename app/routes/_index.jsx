@@ -13,11 +13,11 @@ const EMPTY_PAGE_INFO = {
   endCursor: null,
 };
 
-const InstagramFeedSection = lazy(() =>
-  import('~/components/InstagramFeedSection').then((module) => ({
-    default: module.InstagramFeedSection,
-  })),
-);
+// const InstagramFeedSection = lazy(() =>
+//   import('~/components/InstagramFeedSection').then((module) => ({
+//     default: module.InstagramFeedSection,
+//   })),
+// );
 const StoreAssistantHomeSection = lazy(() =>
   import('~/components/StoreAssistantSection').then((module) => ({
     default: module.StoreAssistantHomeSection,
@@ -434,9 +434,9 @@ export default function Homepage() {
         </Suspense>
       ) : null}
 
-      <DeferredHomeSection skeleton={<InstagramFeedSectionSkeleton />}>
+      {/* <DeferredHomeSection skeleton={<InstagramFeedSectionSkeleton />}>
         <InstagramFeedSection />
-      </DeferredHomeSection>
+      </DeferredHomeSection> */}
       <DeferredHomeSection skeleton={<StoreAssistantSectionSkeleton />}>
         <StoreAssistantHomeSection />
       </DeferredHomeSection>
@@ -716,34 +716,34 @@ function HomeProductRowSectionSkeleton({title, kicker, className = ''}) {
   );
 }
 
-function InstagramFeedSectionSkeleton() {
-  return (
-    <section
-      className="pz-home-section pz-home-instagram pz-instagram-skeleton-section"
-      aria-hidden="true"
-    >
-      <div className="pz-shell">
-        <div className="pz-instagram-copy">
-          <span className="pz-skeleton-block pz-skeleton-title" />
-          <span className="pz-skeleton-block pz-skeleton-copy" />
-        </div>
-        <div className="pz-instagram-track">
-          {Array.from({length: 6}, (_, index) => (
-            <div
-              key={`instagram-skeleton-${index}`}
-              className="pz-instagram-card is-skeleton"
-            >
-              <span className="pz-skeleton-block pz-skeleton-fill" />
-            </div>
-          ))}
-        </div>
-        <div className="pz-instagram-cta-wrap">
-          <span className="pz-skeleton-block pz-skeleton-button" />
-        </div>
-      </div>
-    </section>
-  );
-}
+// function InstagramFeedSectionSkeleton() {
+//   return (
+//     <section
+//       className="pz-home-section pz-home-instagram pz-instagram-skeleton-section"
+//       aria-hidden="true"
+//     >
+//       <div className="pz-shell">
+//         <div className="pz-instagram-copy">
+//           <span className="pz-skeleton-block pz-skeleton-title" />
+//           <span className="pz-skeleton-block pz-skeleton-copy" />
+//         </div>
+//         <div className="pz-instagram-track">
+//           {Array.from({length: 6}, (_, index) => (
+//             <div
+//               key={`instagram-skeleton-${index}`}
+//               className="pz-instagram-card is-skeleton"
+//             >
+//               <span className="pz-skeleton-block pz-skeleton-fill" />
+//             </div>
+//           ))}
+//         </div>
+//         <div className="pz-instagram-cta-wrap">
+//           <span className="pz-skeleton-block pz-skeleton-button" />
+//         </div>
+//       </div>
+//     </section>
+//   );
+// }
 
 function StoreAssistantSectionSkeleton() {
   return (
