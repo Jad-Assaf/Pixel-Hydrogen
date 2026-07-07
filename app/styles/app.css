@@ -2866,7 +2866,7 @@ body > main {
 
 .pz-header-search-item {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr) max-content;
   gap: 0.65rem;
   align-items: center;
   border: 1px solid transparent;
@@ -2909,6 +2909,23 @@ body > main {
 .pz-header-search-item-copy small {
   font-size: 0.8rem;
   color: var(--pz-orange-dark);
+}
+
+.pz-header-search-item-price {
+  justify-self: end;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.pz-header-search-item-price .product-price {
+  font: inherit;
+}
+
+.pz-header-search-item-price .product-price-current {
+  color: inherit;
 }
 
 .pz-header-search-view-all {
@@ -8430,6 +8447,21 @@ body > main {
 
   .pz-header-search-results {
     max-height: min(48vh, 360px);
+  }
+
+  .pz-header-search-item {
+    grid-template-columns: 44px minmax(0, 1fr) max-content;
+    gap: 0.5rem;
+  }
+
+  .pz-header-search-item img,
+  .pz-header-search-thumb-placeholder {
+    width: 44px;
+    height: 44px;
+  }
+
+  .pz-header-search-item-price {
+    font-size: 0.78rem;
   }
 
   .pz-image-lightbox-panel {

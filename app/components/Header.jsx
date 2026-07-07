@@ -1,6 +1,6 @@
 import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {Await, NavLink, useLocation} from 'react-router';
-import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
+import {Money, useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
 import {SearchFormPredictive} from '~/components/SearchFormPredictive';
 import fullLogo from '~/assets/full-logo.avif';
@@ -299,9 +299,22 @@ function SearchToggle({isOpen, onToggle}) {
 
 function HeaderSearchPanel({onClose}) {
   const [searchTerm, setSearchTerm] = useState('');
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+    const input = panelRef.current?.querySelector('input[name="q"]');
+    if (!input) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      input.focus({preventScroll: true});
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
 
   return (
     <div
+      ref={panelRef}
       id="pz-header-search-panel"
       className="pz-header-search-panel"
       role="dialog"
@@ -360,6 +373,7 @@ function HeaderSearchPanel({onClose}) {
                 <div className="pz-header-search-results" role="list">
                   {products.slice(0, 20).map((product) => {
                     const image = product?.selectedOrFirstAvailableVariant?.image || null;
+                    const price = product?.selectedOrFirstAvailableVariant?.price;
                     return (
                       <NavLink
                         key={product.id}
@@ -386,6 +400,11 @@ function HeaderSearchPanel({onClose}) {
                         <span className="pz-header-search-item-copy">
                           <strong>{product.title}</strong>
                         </span>
+                        {price ? (
+                          <span className="pz-header-search-item-price">
+                            <Money data={price} />
+                          </span>
+                        ) : null}
                       </NavLink>
                     );
                   })}
