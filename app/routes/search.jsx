@@ -3,6 +3,7 @@ import {Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
+import {getCorrectedSearchTerm, normalizeSearchTerm} from '~/lib/searchDictionary';
 
 /**
  * @type {Route.MetaFunction}
@@ -15,6 +16,7 @@ const PRODUCTS_PER_PAGE = 30;
 const INITIAL_PREFETCH_PAGES = 4;
 const PREFETCH_PRODUCT_COUNT = PRODUCTS_PER_PAGE * INITIAL_PREFETCH_PAGES;
 const MAX_CONNECTION_FETCH = 250;
+const MIN_STRONG_SEARCH_PRODUCTS = 3;
 
 /**
  * @param {Route.LoaderArgs}
@@ -39,7 +41,9 @@ export async function loader({request, context}) {
  */
 export default function SearchPage() {
   /** @type {LoaderReturnData} */
-  const {type, term, result, error} = useLoaderData();
+  const {type, term, searchTerm, result, error, searchCorrection} =
+    useLoaderData();
+  const resultTerm = searchTerm || term;
   if (type === 'predictive') return null;
 
   return (
@@ -73,11 +77,17 @@ export default function SearchPage() {
       </SearchForm>
 
       {error ? <p className="pz-search-error">{error}</p> : null}
+      {searchCorrection?.correctedTerm ? (
+        <p className="pz-search-correction">
+          Showing results for <strong>{searchCorrection.correctedTerm}</strong>
+          <span> instead of {searchCorrection.originalTerm}</span>
+        </p>
+      ) : null}
 
       {!term || !result?.total ? (
         <SearchResults.Empty />
       ) : (
-        <SearchResults result={result} term={term}>
+        <SearchResults result={result} term={resultTerm}>
           {({articles, products, term}) => (
             <div>
               <SearchResults.Products products={products} term={term} />
@@ -86,7 +96,7 @@ export default function SearchPage() {
           )}
         </SearchResults>
       )}
-      <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
+      <Analytics.SearchView data={{searchTerm: resultTerm, searchResults: result}} />
     </div>
   );
 }
@@ -266,6 +276,73 @@ async function regularSearch({request, context}) {
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '');
   const requestedPage = getRequestedPage(url.searchParams.get('page'));
+  const normalizedTerm = normalizeSearchTerm(term);
+  const primarySearch = await runRegularSearch({
+    storefront,
+    term,
+    requestedPage,
+    url,
+  });
+
+  if (!normalizedTerm || hasStrongProductResults(primarySearch.items)) {
+    return buildRegularSearchReturn({
+      term,
+      searchTerm: term,
+      searchResult: primarySearch,
+      searchCorrection: null,
+    });
+  }
+
+  const correctedTerm = await getCorrectedSearchTerm({
+    storefront,
+    term: normalizedTerm,
+  });
+
+  if (!correctedTerm || correctedTerm === normalizedTerm) {
+    return buildRegularSearchReturn({
+      term,
+      searchTerm: term,
+      searchResult: primarySearch,
+      searchCorrection: null,
+    });
+  }
+
+  const correctedSearch = await runRegularSearch({
+    storefront,
+    term: correctedTerm,
+    requestedPage,
+    url,
+  });
+
+  if (!hasBetterSearchResults(correctedSearch.items, primarySearch.items)) {
+    return buildRegularSearchReturn({
+      term,
+      searchTerm: term,
+      searchResult: primarySearch,
+      searchCorrection: null,
+    });
+  }
+
+  return buildRegularSearchReturn({
+    term,
+    searchTerm: correctedTerm,
+    searchResult: correctedSearch,
+    searchCorrection: {
+      originalTerm: term,
+      correctedTerm,
+    },
+  });
+}
+
+/**
+ * @param {{
+ *   storefront: Route.LoaderArgs['context']['storefront'];
+ *   term: string;
+ *   requestedPage: number;
+ *   url: URL;
+ * }}
+ */
+async function runRegularSearch({storefront, term, requestedPage, url}) {
   const requestedProductCount = Math.max(
     PREFETCH_PRODUCT_COUNT,
     requestedPage * PRODUCTS_PER_PAGE,
@@ -353,21 +430,69 @@ async function regularSearch({request, context}) {
     },
   };
 
-  const total = Object.values(normalizedItems).reduce(
-    (acc, item) => acc + (item?.nodes?.length || 0),
-    0,
-  );
-
   const error = errors
     ? errors.map(({message}) => message).join(', ')
     : undefined;
 
   return {
+    error,
+    items: normalizedItems,
+  };
+}
+
+/**
+ * @param {{
+ *   term: string;
+ *   searchTerm: string;
+ *   searchResult: {error?: string; items: Record<string, {nodes?: unknown[]}>};
+ *   searchCorrection: null | {originalTerm: string; correctedTerm: string};
+ * }}
+ */
+function buildRegularSearchReturn({
+  term,
+  searchTerm,
+  searchResult,
+  searchCorrection,
+}) {
+  const total = getSearchItemsTotal(searchResult.items);
+
+  return {
     type: 'regular',
     term,
-    error,
-    result: {total, items: normalizedItems},
+    searchTerm,
+    error: searchResult.error,
+    searchCorrection,
+    result: {total, items: searchResult.items},
   };
+}
+
+/**
+ * @param {Record<string, {nodes?: unknown[]}>} items
+ */
+function getSearchItemsTotal(items) {
+  return Object.values(items).reduce(
+    (acc, item) => acc + (item?.nodes?.length || 0),
+    0,
+  );
+}
+
+/**
+ * @param {Record<string, {nodes?: unknown[]}>} items
+ */
+function hasStrongProductResults(items) {
+  return (items.products?.nodes?.length || 0) >= MIN_STRONG_SEARCH_PRODUCTS;
+}
+
+/**
+ * @param {Record<string, {nodes?: unknown[]}>} candidate
+ * @param {Record<string, {nodes?: unknown[]}>} original
+ */
+function hasBetterSearchResults(candidate, original) {
+  const candidateProducts = candidate.products?.nodes?.length || 0;
+  const originalProducts = original.products?.nodes?.length || 0;
+
+  if (candidateProducts >= MIN_STRONG_SEARCH_PRODUCTS) return true;
+  return candidateProducts > originalProducts;
 }
 
 function getRequestedPage(value) {

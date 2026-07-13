@@ -131,6 +131,17 @@ export default function TotersOrderPage() {
             </label>
 
             <label className="pz-toters-field pz-toters-field--wide">
+              <span>Location</span>
+              <input
+                name="location"
+                type="text"
+                autoComplete="street-address"
+                placeholder="Beirut, Achrafieh"
+                required
+              />
+            </label>
+
+            <label className="pz-toters-field pz-toters-field--wide">
               <span>Toters Order Number</span>
               <input
                 name="totersOrderNumber"
@@ -175,6 +186,7 @@ function parseTotersOrderForm(form) {
     familyName: getFormString(form, 'familyName'),
     phone: normalizePhone(getFormString(form, 'phone')),
     email: getFormString(form, 'email').toLowerCase(),
+    location: getFormString(form, 'location'),
     totersOrderNumber: getFormString(form, 'totersOrderNumber'),
   };
 }
@@ -198,6 +210,7 @@ function validateTotersOrderInput(input) {
   if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
     return 'A valid email is required.';
   }
+  if (!input.location) return 'Location is required.';
   if (!input.totersOrderNumber) return 'Toters order number is required.';
 
   return null;
@@ -304,7 +317,7 @@ async function addTotersCustomerDetails(env, customerId, input) {
       tags: TOTERS_CUSTOMER_TAGS,
     }),
     adminGraphql(env, METAFIELDS_SET_MUTATION, {
-      metafields: [buildTotersOrderMetafield(customerId, input.totersOrderNumber)],
+      metafields: buildTotersCustomerMetafields(customerId, input),
     }),
   ]);
 
@@ -322,29 +335,32 @@ function buildCustomerInput(input) {
     firstName: input.name,
     lastName: input.familyName,
     tags: TOTERS_CUSTOMER_TAGS,
-    metafields: [
-      {
-        namespace: TOTERS_METAFIELD_NAMESPACE,
-        key: TOTERS_ORDER_METAFIELD_KEY,
-        type: 'single_line_text_field',
-        value: input.totersOrderNumber,
-      },
-    ],
+    metafields: buildTotersCustomerMetafields(null, input),
   };
 }
 
 /**
- * @param {string} ownerId
- * @param {string} orderNumber
+ * @param {string | null} ownerId
+ * @param {TotersOrderInput} input
  */
-function buildTotersOrderMetafield(ownerId, orderNumber) {
-  return {
-    ownerId,
-    namespace: TOTERS_METAFIELD_NAMESPACE,
-    key: TOTERS_ORDER_METAFIELD_KEY,
-    type: 'single_line_text_field',
-    value: orderNumber,
-  };
+function buildTotersCustomerMetafields(ownerId, input) {
+  const withOwner = (metafield) =>
+    ownerId ? {...metafield, ownerId} : metafield;
+
+  return [
+    withOwner({
+      namespace: TOTERS_METAFIELD_NAMESPACE,
+      key: TOTERS_ORDER_METAFIELD_KEY,
+      type: 'single_line_text_field',
+      value: input.totersOrderNumber,
+    }),
+    withOwner({
+      namespace: TOTERS_METAFIELD_NAMESPACE,
+      key: TOTERS_LOCATION_METAFIELD_KEY,
+      type: 'single_line_text_field',
+      value: input.location,
+    }),
+  ];
 }
 
 /**
@@ -431,9 +447,10 @@ function escapeShopifySearchValue(value) {
   return JSON.stringify(value);
 }
 
-const TOTERS_CUSTOMER_TAGS = ['toters', 'toters-order-form'];
+const TOTERS_CUSTOMER_TAGS = ['Toters', 'toters-order-form'];
 const TOTERS_METAFIELD_NAMESPACE = 'custom';
 const TOTERS_ORDER_METAFIELD_KEY = 'toters_order_number';
+const TOTERS_LOCATION_METAFIELD_KEY = 'toters_location';
 
 const CUSTOMER_BY_EMAIL_QUERY = `
   query TotersCustomerByEmail($query: String!) {
@@ -513,6 +530,7 @@ const METAFIELDS_SET_MUTATION = `
  *   familyName: string;
  *   phone: string;
  *   email: string;
+ *   location: string;
  *   totersOrderNumber: string;
  * }} TotersOrderInput
  */

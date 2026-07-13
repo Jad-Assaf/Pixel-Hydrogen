@@ -9,7 +9,8 @@
     "dev": "shopify hydrogen dev --codegen",
     "preview": "shopify hydrogen preview --build",
     "lint": "eslint --no-error-on-unmatched-pattern .",
-    "codegen": "shopify hydrogen codegen && react-router typegen"
+    "codegen": "shopify hydrogen codegen && react-router typegen",
+    "build:search-dictionary": "node scripts/build-search-dictionary.js"
   },
   "prettier": "@shopify/prettier-config",
   "dependencies": {
@@ -17,6 +18,7 @@
     "graphql": "^16.10.0",
     "graphql-tag": "^2.12.6",
     "isbot": "^5.1.22",
+    "minisearch": "^7.2.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router": "^7.12.0",

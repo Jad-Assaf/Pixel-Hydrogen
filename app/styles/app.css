@@ -6241,6 +6241,20 @@ body > main {
   color: #dc2626;
 }
 
+.pz-search-correction {
+  margin: -0.4rem 0 1rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.pz-search-correction strong {
+  color: #0f172a;
+}
+
+.pz-search-correction span {
+  color: #64748b;
+}
+
 .pz-search-empty {
   margin: 0;
   border: 1px dashed var(--pz-border);
