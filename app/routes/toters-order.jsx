@@ -386,7 +386,6 @@ function getAdminApiToken(env) {
   const token =
     env.SHOPIFY_ADMIN_API_ACCESS_TOKEN ||
     env.PRIVATE_SHOPIFY_ADMIN_API_ACCESS_TOKEN ||
-    env.PRIVATE_STOREFRONT_API_TOKEN ||
     env.SHOPIFY_ADMIN_ACCESS_TOKEN ||
     env.ADMIN_API_ACCESS_TOKEN;
 
