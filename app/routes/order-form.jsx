@@ -292,7 +292,25 @@ function normalizePhone(phone) {
  * @param {OrderFormInput} input
  */
 async function upsertWarrantyCustomer(env, input) {
-  const existingCustomer = await findCustomerByEmail(env, input.email);
+  const {emailCustomer, phoneCustomer} = await findCustomerMatches(env, input);
+
+  if (
+    emailCustomer?.id &&
+    phoneCustomer?.id &&
+    emailCustomer.id !== phoneCustomer.id
+  ) {
+    throw new Error(
+      'This email and phone number belong to different customer accounts.',
+    );
+  }
+
+  if (!emailCustomer?.id && phoneCustomer?.id) {
+    throw new Error(
+      'This phone number belongs to a customer with a different email address.',
+    );
+  }
+
+  const existingCustomer = emailCustomer;
 
   if (existingCustomer?.id) {
     const customer = await updateWarrantyCustomer(
@@ -324,14 +342,35 @@ async function upsertWarrantyCustomer(env, input) {
 
 /**
  * @param {Env} env
- * @param {string} email
+ * @param {OrderFormInput} input
  */
-async function findCustomerByEmail(env, email) {
-  const response = await adminGraphql(env, CUSTOMER_BY_EMAIL_QUERY, {
-    query: `email:${escapeShopifySearchValue(email)}`,
+async function findCustomerMatches(env, input) {
+  const response = await adminGraphql(env, CUSTOMER_MATCH_QUERY, {
+    emailQuery: `email:${escapeShopifySearchValue(input.email)}`,
+    phoneQuery: `phone:${escapeShopifySearchValue(input.phone)}`,
   });
+  const emailCustomer = response.byEmail?.nodes?.find(
+    (customer) =>
+      String(customer.email || '')
+        .trim()
+        .toLowerCase() === input.email,
+  );
+  const submittedPhoneDigits = getPhoneDigits(input.phone);
+  const phoneCustomer = response.byPhone?.nodes?.find(
+    (customer) => getPhoneDigits(customer.phone) === submittedPhoneDigits,
+  );
 
-  return response.customers?.nodes?.[0] || null;
+  return {
+    emailCustomer: emailCustomer || null,
+    phoneCustomer: phoneCustomer || null,
+  };
+}
+
+/**
+ * @param {string | null | undefined} phone
+ */
+function getPhoneDigits(phone) {
+  return String(phone || '').replace(/\D/g, '');
 }
 
 /**
@@ -339,12 +378,12 @@ async function findCustomerByEmail(env, email) {
  * @param {OrderFormInput} input
  */
 async function createWarrantyCustomer(env, input) {
-  const payload = await runCustomerMutationWithPhoneFallback(
-    env,
-    CUSTOMER_CREATE_MUTATION,
-    'customerCreate',
-    buildCustomerInput(input),
-  );
+  const response = await adminGraphql(env, CUSTOMER_CREATE_MUTATION, {
+    input: buildCustomerInput(input),
+  });
+  const payload = response.customerCreate;
+
+  assertNoUserErrors(payload?.userErrors);
 
   if (!payload?.customer?.id) {
     throw new Error('Shopify did not return a created customer.');
@@ -359,70 +398,24 @@ async function createWarrantyCustomer(env, input) {
  * @param {OrderFormInput} input
  */
 async function updateWarrantyCustomer(env, customerId, input) {
-  const payload = await runCustomerMutationWithPhoneFallback(
-    env,
-    CUSTOMER_UPDATE_MUTATION,
-    'customerUpdate',
-    {
+  const response = await adminGraphql(env, CUSTOMER_UPDATE_MUTATION, {
+    input: {
       id: customerId,
       email: input.email,
       phone: input.phone,
       firstName: input.name,
       lastName: input.familyName,
     },
-  );
+  });
+  const payload = response.customerUpdate;
+
+  assertNoUserErrors(payload?.userErrors);
 
   if (!payload?.customer?.id) {
     throw new Error('Shopify did not return an updated customer.');
   }
 
   return payload.customer;
-}
-
-/**
- * Shopify requires customer phone numbers to be unique. Email remains the
- * identity for this form, so a conflicting phone must not block other updates.
- *
- * @param {Env} env
- * @param {string} mutation
- * @param {'customerCreate' | 'customerUpdate'} payloadKey
- * @param {Record<string, unknown> & {phone?: string}} customerInput
- */
-async function runCustomerMutationWithPhoneFallback(
-  env,
-  mutation,
-  payloadKey,
-  customerInput,
-) {
-  let response = await adminGraphql(env, mutation, {input: customerInput});
-  let payload = response[payloadKey];
-
-  if (customerInput.phone && hasPhoneAlreadyTakenError(payload?.userErrors)) {
-    const inputWithoutPhone = {...customerInput};
-    delete inputWithoutPhone.phone;
-    response = await adminGraphql(env, mutation, {input: inputWithoutPhone});
-    payload = response[payloadKey];
-  }
-
-  assertNoUserErrors(payload?.userErrors);
-  return payload;
-}
-
-/**
- * @param {{field?: string[] | null; message?: string}[] | undefined} userErrors
- */
-function hasPhoneAlreadyTakenError(userErrors) {
-  return Boolean(
-    userErrors?.some((error) => {
-      const field = Array.isArray(error.field) ? error.field.join('.') : '';
-      const message = String(error.message || '');
-
-      return (
-        (/phone/i.test(field) || /phone/i.test(message)) &&
-        /already (?:been )?taken|already exists/i.test(message)
-      );
-    }),
-  );
 }
 
 /**
@@ -643,19 +636,28 @@ const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
 const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
 const WARRANTY_PHONE_METAFIELD_KEY = 'warranty_phone';
 
-const CUSTOMER_BY_EMAIL_QUERY = `
-  query WarrantyCustomerByEmail($query: String!) {
-    customers(first: 1, query: $query) {
+const CUSTOMER_MATCH_QUERY = `
+  query WarrantyCustomerMatch($emailQuery: String!, $phoneQuery: String!) {
+    byEmail: customers(first: 5, query: $emailQuery) {
       nodes {
-        id
-        email
-        phone
-        firstName
-        lastName
-        addresses(first: 20) {
-          address1
-        }
+        ...WarrantyCustomerMatchFields
       }
+    }
+    byPhone: customers(first: 5, query: $phoneQuery) {
+      nodes {
+        ...WarrantyCustomerMatchFields
+      }
+    }
+  }
+
+  fragment WarrantyCustomerMatchFields on Customer {
+    id
+    email
+    phone
+    firstName
+    lastName
+    addresses(first: 20) {
+      address1
     }
   }
 `;
