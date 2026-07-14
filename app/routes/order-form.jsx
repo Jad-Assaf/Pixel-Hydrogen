@@ -339,12 +339,12 @@ async function findCustomerByEmail(env, email) {
  * @param {OrderFormInput} input
  */
 async function createWarrantyCustomer(env, input) {
-  const response = await adminGraphql(env, CUSTOMER_CREATE_MUTATION, {
-    input: buildCustomerInput(input),
-  });
-  const payload = response.customerCreate;
-
-  assertNoUserErrors(payload?.userErrors);
+  const payload = await runCustomerMutationWithPhoneFallback(
+    env,
+    CUSTOMER_CREATE_MUTATION,
+    'customerCreate',
+    buildCustomerInput(input),
+  );
 
   if (!payload?.customer?.id) {
     throw new Error('Shopify did not return a created customer.');
@@ -359,24 +359,70 @@ async function createWarrantyCustomer(env, input) {
  * @param {OrderFormInput} input
  */
 async function updateWarrantyCustomer(env, customerId, input) {
-  const response = await adminGraphql(env, CUSTOMER_UPDATE_MUTATION, {
-    input: {
+  const payload = await runCustomerMutationWithPhoneFallback(
+    env,
+    CUSTOMER_UPDATE_MUTATION,
+    'customerUpdate',
+    {
       id: customerId,
       email: input.email,
       phone: input.phone,
       firstName: input.name,
       lastName: input.familyName,
     },
-  });
-  const payload = response.customerUpdate;
-
-  assertNoUserErrors(payload?.userErrors);
+  );
 
   if (!payload?.customer?.id) {
     throw new Error('Shopify did not return an updated customer.');
   }
 
   return payload.customer;
+}
+
+/**
+ * Shopify requires customer phone numbers to be unique. Email remains the
+ * identity for this form, so a conflicting phone must not block other updates.
+ *
+ * @param {Env} env
+ * @param {string} mutation
+ * @param {'customerCreate' | 'customerUpdate'} payloadKey
+ * @param {Record<string, unknown> & {phone?: string}} customerInput
+ */
+async function runCustomerMutationWithPhoneFallback(
+  env,
+  mutation,
+  payloadKey,
+  customerInput,
+) {
+  let response = await adminGraphql(env, mutation, {input: customerInput});
+  let payload = response[payloadKey];
+
+  if (customerInput.phone && hasPhoneAlreadyTakenError(payload?.userErrors)) {
+    const inputWithoutPhone = {...customerInput};
+    delete inputWithoutPhone.phone;
+    response = await adminGraphql(env, mutation, {input: inputWithoutPhone});
+    payload = response[payloadKey];
+  }
+
+  assertNoUserErrors(payload?.userErrors);
+  return payload;
+}
+
+/**
+ * @param {{field?: string[] | null; message?: string}[] | undefined} userErrors
+ */
+function hasPhoneAlreadyTakenError(userErrors) {
+  return Boolean(
+    userErrors?.some((error) => {
+      const field = Array.isArray(error.field) ? error.field.join('.') : '';
+      const message = String(error.message || '');
+
+      return (
+        (/phone/i.test(field) || /phone/i.test(message)) &&
+        /already (?:been )?taken|already exists/i.test(message)
+      );
+    }),
+  );
 }
 
 /**
@@ -496,6 +542,12 @@ function buildWarrantyCustomerMetafields(ownerId, input) {
       type: 'single_line_text_field',
       value: input.location,
     }),
+    withOwner({
+      namespace: WARRANTY_METAFIELD_NAMESPACE,
+      key: WARRANTY_PHONE_METAFIELD_KEY,
+      type: 'single_line_text_field',
+      value: input.phone,
+    }),
   ];
 }
 
@@ -589,6 +641,7 @@ const WARRANTY_CUSTOMER_TAG = 'Toters Order';
 const WARRANTY_METAFIELD_NAMESPACE = 'custom';
 const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
 const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
+const WARRANTY_PHONE_METAFIELD_KEY = 'warranty_phone';
 
 const CUSTOMER_BY_EMAIL_QUERY = `
   query WarrantyCustomerByEmail($query: String!) {
