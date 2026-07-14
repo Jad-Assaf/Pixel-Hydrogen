@@ -217,6 +217,24 @@
   line-height: 1.2;
 }
 
+.pz-order-popup-close {
+  min-width: 8rem;
+  min-height: 2.8rem;
+  margin-top: 0.25rem;
+  border: 1px solid #111827;
+  border-radius: 0.4rem;
+  background: #111827;
+  color: #fff;
+  font-weight: 800;
+}
+
+.pz-order-popup-close:hover,
+.pz-order-popup-close:focus-visible {
+  border-color: #f97316;
+  background: #f97316;
+  color: #fff;
+}
+
 @media (max-width: 560px) {
   .pz-order-page {
     padding-top: 0.25rem;

@@ -1,4 +1,11 @@
-import {data, Form, useActionData, useNavigation} from 'react-router';
+import {useEffect, useRef, useState} from 'react';
+import {
+  data,
+  Form,
+  useActionData,
+  useNavigate,
+  useNavigation,
+} from 'react-router';
 import orderFormStyles from '~/styles/order-form.css?url';
 
 export function links() {
@@ -62,8 +69,36 @@ export async function action({request, context}) {
 export default function OrderFormPage() {
   /** @type {ActionReturnData | undefined} */
   const action = useActionData();
+  const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== 'idle';
+  const [isPopupOpen, setIsPopupOpen] = useState(Boolean(action?.ok));
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (action?.ok) setIsPopupOpen(true);
+  }, [action]);
+
+  useEffect(() => {
+    if (!isPopupOpen) return undefined;
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsPopupOpen(false);
+        navigate('/', {replace: true});
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPopupOpen, navigate]);
+
+  const closeSuccessPopup = () => {
+    setIsPopupOpen(false);
+    navigate('/', {replace: true});
+  };
 
   return (
     <div className="pz-order-page">
@@ -73,110 +108,129 @@ export default function OrderFormPage() {
           <p>Register your information to activate your warranty</p>
         </div>
 
-        <Form className="pz-order-form" method="post">
-          <div className="pz-order-form-header">
-            <div>
-              <p className="pz-order-form-label">Customer Details</p>
-              <h2>Warranty activation form</h2>
+        {!action?.ok ? (
+          <Form className="pz-order-form" method="post">
+            <div className="pz-order-form-header">
+              <div>
+                <p className="pz-order-form-label">Customer Details</p>
+                <h2>Warranty activation form</h2>
+              </div>
             </div>
-          </div>
 
-          <div className="pz-order-grid">
-            <label className="pz-order-field">
-              <span>Name</span>
-              <input
-                name="name"
-                type="text"
-                autoComplete="given-name"
-                placeholder="Jad"
-                required
-              />
-            </label>
+            <div className="pz-order-grid">
+              <label className="pz-order-field">
+                <span>Name</span>
+                <input
+                  name="name"
+                  type="text"
+                  autoComplete="given-name"
+                  placeholder="Jad"
+                  required
+                />
+              </label>
 
-            <label className="pz-order-field">
-              <span>Family Name</span>
-              <input
-                name="familyName"
-                type="text"
-                autoComplete="family-name"
-                placeholder="Haddad"
-                required
-              />
-            </label>
+              <label className="pz-order-field">
+                <span>Family Name</span>
+                <input
+                  name="familyName"
+                  type="text"
+                  autoComplete="family-name"
+                  placeholder="Haddad"
+                  required
+                />
+              </label>
 
-            <label className="pz-order-field">
-              <span>Phone Number</span>
-              <input
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                inputMode="tel"
-                placeholder="+961 81 539 339"
-                required
-              />
-            </label>
+              <label className="pz-order-field">
+                <span>Phone Number</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  placeholder="+961 81 539 339"
+                  required
+                />
+              </label>
 
-            <label className="pz-order-field">
-              <span>Email</span>
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="name@example.com"
-                required
-              />
-            </label>
+              <label className="pz-order-field">
+                <span>Email</span>
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  required
+                />
+              </label>
 
-            <label className="pz-order-field pz-order-field--wide">
-              <span>Location</span>
-              <input
-                name="location"
-                type="text"
-                autoComplete="street-address"
-                placeholder="Beirut, Achrafieh"
-                required
-              />
-            </label>
+              <label className="pz-order-field pz-order-field--wide">
+                <span>Location</span>
+                <input
+                  name="location"
+                  type="text"
+                  autoComplete="street-address"
+                  placeholder="Beirut, Achrafieh"
+                  required
+                />
+              </label>
 
-            <label className="pz-order-field pz-order-field--wide">
-              <span>Toters Order Number</span>
-              <input
-                name="totersOrderNumber"
-                type="text"
-                autoComplete="off"
-                placeholder="TOT-123456"
-                required
-              />
-            </label>
-          </div>
+              <label className="pz-order-field pz-order-field--wide">
+                <span>Toters Order Number</span>
+                <input
+                  name="totersOrderNumber"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="TOT-123456"
+                  required
+                />
+              </label>
+            </div>
 
-          <div className="pz-order-actions">
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Submit details'}
-            </button>
-          </div>
+            <div className="pz-order-actions">
+              <button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit details'}
+              </button>
+            </div>
 
-          {action?.error ? (
-            <p className="pz-order-error" role="alert">
-              {action.error}
-            </p>
-          ) : null}
-        </Form>
+            {action?.error ? (
+              <p className="pz-order-error" role="alert">
+                {action.error}
+              </p>
+            ) : null}
+          </Form>
+        ) : null}
 
-        {action?.ok ? (
-          <div className="pz-order-popup-backdrop" role="presentation">
+        {action?.ok && isPopupOpen ? (
+          <div
+            className="pz-order-popup-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) closeSuccessPopup();
+            }}
+          >
             <section
               className="pz-order-popup"
-              role="status"
+              role="dialog"
+              aria-modal="true"
               aria-live="polite"
-              aria-label="Warranty activated"
+              aria-labelledby="warranty-success-title"
             >
               <span className="pz-order-popup-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
                   <path d="M20 6 9 17l-5-5" />
                 </svg>
               </span>
-              <h2>Your warranty has been successfully activated.</h2>
+              <h2 id="warranty-success-title">
+                Your warranty has been successfully activated.
+              </h2>
+              <button
+                className="pz-order-popup-close"
+                type="button"
+                onClick={closeSuccessPopup}
+                ref={closeButtonRef}
+              >
+                Close
+              </button>
             </section>
           </div>
         ) : null}
@@ -214,7 +268,9 @@ function getFormString(form, key) {
 function validateOrderInput(input) {
   if (!input.name) return 'Name is required.';
   if (!input.familyName) return 'Family name is required.';
-  if (!input.phone) return 'Phone number is required.';
+  if (!input.phone || input.phone.replace(/\D/g, '').length < 6) {
+    return 'A valid phone number is required.';
+  }
   if (!input.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) {
     return 'A valid email is required.';
   }
@@ -239,8 +295,17 @@ async function upsertWarrantyCustomer(env, input) {
   const existingCustomer = await findCustomerByEmail(env, input.email);
 
   if (existingCustomer?.id) {
-    const customer = await updateWarrantyCustomer(env, existingCustomer.id, input);
-    await addWarrantyCustomerDetails(env, customer.id, input);
+    const customer = await updateWarrantyCustomer(
+      env,
+      existingCustomer.id,
+      input,
+    );
+    await addWarrantyCustomerDetails(
+      env,
+      customer.id,
+      input,
+      existingCustomer.addresses?.nodes || [],
+    );
 
     return {
       created: false,
@@ -249,6 +314,7 @@ async function upsertWarrantyCustomer(env, input) {
   }
 
   const customer = await createWarrantyCustomer(env, input);
+  await createCustomerAddress(env, customer.id, input, true);
 
   return {
     created: true,
@@ -317,9 +383,19 @@ async function updateWarrantyCustomer(env, customerId, input) {
  * @param {Env} env
  * @param {string} customerId
  * @param {OrderFormInput} input
+ * @param {{address1?: string | null}[]} existingAddresses
  */
-async function addWarrantyCustomerDetails(env, customerId, input) {
-  const [tagsResponse, metafieldsResponse] = await Promise.all([
+async function addWarrantyCustomerDetails(
+  env,
+  customerId,
+  input,
+  existingAddresses,
+) {
+  const addressExists = existingAddresses.some(
+    (address) =>
+      normalizeAddress(address.address1) === normalizeAddress(input.location),
+  );
+  const requests = [
     adminGraphql(env, TAGS_ADD_MUTATION, {
       id: customerId,
       tags: WARRANTY_CUSTOMER_TAGS,
@@ -327,10 +403,55 @@ async function addWarrantyCustomerDetails(env, customerId, input) {
     adminGraphql(env, METAFIELDS_SET_MUTATION, {
       metafields: buildWarrantyCustomerMetafields(customerId, input),
     }),
-  ]);
+  ];
+
+  if (!addressExists) {
+    requests.push(
+      createCustomerAddress(
+        env,
+        customerId,
+        input,
+        existingAddresses.length === 0,
+      ),
+    );
+  }
+
+  const [tagsResponse, metafieldsResponse] = await Promise.all(requests);
 
   assertNoUserErrors(tagsResponse.tagsAdd?.userErrors);
   assertNoUserErrors(metafieldsResponse.metafieldsSet?.userErrors);
+}
+
+/**
+ * @param {Env} env
+ * @param {string} customerId
+ * @param {OrderFormInput} input
+ * @param {boolean} setAsDefault
+ */
+async function createCustomerAddress(env, customerId, input, setAsDefault) {
+  const response = await adminGraphql(env, CUSTOMER_ADDRESS_CREATE_MUTATION, {
+    customerId,
+    setAsDefault,
+    address: {
+      address1: input.location,
+      firstName: input.name,
+      lastName: input.familyName,
+      phone: input.phone,
+    },
+  });
+
+  assertNoUserErrors(response.customerAddressCreate?.userErrors);
+  return response;
+}
+
+/**
+ * @param {string | null | undefined} value
+ */
+function normalizeAddress(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
 }
 
 /**
@@ -393,7 +514,9 @@ async function adminGraphql(env, query, variables) {
   const json = await response.json();
 
   if (!response.ok) {
-    throw new Error(`Shopify Admin API request failed with ${response.status}.`);
+    throw new Error(
+      `Shopify Admin API request failed with ${response.status}.`,
+    );
   }
 
   if (json.errors?.length) {
@@ -455,7 +578,7 @@ function escapeShopifySearchValue(value) {
   return JSON.stringify(value);
 }
 
-const WARRANTY_CUSTOMER_TAGS = ['Warranty', 'warranty-form'];
+const WARRANTY_CUSTOMER_TAGS = ['Toters Order'];
 const WARRANTY_METAFIELD_NAMESPACE = 'custom';
 const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
 const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
@@ -469,6 +592,11 @@ const CUSTOMER_BY_EMAIL_QUERY = `
         phone
         firstName
         lastName
+        addresses(first: 20) {
+          nodes {
+            address1
+          }
+        }
       }
     }
   }
@@ -524,6 +652,29 @@ const TAGS_ADD_MUTATION = `
 const METAFIELDS_SET_MUTATION = `
   mutation WarrantyMetafieldsSet($metafields: [MetafieldsSetInput!]!) {
     metafieldsSet(metafields: $metafields) {
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const CUSTOMER_ADDRESS_CREATE_MUTATION = `
+  mutation WarrantyCustomerAddressCreate(
+    $address: MailingAddressInput!
+    $customerId: ID!
+    $setAsDefault: Boolean
+  ) {
+    customerAddressCreate(
+      address: $address
+      customerId: $customerId
+      setAsDefault: $setAsDefault
+    ) {
+      address {
+        id
+        address1
+      }
       userErrors {
         field
         message
