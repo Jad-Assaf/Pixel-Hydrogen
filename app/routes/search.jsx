@@ -3,7 +3,10 @@ import {Analytics} from '@shopify/hydrogen';
 import {SearchForm} from '~/components/SearchForm';
 import {SearchResults} from '~/components/SearchResults';
 import {getEmptyPredictiveSearchResult} from '~/lib/search';
-import {getCorrectedSearchTerm, normalizeSearchTerm} from '~/lib/searchDictionary';
+import {
+  getCorrectedSearchTerm,
+  normalizeSearchTerm,
+} from '~/lib/searchDictionary';
 
 /**
  * @type {Route.MetaFunction}
@@ -16,7 +19,6 @@ const PRODUCTS_PER_PAGE = 30;
 const INITIAL_PREFETCH_PAGES = 4;
 const PREFETCH_PRODUCT_COUNT = PRODUCTS_PER_PAGE * INITIAL_PREFETCH_PAGES;
 const MAX_CONNECTION_FETCH = 250;
-const MIN_STRONG_SEARCH_PRODUCTS = 3;
 
 /**
  * @param {Route.LoaderArgs}
@@ -96,7 +98,9 @@ export default function SearchPage() {
           )}
         </SearchResults>
       )}
-      <Analytics.SearchView data={{searchTerm: resultTerm, searchResults: result}} />
+      <Analytics.SearchView
+        data={{searchTerm: resultTerm, searchResults: result}}
+      />
     </div>
   );
 }
@@ -277,60 +281,43 @@ async function regularSearch({request, context}) {
   const term = String(url.searchParams.get('q') || '');
   const requestedPage = getRequestedPage(url.searchParams.get('page'));
   const normalizedTerm = normalizeSearchTerm(term);
-  const primarySearch = await runRegularSearch({
+  const correctedTerm = normalizedTerm
+    ? await getCorrectedSearchTerm({term: normalizedTerm})
+    : '';
+  const usesCorrection = Boolean(
+    correctedTerm && correctedTerm !== normalizedTerm,
+  );
+  const searchTerm = usesCorrection ? correctedTerm : term;
+  const searchResult = await runRegularSearch({
+    storefront,
+    term: searchTerm,
+    requestedPage,
+    url,
+  });
+
+  if (!usesCorrection || hasProductResults(searchResult.items)) {
+    return buildRegularSearchReturn({
+      term,
+      searchTerm,
+      searchResult,
+      searchCorrection: usesCorrection
+        ? {originalTerm: term, correctedTerm}
+        : null,
+    });
+  }
+
+  const fallbackSearch = await runRegularSearch({
     storefront,
     term,
     requestedPage,
     url,
   });
-
-  if (!normalizedTerm || hasStrongProductResults(primarySearch.items)) {
-    return buildRegularSearchReturn({
-      term,
-      searchTerm: term,
-      searchResult: primarySearch,
-      searchCorrection: null,
-    });
-  }
-
-  const correctedTerm = await getCorrectedSearchTerm({
-    storefront,
-    term: normalizedTerm,
-  });
-
-  if (!correctedTerm || correctedTerm === normalizedTerm) {
-    return buildRegularSearchReturn({
-      term,
-      searchTerm: term,
-      searchResult: primarySearch,
-      searchCorrection: null,
-    });
-  }
-
-  const correctedSearch = await runRegularSearch({
-    storefront,
-    term: correctedTerm,
-    requestedPage,
-    url,
-  });
-
-  if (!hasBetterSearchResults(correctedSearch.items, primarySearch.items)) {
-    return buildRegularSearchReturn({
-      term,
-      searchTerm: term,
-      searchResult: primarySearch,
-      searchCorrection: null,
-    });
-  }
 
   return buildRegularSearchReturn({
     term,
-    searchTerm: correctedTerm,
-    searchResult: correctedSearch,
-    searchCorrection: {
-      originalTerm: term,
-      correctedTerm,
-    },
+    searchTerm: term,
+    searchResult: fallbackSearch,
+    searchCorrection: null,
   });
 }
 
@@ -479,20 +466,8 @@ function getSearchItemsTotal(items) {
 /**
  * @param {Record<string, {nodes?: unknown[]}>} items
  */
-function hasStrongProductResults(items) {
-  return (items.products?.nodes?.length || 0) >= MIN_STRONG_SEARCH_PRODUCTS;
-}
-
-/**
- * @param {Record<string, {nodes?: unknown[]}>} candidate
- * @param {Record<string, {nodes?: unknown[]}>} original
- */
-function hasBetterSearchResults(candidate, original) {
-  const candidateProducts = candidate.products?.nodes?.length || 0;
-  const originalProducts = original.products?.nodes?.length || 0;
-
-  if (candidateProducts >= MIN_STRONG_SEARCH_PRODUCTS) return true;
-  return candidateProducts > originalProducts;
+function hasProductResults(items) {
+  return (items.products?.nodes?.length || 0) > 0;
 }
 
 function getRequestedPage(value) {
@@ -642,11 +617,14 @@ async function predictiveSearch({request, context}) {
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
 
+  const correctedTerm = await getCorrectedSearchTerm({term});
+  const searchTerm = correctedTerm || term;
+
   if (limit > 10) {
-    const {products, errors} = await storefront.query(
+    let {products, errors} = await storefront.query(
       PREDICTIVE_PRODUCTS_ONLY_QUERY,
       {
-        variables: {term, limit},
+        variables: {term: searchTerm, limit},
       },
     );
 
@@ -654,6 +632,20 @@ async function predictiveSearch({request, context}) {
       throw new Error(
         `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
       );
+    }
+
+    if (!products?.nodes?.length && searchTerm !== term) {
+      const fallback = await storefront.query(PREDICTIVE_PRODUCTS_ONLY_QUERY, {
+        variables: {term, limit},
+      });
+      products = fallback.products;
+      errors = fallback.errors;
+
+      if (errors) {
+        throw new Error(
+          `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+        );
+      }
     }
 
     const items = {
@@ -668,14 +660,14 @@ async function predictiveSearch({request, context}) {
   }
 
   // Predictively search articles, products, and query suggestions
-  const {predictiveSearch: items, errors} = await storefront.query(
+  let {predictiveSearch: items, errors} = await storefront.query(
     PREDICTIVE_SEARCH_QUERY,
     {
       variables: {
         // customize search options as needed
         limit,
         limitScope: 'EACH',
-        term,
+        term: searchTerm,
         types: ['ARTICLE', 'PRODUCT', 'QUERY'],
       },
     },
@@ -685,6 +677,25 @@ async function predictiveSearch({request, context}) {
     throw new Error(
       `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
     );
+  }
+
+  if (!getPredictiveItemsTotal(items) && searchTerm !== term) {
+    const fallback = await storefront.query(PREDICTIVE_SEARCH_QUERY, {
+      variables: {
+        limit,
+        limitScope: 'EACH',
+        term,
+        types: ['ARTICLE', 'PRODUCT', 'QUERY'],
+      },
+    });
+    items = fallback.predictiveSearch;
+    errors = fallback.errors;
+
+    if (errors) {
+      throw new Error(
+        `Shopify API errors: ${errors.map(({message}) => message).join(', ')}`,
+      );
+    }
   }
 
   if (!items) {
@@ -705,6 +716,17 @@ async function predictiveSearch({request, context}) {
   );
 
   return {type, term, result: {items: normalizedItems, total}};
+}
+
+/**
+ * @param {PredictiveSearchQuery['predictiveSearch'] | null | undefined} items
+ */
+function getPredictiveItemsTotal(items) {
+  return (
+    (items?.articles?.length || 0) +
+    (items?.products?.length || 0) +
+    (items?.queries?.length || 0)
+  );
 }
 
 /** @typedef {import('./+types/search').Route} Route */

@@ -1,5 +1,5 @@
 import MiniSearch from 'minisearch';
-import {SEARCH_TERMS} from '~/lib/searchTerms.generated';
+import {SEARCH_TERMS} from './searchTerms.generated.js';
 
 const MIN_WORD_LENGTH = 3;
 const MIN_CORRECTION_WORD_LENGTH = 2;
@@ -140,9 +140,7 @@ function addWords(words, value) {
  * @param {string | null | undefined} value
  */
 function tokenizeSearchText(value) {
-  return normalizeSearchTerm(value)
-    .split(' ')
-    .filter(Boolean);
+  return normalizeSearchTerm(value).split(' ').filter(Boolean);
 }
 
 /**
@@ -152,6 +150,15 @@ function tokenizeSearchText(value) {
 function correctSearchWord(word, dictionary) {
   if (word.length < MIN_CORRECTION_WORD_LENGTH || dictionary.words.has(word)) {
     return word;
+  }
+
+  const [prefixMatch] = dictionary.index.search(word, {
+    fuzzy: false,
+    prefix: true,
+  });
+
+  if (prefixMatch?.term) {
+    return prefixMatch.term;
   }
 
   const [suggestion] = dictionary.index.autoSuggest(word, {
