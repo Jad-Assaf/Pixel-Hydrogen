@@ -81,7 +81,7 @@ export default function OrderFormPage() {
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        closePageOrDismissPopup();
+        closePage();
       }
     };
 
@@ -89,9 +89,13 @@ export default function OrderFormPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isPopupOpen]);
 
-  const closePageOrDismissPopup = () => {
-    window.close();
-    setIsPopupOpen(false);
+  const closePage = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.replace('/');
   };
 
   return (
@@ -200,7 +204,7 @@ export default function OrderFormPage() {
             role="presentation"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) {
-                closePageOrDismissPopup();
+                closePage();
               }
             }}
           >
@@ -222,7 +226,7 @@ export default function OrderFormPage() {
               <button
                 className="pz-order-popup-close"
                 type="button"
-                onClick={closePageOrDismissPopup}
+                onClick={closePage}
                 ref={closeButtonRef}
               >
                 Close
