@@ -1,11 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {
-  data,
-  Form,
-  useActionData,
-  useNavigate,
-  useNavigation,
-} from 'react-router';
+import {data, Form, useActionData, useNavigation} from 'react-router';
 import orderFormStyles from '~/styles/order-form.css?url';
 
 export function links() {
@@ -69,15 +63,16 @@ export async function action({request, context}) {
 export default function OrderFormPage() {
   /** @type {ActionReturnData | undefined} */
   const action = useActionData();
-  const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== 'idle';
   const [isPopupOpen, setIsPopupOpen] = useState(Boolean(action?.ok));
   const closeButtonRef = useRef(null);
 
   useEffect(() => {
-    if (action?.ok) setIsPopupOpen(true);
-  }, [action]);
+    if (!action?.ok) return;
+
+    setIsPopupOpen(true);
+  }, [action?.ok]);
 
   useEffect(() => {
     if (!isPopupOpen) return undefined;
@@ -86,18 +81,17 @@ export default function OrderFormPage() {
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        setIsPopupOpen(false);
-        navigate('/', {replace: true});
+        closePageOrDismissPopup();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPopupOpen, navigate]);
+  }, [isPopupOpen]);
 
-  const closeSuccessPopup = () => {
+  const closePageOrDismissPopup = () => {
+    window.close();
     setIsPopupOpen(false);
-    navigate('/', {replace: true});
   };
 
   return (
@@ -205,7 +199,9 @@ export default function OrderFormPage() {
             className="pz-order-popup-backdrop"
             role="presentation"
             onMouseDown={(event) => {
-              if (event.target === event.currentTarget) closeSuccessPopup();
+              if (event.target === event.currentTarget) {
+                closePageOrDismissPopup();
+              }
             }}
           >
             <section
@@ -226,7 +222,7 @@ export default function OrderFormPage() {
               <button
                 className="pz-order-popup-close"
                 type="button"
-                onClick={closeSuccessPopup}
+                onClick={closePageOrDismissPopup}
                 ref={closeButtonRef}
               >
                 Close
