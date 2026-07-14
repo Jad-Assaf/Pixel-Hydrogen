@@ -1,8 +1,8 @@
 import {data, Form, useActionData, useNavigation} from 'react-router';
-import totersOrderStyles from '~/styles/toters-order.css?url';
+import orderFormStyles from '~/styles/order-form.css?url';
 
 export function links() {
-  return [{rel: 'stylesheet', href: totersOrderStyles}];
+  return [{rel: 'stylesheet', href: orderFormStyles}];
 }
 
 /**
@@ -10,10 +10,10 @@ export function links() {
  */
 export const meta = () => {
   return [
-    {title: 'Pixel Zones | Toters Order Form'},
+    {title: 'Pixel Zones | Activate Your Warranty'},
     {
       name: 'description',
-      content: 'Submit your Toters order details to Pixel Zones.',
+      content: 'Register your information to activate your warranty.',
     },
   ];
 };
@@ -27,15 +27,15 @@ export async function action({request, context}) {
   }
 
   const form = await request.formData();
-  const input = parseTotersOrderForm(form);
-  const validationError = validateTotersOrderInput(input);
+  const input = parseOrderForm(form);
+  const validationError = validateOrderInput(input);
 
   if (validationError) {
     return data({ok: false, error: validationError}, {status: 400});
   }
 
   try {
-    const result = await upsertTotersCustomer(context.env, input);
+    const result = await upsertWarrantyCustomer(context.env, input);
 
     return {
       ok: true,
@@ -44,7 +44,7 @@ export async function action({request, context}) {
       created: result.created,
     };
   } catch (error) {
-    console.error('[toters-order] Shopify customer sync failed', error);
+    console.error('[order-form] Shopify customer sync failed', error);
 
     return data(
       {
@@ -59,33 +59,30 @@ export async function action({request, context}) {
   }
 }
 
-export default function TotersOrderPage() {
+export default function OrderFormPage() {
   /** @type {ActionReturnData | undefined} */
   const action = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== 'idle';
 
   return (
-    <div className="pz-toters-page">
-      <section className="pz-toters-shell" aria-labelledby="toters-order-title">
-        <div className="pz-toters-intro">
-          <h1 id="toters-order-title">Share your order details</h1>
-          <p>
-            Send the core information we need to identify your Toters purchase
-            and prepare the next step with Pixel Zones.
-          </p>
+    <div className="pz-order-page">
+      <section className="pz-order-shell" aria-labelledby="order-form-title">
+        <div className="pz-order-intro">
+          <h1 id="order-form-title">Activate Your Warranty</h1>
+          <p>Register your information to activate your warranty</p>
         </div>
 
-        <Form className="pz-toters-form" method="post">
-          <div className="pz-toters-form-header">
+        <Form className="pz-order-form" method="post">
+          <div className="pz-order-form-header">
             <div>
-              <p className="pz-toters-form-label">Customer Details</p>
-              <h2>Toters order form</h2>
+              <p className="pz-order-form-label">Customer Details</p>
+              <h2>Warranty activation form</h2>
             </div>
           </div>
 
-          <div className="pz-toters-grid">
-            <label className="pz-toters-field">
+          <div className="pz-order-grid">
+            <label className="pz-order-field">
               <span>Name</span>
               <input
                 name="name"
@@ -96,7 +93,7 @@ export default function TotersOrderPage() {
               />
             </label>
 
-            <label className="pz-toters-field">
+            <label className="pz-order-field">
               <span>Family Name</span>
               <input
                 name="familyName"
@@ -107,7 +104,7 @@ export default function TotersOrderPage() {
               />
             </label>
 
-            <label className="pz-toters-field">
+            <label className="pz-order-field">
               <span>Phone Number</span>
               <input
                 name="phone"
@@ -119,7 +116,7 @@ export default function TotersOrderPage() {
               />
             </label>
 
-            <label className="pz-toters-field">
+            <label className="pz-order-field">
               <span>Email</span>
               <input
                 name="email"
@@ -130,7 +127,7 @@ export default function TotersOrderPage() {
               />
             </label>
 
-            <label className="pz-toters-field pz-toters-field--wide">
+            <label className="pz-order-field pz-order-field--wide">
               <span>Location</span>
               <input
                 name="location"
@@ -141,7 +138,7 @@ export default function TotersOrderPage() {
               />
             </label>
 
-            <label className="pz-toters-field pz-toters-field--wide">
+            <label className="pz-order-field pz-order-field--wide">
               <span>Toters Order Number</span>
               <input
                 name="totersOrderNumber"
@@ -153,25 +150,36 @@ export default function TotersOrderPage() {
             </label>
           </div>
 
-          <div className="pz-toters-actions">
+          <div className="pz-order-actions">
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit details'}
             </button>
           </div>
 
-          {action?.ok ? (
-            <p className="pz-toters-confirm" role="status">
-              Details synced to Shopify
-              {action.created ? ' as a new customer.' : ' on the existing customer.'}
-            </p>
-          ) : null}
-
           {action?.error ? (
-            <p className="pz-toters-error" role="alert">
+            <p className="pz-order-error" role="alert">
               {action.error}
             </p>
           ) : null}
         </Form>
+
+        {action?.ok ? (
+          <div className="pz-order-popup-backdrop" role="presentation">
+            <section
+              className="pz-order-popup"
+              role="status"
+              aria-live="polite"
+              aria-label="Warranty activated"
+            >
+              <span className="pz-order-popup-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+              <h2>Your warranty has been successfully activated.</h2>
+            </section>
+          </div>
+        ) : null}
       </section>
     </div>
   );
@@ -180,7 +188,7 @@ export default function TotersOrderPage() {
 /**
  * @param {FormData} form
  */
-function parseTotersOrderForm(form) {
+function parseOrderForm(form) {
   return {
     name: getFormString(form, 'name'),
     familyName: getFormString(form, 'familyName'),
@@ -201,9 +209,9 @@ function getFormString(form, key) {
 }
 
 /**
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-function validateTotersOrderInput(input) {
+function validateOrderInput(input) {
   if (!input.name) return 'Name is required.';
   if (!input.familyName) return 'Family name is required.';
   if (!input.phone) return 'Phone number is required.';
@@ -225,14 +233,14 @@ function normalizePhone(phone) {
 
 /**
  * @param {Env} env
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-async function upsertTotersCustomer(env, input) {
+async function upsertWarrantyCustomer(env, input) {
   const existingCustomer = await findCustomerByEmail(env, input.email);
 
   if (existingCustomer?.id) {
-    const customer = await updateTotersCustomer(env, existingCustomer.id, input);
-    await addTotersCustomerDetails(env, customer.id, input);
+    const customer = await updateWarrantyCustomer(env, existingCustomer.id, input);
+    await addWarrantyCustomerDetails(env, customer.id, input);
 
     return {
       created: false,
@@ -240,7 +248,7 @@ async function upsertTotersCustomer(env, input) {
     };
   }
 
-  const customer = await createTotersCustomer(env, input);
+  const customer = await createWarrantyCustomer(env, input);
 
   return {
     created: true,
@@ -262,9 +270,9 @@ async function findCustomerByEmail(env, email) {
 
 /**
  * @param {Env} env
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-async function createTotersCustomer(env, input) {
+async function createWarrantyCustomer(env, input) {
   const response = await adminGraphql(env, CUSTOMER_CREATE_MUTATION, {
     input: buildCustomerInput(input),
   });
@@ -282,9 +290,9 @@ async function createTotersCustomer(env, input) {
 /**
  * @param {Env} env
  * @param {string} customerId
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-async function updateTotersCustomer(env, customerId, input) {
+async function updateWarrantyCustomer(env, customerId, input) {
   const response = await adminGraphql(env, CUSTOMER_UPDATE_MUTATION, {
     input: {
       id: customerId,
@@ -308,16 +316,16 @@ async function updateTotersCustomer(env, customerId, input) {
 /**
  * @param {Env} env
  * @param {string} customerId
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-async function addTotersCustomerDetails(env, customerId, input) {
+async function addWarrantyCustomerDetails(env, customerId, input) {
   const [tagsResponse, metafieldsResponse] = await Promise.all([
     adminGraphql(env, TAGS_ADD_MUTATION, {
       id: customerId,
-      tags: TOTERS_CUSTOMER_TAGS,
+      tags: WARRANTY_CUSTOMER_TAGS,
     }),
     adminGraphql(env, METAFIELDS_SET_MUTATION, {
-      metafields: buildTotersCustomerMetafields(customerId, input),
+      metafields: buildWarrantyCustomerMetafields(customerId, input),
     }),
   ]);
 
@@ -326,7 +334,7 @@ async function addTotersCustomerDetails(env, customerId, input) {
 }
 
 /**
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
 function buildCustomerInput(input) {
   return {
@@ -334,29 +342,29 @@ function buildCustomerInput(input) {
     phone: input.phone,
     firstName: input.name,
     lastName: input.familyName,
-    tags: TOTERS_CUSTOMER_TAGS,
-    metafields: buildTotersCustomerMetafields(null, input),
+    tags: WARRANTY_CUSTOMER_TAGS,
+    metafields: buildWarrantyCustomerMetafields(null, input),
   };
 }
 
 /**
  * @param {string | null} ownerId
- * @param {TotersOrderInput} input
+ * @param {OrderFormInput} input
  */
-function buildTotersCustomerMetafields(ownerId, input) {
+function buildWarrantyCustomerMetafields(ownerId, input) {
   const withOwner = (metafield) =>
     ownerId ? {...metafield, ownerId} : metafield;
 
   return [
     withOwner({
-      namespace: TOTERS_METAFIELD_NAMESPACE,
-      key: TOTERS_ORDER_METAFIELD_KEY,
+      namespace: WARRANTY_METAFIELD_NAMESPACE,
+      key: WARRANTY_ORDER_METAFIELD_KEY,
       type: 'single_line_text_field',
       value: input.totersOrderNumber,
     }),
     withOwner({
-      namespace: TOTERS_METAFIELD_NAMESPACE,
-      key: TOTERS_LOCATION_METAFIELD_KEY,
+      namespace: WARRANTY_METAFIELD_NAMESPACE,
+      key: WARRANTY_LOCATION_METAFIELD_KEY,
       type: 'single_line_text_field',
       value: input.location,
     }),
@@ -447,13 +455,13 @@ function escapeShopifySearchValue(value) {
   return JSON.stringify(value);
 }
 
-const TOTERS_CUSTOMER_TAGS = ['Toters', 'toters-order-form'];
-const TOTERS_METAFIELD_NAMESPACE = 'custom';
-const TOTERS_ORDER_METAFIELD_KEY = 'toters_order_number';
-const TOTERS_LOCATION_METAFIELD_KEY = 'toters_location';
+const WARRANTY_CUSTOMER_TAGS = ['Warranty', 'warranty-form'];
+const WARRANTY_METAFIELD_NAMESPACE = 'custom';
+const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
+const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
 
 const CUSTOMER_BY_EMAIL_QUERY = `
-  query TotersCustomerByEmail($query: String!) {
+  query WarrantyCustomerByEmail($query: String!) {
     customers(first: 1, query: $query) {
       nodes {
         id
@@ -467,7 +475,7 @@ const CUSTOMER_BY_EMAIL_QUERY = `
 `;
 
 const CUSTOMER_CREATE_MUTATION = `
-  mutation TotersCustomerCreate($input: CustomerInput!) {
+  mutation WarrantyCustomerCreate($input: CustomerInput!) {
     customerCreate(input: $input) {
       userErrors {
         field
@@ -485,7 +493,7 @@ const CUSTOMER_CREATE_MUTATION = `
 `;
 
 const CUSTOMER_UPDATE_MUTATION = `
-  mutation TotersCustomerUpdate($input: CustomerInput!) {
+  mutation WarrantyCustomerUpdate($input: CustomerInput!) {
     customerUpdate(input: $input) {
       userErrors {
         field
@@ -503,7 +511,7 @@ const CUSTOMER_UPDATE_MUTATION = `
 `;
 
 const TAGS_ADD_MUTATION = `
-  mutation TotersTagsAdd($id: ID!, $tags: [String!]!) {
+  mutation WarrantyTagsAdd($id: ID!, $tags: [String!]!) {
     tagsAdd(id: $id, tags: $tags) {
       userErrors {
         field
@@ -514,7 +522,7 @@ const TAGS_ADD_MUTATION = `
 `;
 
 const METAFIELDS_SET_MUTATION = `
-  mutation TotersMetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+  mutation WarrantyMetafieldsSet($metafields: [MetafieldsSetInput!]!) {
     metafieldsSet(metafields: $metafields) {
       userErrors {
         field
@@ -532,8 +540,8 @@ const METAFIELDS_SET_MUTATION = `
  *   email: string;
  *   location: string;
  *   totersOrderNumber: string;
- * }} TotersOrderInput
+ * }} OrderFormInput
  */
 
-/** @typedef {import('./+types/toters-order').Route} Route */
+/** @typedef {import('./+types/order-form').Route} Route */
 /** @typedef {import('@shopify/remix-oxygen').SerializeFrom<typeof action>} ActionReturnData */

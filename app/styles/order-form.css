@@ -1,9 +1,9 @@
-.pz-toters-page {
+.pz-order-page {
   min-height: min(760px, calc(100vh - var(--header-height)));
   padding: clamp(1.25rem, 3vw, 3rem) 0;
 }
 
-.pz-toters-shell {
+.pz-order-shell {
   display: flex;
   flex-direction: column;
   gap: clamp(1.25rem, 2.6vw, 2rem);
@@ -11,14 +11,13 @@
   margin: 0 auto;
 }
 
-.pz-toters-intro {
+.pz-order-intro {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.pz-toters-kicker,
-.pz-toters-form-label {
+.pz-order-form-label {
   margin: 0;
   color: #f97316;
   font-size: 0.78rem;
@@ -28,7 +27,7 @@
   text-transform: uppercase;
 }
 
-.pz-toters-intro h1 {
+.pz-order-intro h1 {
   max-width: 100%;
   margin: 0;
   color: #101010;
@@ -38,14 +37,14 @@
   line-height: 1;
 }
 
-.pz-toters-intro p:not(.pz-toters-kicker) {
+.pz-order-intro p {
   max-width: 68ch;
   margin: 0;
   color: #4b5563;
   font-size: clamp(1rem, 1.4vw, 1.12rem);
 }
 
-.pz-toters-form {
+.pz-order-form {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -58,7 +57,7 @@
   max-width: 100%;
 }
 
-.pz-toters-form::before {
+.pz-order-form::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -67,42 +66,42 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.pz-toters-form-header {
+.pz-order-form-header {
   display: flex;
   align-items: flex-start;
   padding-bottom: 1rem;
   border-bottom: 1px solid rgba(17, 24, 39, 0.08);
 }
 
-.pz-toters-form-header h2 {
+.pz-order-form-header h2 {
   margin: 0.2rem 0 0;
   font-size: clamp(1.35rem, 2vw, 1.8rem);
   letter-spacing: 0;
 }
 
-.pz-toters-grid {
+.pz-order-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.95rem;
 }
 
-.pz-toters-field {
+.pz-order-field {
   display: flex;
   flex-direction: column;
   gap: 0.42rem;
 }
 
-.pz-toters-field--wide {
+.pz-order-field--wide {
   grid-column: 1 / -1;
 }
 
-.pz-toters-field span {
+.pz-order-field span {
   color: #111827;
   font-size: 0.86rem;
   font-weight: 700;
 }
 
-.pz-toters-field input {
+.pz-order-field input {
   width: 100%;
   min-height: 3.15rem;
   border-color: rgba(17, 24, 39, 0.14);
@@ -117,24 +116,24 @@
     box-shadow 180ms ease;
 }
 
-.pz-toters-field input::placeholder {
+.pz-order-field input::placeholder {
   color: #9ca3af;
 }
 
-.pz-toters-field input:focus {
+.pz-order-field input:focus {
   border-color: #f97316;
   background: #fff;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.16);
 }
 
-.pz-toters-actions {
+.pz-order-actions {
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
   padding-top: 0.25rem;
 }
 
-.pz-toters-actions button {
+.pz-order-actions button {
   min-height: 3rem;
   width: 100%;
   white-space: nowrap;
@@ -145,25 +144,13 @@
   font-weight: 800;
 }
 
-.pz-toters-actions button:hover {
+.pz-order-actions button:hover {
   border-color: #111827;
   background: #111827;
   color: #fff;
 }
 
-.pz-toters-confirm {
-  margin: 0;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(22, 163, 74, 0.22);
-  border-radius: 8px;
-  background: #f0fdf4;
-  color: #166534;
-  font-size: 0.92rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.pz-toters-error {
+.pz-order-error {
   margin: 0;
   padding: 0.8rem 0.9rem;
   border: 1px solid rgba(220, 38, 38, 0.22);
@@ -175,17 +162,108 @@
   line-height: 1.4;
 }
 
+.pz-order-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.42);
+  animation: pz-order-popup-fade 220ms ease-out both;
+}
+
+.pz-order-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: min(100%, 440px);
+  padding: clamp(1.35rem, 4vw, 2.1rem);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 28px 80px -48px rgba(15, 23, 42, 0.9);
+  text-align: center;
+  animation: pz-order-popup-rise 360ms cubic-bezier(0.2, 0.9, 0.2, 1.1) both;
+}
+
+.pz-order-popup-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #fff;
+  animation: pz-order-popup-check 520ms ease-out 120ms both;
+}
+
+.pz-order-popup-icon svg {
+  width: 2.2rem;
+  height: 2.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.pz-order-popup h2 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(1.2rem, 3.5vw, 1.55rem);
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 @media (max-width: 560px) {
-  .pz-toters-page {
+  .pz-order-page {
     padding-top: 0.25rem;
   }
 
-  .pz-toters-actions {
+  .pz-order-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .pz-toters-actions button {
+  .pz-order-actions button {
     width: 100%;
+  }
+}
+
+@keyframes pz-order-popup-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pz-order-popup-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pz-order-popup-check {
+  0% {
+    transform: scale(0.72);
+  }
+
+  70% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }

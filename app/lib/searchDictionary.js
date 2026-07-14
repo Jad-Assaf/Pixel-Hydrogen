@@ -2,6 +2,7 @@ import MiniSearch from 'minisearch';
 import {SEARCH_TERMS} from '~/lib/searchTerms.generated';
 
 const MIN_WORD_LENGTH = 3;
+const MIN_CORRECTION_WORD_LENGTH = 2;
 const FUZZY_SEARCH_DISTANCE = 0.3;
 
 const SEARCH_ALIASES = new Map(
@@ -149,7 +150,7 @@ function tokenizeSearchText(value) {
  * @param {{index: MiniSearch; words: Set<string>}} dictionary
  */
 function correctSearchWord(word, dictionary) {
-  if (word.length < MIN_WORD_LENGTH || dictionary.words.has(word)) {
+  if (word.length < MIN_CORRECTION_WORD_LENGTH || dictionary.words.has(word)) {
     return word;
   }
 
