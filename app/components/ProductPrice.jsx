@@ -40,6 +40,18 @@ export function ProductPrice({price, compareAtPrice, suffix = ''}) {
   );
 }
 
+/**
+ * Compact catalog-price renderer for search results and other inline layouts.
+ * @param {{price?: MoneyV2 | null; className?: string}} props
+ */
+export function ProductMoney({price, className}) {
+  if (isZeroPrice(price)) {
+    return <span className={className}>{ASK_FOR_PRICE_LABEL}</span>;
+  }
+
+  return price ? <Money className={className} data={price} /> : null;
+}
+
 export function hasCompareAtPrice(price, compareAtPrice) {
   const priceAmount = Number.parseFloat(price?.amount || '');
   const compareAtAmount = Number.parseFloat(compareAtPrice?.amount || '');

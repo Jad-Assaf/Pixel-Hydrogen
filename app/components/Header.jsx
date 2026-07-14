@@ -1,7 +1,8 @@
 import {Suspense, useEffect, useMemo, useRef, useState} from 'react';
 import {Await, NavLink, useLocation} from 'react-router';
-import {Money, useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
+import {useAnalytics, useOptimisticCart} from '@shopify/hydrogen';
 import {useAside} from '~/components/Aside';
+import {ProductMoney} from '~/components/ProductPrice';
 import {SearchFormPredictive} from '~/components/SearchFormPredictive';
 import fullLogo from '~/assets/full-logo.avif';
 import miniLogo from '~/assets/mini-logo.webp';
@@ -270,8 +271,7 @@ function isIOSWebKitBrowser() {
     /iPad|iPhone|iPod/i.test(ua) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isSafariDesktop =
-    /Safari/i.test(ua) &&
-    !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(ua);
+    /Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|OPR|FxiOS/i.test(ua);
 
   return isIOSDevice || isSafariDesktop;
 }
@@ -328,103 +328,106 @@ function HeaderSearchPanel({onClose}) {
         {({fetchResults, inputRef, fetcher, goToSearch}) => {
           const term = searchTerm.trim();
           const products = fetcher?.data?.result?.items?.products || [];
-          const isLoading = fetcher?.state === 'loading' || fetcher?.state === 'submitting';
+          const isLoading =
+            fetcher?.state === 'loading' || fetcher?.state === 'submitting';
           const viewAllHref = `/search?q=${encodeURIComponent(term)}`;
 
           return (
-          <>
-            <div className="pz-header-search-input-wrap">
-              <input
-                name="q"
-                onChange={(event) => {
-                  setSearchTerm(event.target.value);
-                  fetchResults(event);
-                }}
-                onFocus={(event) => {
-                  if (event.target.value) {
+            <>
+              <div className="pz-header-search-input-wrap">
+                <input
+                  name="q"
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
                     fetchResults(event);
-                  }
-                }}
-                placeholder="Search products..."
-                ref={inputRef}
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                aria-label="Search products"
-              />
-              <button
-                type="button"
-                className="pz-header-search-icon-btn"
-                aria-label="Go to search page"
-                onClick={goToSearch}
-              >
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <circle cx="11" cy="11" r="6.5" />
-                  <path d="M16.1 16.1 21 21" />
-                </svg>
-              </button>
-            </div>
+                  }}
+                  onFocus={(event) => {
+                    if (event.target.value) {
+                      fetchResults(event);
+                    }
+                  }}
+                  placeholder="Search products..."
+                  ref={inputRef}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-label="Search products"
+                />
+                <button
+                  type="button"
+                  className="pz-header-search-icon-btn"
+                  aria-label="Go to search page"
+                  onClick={goToSearch}
+                >
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <circle cx="11" cy="11" r="6.5" />
+                    <path d="M16.1 16.1 21 21" />
+                  </svg>
+                </button>
+              </div>
 
-            {term ? (
-              isLoading ? (
-                <p className="pz-header-search-state">Searching...</p>
-              ) : products.length ? (
-                <div className="pz-header-search-results" role="list">
-                  {products.slice(0, 20).map((product) => {
-                    const image = product?.selectedOrFirstAvailableVariant?.image || null;
-                    const price = product?.selectedOrFirstAvailableVariant?.price;
-                    return (
-                      <NavLink
-                        key={product.id}
-                        to={`/products/${product.handle}`}
-                        prefetch="intent"
-                        className="pz-header-search-item"
-                        onClick={onClose}
-                        role="listitem"
-                      >
-                        {image?.url ? (
-                          <img
-                            src={image.url}
-                            alt={image.altText || product.title}
-                            loading="lazy"
-                            width={52}
-                            height={52}
-                          />
-                        ) : (
-                          <span
-                            className="pz-header-search-thumb-placeholder"
-                            aria-hidden="true"
-                          />
-                        )}
-                        <span className="pz-header-search-item-copy">
-                          <strong>{product.title}</strong>
-                        </span>
-                        {price ? (
-                          <span className="pz-header-search-item-price">
-                            <Money data={price} />
+              {term ? (
+                isLoading ? (
+                  <p className="pz-header-search-state">Searching...</p>
+                ) : products.length ? (
+                  <div className="pz-header-search-results" role="list">
+                    {products.slice(0, 20).map((product) => {
+                      const image =
+                        product?.selectedOrFirstAvailableVariant?.image || null;
+                      const price =
+                        product?.selectedOrFirstAvailableVariant?.price;
+                      return (
+                        <NavLink
+                          key={product.id}
+                          to={`/products/${product.handle}`}
+                          prefetch="intent"
+                          className="pz-header-search-item"
+                          onClick={onClose}
+                          role="listitem"
+                        >
+                          {image?.url ? (
+                            <img
+                              src={image.url}
+                              alt={image.altText || product.title}
+                              loading="lazy"
+                              width={52}
+                              height={52}
+                            />
+                          ) : (
+                            <span
+                              className="pz-header-search-thumb-placeholder"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span className="pz-header-search-item-copy">
+                            <strong>{product.title}</strong>
                           </span>
-                        ) : null}
-                      </NavLink>
-                    );
-                  })}
-                  <NavLink
-                    to={viewAllHref}
-                    prefetch="intent"
-                    className="pz-header-search-view-all"
-                    onClick={onClose}
-                    role="listitem"
-                  >
-                    View all results
-                  </NavLink>
-                </div>
-              ) : (
-                <p className="pz-header-search-state">
-                  No products found for <q>{term}</q>.
-                </p>
-              )
-            ) : null}
-          </>
+                          {price ? (
+                            <span className="pz-header-search-item-price">
+                              <ProductMoney price={price} />
+                            </span>
+                          ) : null}
+                        </NavLink>
+                      );
+                    })}
+                    <NavLink
+                      to={viewAllHref}
+                      prefetch="intent"
+                      className="pz-header-search-view-all"
+                      onClick={onClose}
+                      role="listitem"
+                    >
+                      View all results
+                    </NavLink>
+                  </div>
+                ) : (
+                  <p className="pz-header-search-state">
+                    No products found for <q>{term}</q>.
+                  </p>
+                )
+              ) : null}
+            </>
           );
         }}
       </SearchFormPredictive>
@@ -475,24 +478,32 @@ function DesktopBrowseMenu({
 
   const firstColumn = visibleColumns[0] || null;
   const activeRootItem = firstColumn
-    ? firstColumn.items.find((entry) => entry.id === firstColumn.activeItemId) || null
+    ? firstColumn.items.find(
+        (entry) => entry.id === firstColumn.activeItemId,
+      ) || null
     : null;
   const activeRootLink = activeRootItem
     ? normalizeMenuUrl(activeRootItem.url, primaryDomainUrl, publicStoreDomain)
     : null;
 
   return (
-    <div className="pz-desktop-menu-panel" role="dialog" aria-label="Browse shop">
+    <div
+      className="pz-desktop-menu-panel"
+      role="dialog"
+      aria-label="Browse shop"
+    >
       <section className="pz-desktop-menu-intro">
-        <button type="button" className="pz-desktop-menu-close" onClick={onClose}>
+        <button
+          type="button"
+          className="pz-desktop-menu-close"
+          onClick={onClose}
+        >
           <span aria-hidden="true">×</span>
           <span>Close</span>
         </button>
 
         <p className="pz-desktop-menu-kicker">Browse Shop</p>
-        <h3>
-          About {activeRootItem?.title || 'Our Collections'}
-        </h3>
+        <h3>About {activeRootItem?.title || 'Our Collections'}</h3>
         <div className="pz-desktop-menu-callout">
           {activeRootLink?.external ? (
             <a
@@ -524,7 +535,10 @@ function DesktopBrowseMenu({
       </section>
 
       {visibleColumns.map((column) => (
-        <section className="pz-desktop-menu-column" key={`column-${column.level}`}>
+        <section
+          className="pz-desktop-menu-column"
+          key={`column-${column.level}`}
+        >
           <p className="pz-desktop-menu-column-title">{column.title}</p>
           <ul className="pz-desktop-menu-list">
             {column.items.map((item) => {
@@ -545,7 +559,10 @@ function DesktopBrowseMenu({
                         isActiveColumnItem ? ' is-active' : ''
                       }`}
                       onClick={() => {
-                        setActivePath((prev) => [...prev.slice(0, column.level), item.id]);
+                        setActivePath((prev) => [
+                          ...prev.slice(0, column.level),
+                          item.id,
+                        ]);
                       }}
                     >
                       <span>{item.title}</span>
@@ -558,7 +575,9 @@ function DesktopBrowseMenu({
               if (!normalized) {
                 return (
                   <li key={item.id} className="pz-desktop-menu-item">
-                    <span className="pz-desktop-menu-link is-disabled">{item.title}</span>
+                    <span className="pz-desktop-menu-link is-disabled">
+                      {item.title}
+                    </span>
                   </li>
                 );
               }
@@ -698,8 +717,14 @@ function HeaderMenuItem({
   isMobile = false,
   onNavigate,
 }) {
-  const normalized = normalizeMenuUrl(item.url, primaryDomainUrl, publicStoreDomain);
-  const media = isMobile ? getMenuCollectionMedia(item, menuCollectionMedia) : null;
+  const normalized = normalizeMenuUrl(
+    item.url,
+    primaryDomainUrl,
+    publicStoreDomain,
+  );
+  const media = isMobile
+    ? getMenuCollectionMedia(item, menuCollectionMedia)
+    : null;
   const mediaUrl = media?.url ? withImageWidth(media.url, 100) : null;
   const mediaAlt = media?.altText || item.title;
 
@@ -739,9 +764,7 @@ function HeaderMenuItem({
   return (
     <li className="pz-nav-item">
       <NavLink
-        className={({isActive}) =>
-          `pz-nav-link${isActive ? ' is-active' : ''}`
-        }
+        className={({isActive}) => `pz-nav-link${isActive ? ' is-active' : ''}`}
         end={normalized.url === '/'}
         onClick={() => {
           close();
@@ -785,7 +808,11 @@ function MobileMenuItem({
   onNavigate,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const normalized = normalizeMenuUrl(item.url, primaryDomainUrl, publicStoreDomain);
+  const normalized = normalizeMenuUrl(
+    item.url,
+    primaryDomainUrl,
+    publicStoreDomain,
+  );
   const children = item.items || [];
   const media = getMenuCollectionMedia(item, menuCollectionMedia);
   const mediaUrl = media?.url ? withImageWidth(media.url, 100) : null;
@@ -1018,15 +1045,11 @@ function CartIcon() {
 }
 
 function CartLabel() {
-  return (
-    <span className="pz-cart-label">Cart</span>
-  );
+  return <span className="pz-cart-label">Cart</span>;
 }
 
 function CartCount({badgeCount}) {
-  return (
-    <span className="pz-cart-count">{badgeCount}</span>
-  );
+  return <span className="pz-cart-count">{badgeCount}</span>;
 }
 
 function CartButton({badgeCount, onClick}) {
@@ -1151,7 +1174,9 @@ function normalizeMenuUrl(url, primaryDomainUrl, publicStoreDomain) {
       [
         primaryDomain?.host,
         normalizedPublicStoreDomain,
-        normalizedPublicStoreDomain ? `${normalizedPublicStoreDomain}.myshopify.com` : null,
+        normalizedPublicStoreDomain
+          ? `${normalizedPublicStoreDomain}.myshopify.com`
+          : null,
       ].filter(Boolean),
     );
 
@@ -1160,7 +1185,10 @@ function normalizeMenuUrl(url, primaryDomainUrl, publicStoreDomain) {
       (!/^https?:/.test(url) && url.startsWith('/'));
 
     if (isInternal) {
-      return {url: `${parsed.pathname}${parsed.search}${parsed.hash}`, external: false};
+      return {
+        url: `${parsed.pathname}${parsed.search}${parsed.hash}`,
+        external: false,
+      };
     }
 
     return {url: parsed.toString(), external: true};
@@ -1173,7 +1201,13 @@ const FALLBACK_HEADER_MENU = {
   items: [
     {id: 'home', title: 'Home', url: '/', type: 'HTTP', items: []},
     {id: 'shop', title: 'Shop', url: '/shop', type: 'HTTP', items: []},
-    {id: 'collections', title: 'Collections', url: '/collections', type: 'HTTP', items: []},
+    {
+      id: 'collections',
+      title: 'Collections',
+      url: '/collections',
+      type: 'HTTP',
+      items: [],
+    },
     {id: 'contact', title: 'Search', url: '/search', type: 'HTTP', items: []},
   ],
 };

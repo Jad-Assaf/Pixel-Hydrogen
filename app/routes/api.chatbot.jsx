@@ -1,4 +1,5 @@
 import {data} from 'react-router';
+import {CALL_FOR_PRICE_LABEL} from '~/lib/pricing';
 
 const OUT_OF_SCOPE_REPLY =
   'I can only help with Pixel Zones products, delivery, location, and customer service details.';
@@ -3147,6 +3148,7 @@ function formatMoney(amount, currencyCode) {
 
   const numeric = Number(amount);
   if (Number.isNaN(numeric)) return 'N/A';
+  if (numeric === 0) return CALL_FOR_PRICE_LABEL;
 
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

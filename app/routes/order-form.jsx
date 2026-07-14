@@ -304,7 +304,7 @@ async function upsertWarrantyCustomer(env, input) {
       env,
       customer.id,
       input,
-      existingCustomer.addresses?.nodes || [],
+      existingCustomer.addresses || [],
     );
 
     return {
@@ -398,7 +398,7 @@ async function addWarrantyCustomerDetails(
   const requests = [
     adminGraphql(env, TAGS_ADD_MUTATION, {
       id: customerId,
-      tags: WARRANTY_CUSTOMER_TAGS,
+      tags: buildWarrantyCustomerTags(input),
     }),
     adminGraphql(env, METAFIELDS_SET_MUTATION, {
       metafields: buildWarrantyCustomerMetafields(customerId, input),
@@ -463,9 +463,16 @@ function buildCustomerInput(input) {
     phone: input.phone,
     firstName: input.name,
     lastName: input.familyName,
-    tags: WARRANTY_CUSTOMER_TAGS,
+    tags: buildWarrantyCustomerTags(input),
     metafields: buildWarrantyCustomerMetafields(null, input),
   };
+}
+
+/**
+ * @param {OrderFormInput} input
+ */
+function buildWarrantyCustomerTags(input) {
+  return [WARRANTY_CUSTOMER_TAG, input.totersOrderNumber];
 }
 
 /**
@@ -578,7 +585,7 @@ function escapeShopifySearchValue(value) {
   return JSON.stringify(value);
 }
 
-const WARRANTY_CUSTOMER_TAGS = ['Toters Order'];
+const WARRANTY_CUSTOMER_TAG = 'Toters Order';
 const WARRANTY_METAFIELD_NAMESPACE = 'custom';
 const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
 const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
@@ -593,9 +600,7 @@ const CUSTOMER_BY_EMAIL_QUERY = `
         firstName
         lastName
         addresses(first: 20) {
-          nodes {
-            address1
-          }
+          address1
         }
       }
     }

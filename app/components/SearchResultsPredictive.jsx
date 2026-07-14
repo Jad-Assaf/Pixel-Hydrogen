@@ -1,6 +1,7 @@
 import {Link, useFetcher} from 'react-router';
-import {Image, Money} from '@shopify/hydrogen';
-import React, {useRef, useEffect} from 'react';
+import {Image} from '@shopify/hydrogen';
+import {useRef, useEffect} from 'react';
+import {ProductMoney} from '~/components/ProductPrice';
 import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
@@ -195,7 +196,7 @@ function SearchResultsPredictiveProducts({term, products, closeSearch}) {
                 )}
                 <div>
                   <p>{product.title}</p>
-                  <small>{price && <Money data={price} />}</small>
+                  <small>{price && <ProductMoney price={price} />}</small>
                 </div>
               </Link>
             </li>
