@@ -922,28 +922,34 @@ export default function Product() {
             </button>
             <h3 id="pz-availability-title">Available at:</h3>
             <ul className="pz-availability-options">
-              {isAvailableInStore ? (
-                <li>
-                  <span
-                    className={`pz-availability-dot${
-                      isStoreOpenNow ? ' is-open' : ' is-closed'
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <div className="pz-availability-option-text">
-                    <p>
-                      Sami Solh Avenu, Beirut, &nbsp;
-                      <span
-                        className={`pz-availability-status${
-                          isStoreOpenNow ? ' is-open' : ' is-closed'
-                        }`}
-                      >
-                        {isStoreOpenNow ? 'Open' : 'Closed'}
-                      </span>
-                    </p>
-                  </div>
-                </li>
-              ) : null}
+              <li>
+                <span
+                  className={`pz-availability-dot${
+                    isAvailableInStore && isStoreOpenNow
+                      ? ' is-open'
+                      : ' is-closed'
+                  }`}
+                  aria-hidden="true"
+                />
+                <div className="pz-availability-option-text">
+                  <p>
+                    Sami Solh Avenu, Beirut, &nbsp;
+                    <span
+                      className={`pz-availability-status${
+                        isAvailableInStore && isStoreOpenNow
+                          ? ' is-open'
+                          : ' is-closed'
+                      }`}
+                    >
+                      {isAvailableInStore
+                        ? isStoreOpenNow
+                          ? 'Open'
+                          : 'Closed'
+                        : 'Not Available'}
+                    </span>
+                  </p>
+                </div>
+              </li>
               <li>
                 <span className="pz-availability-dot" aria-hidden="true" />
                 <span>Available Online</span>
