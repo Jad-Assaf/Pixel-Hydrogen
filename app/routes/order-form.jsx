@@ -146,12 +146,12 @@ export default function OrderFormPage() {
                 </label>
 
                 <label className="pz-order-field pz-order-field--wide">
-                  <span>Toters Order Number</span>
+                  <span>Date of Purchase</span>
                   <input
-                    name="totersOrderNumber"
-                    type="text"
+                    name="dateOfPurchase"
+                    type="date"
                     autoComplete="off"
-                    placeholder="#123456"
+                    max={getTodayDate()}
                     required
                   />
                 </label>
@@ -204,7 +204,7 @@ function parseOrderForm(form) {
     phone: normalizePhone(getFormString(form, 'phone')),
     email: getFormString(form, 'email').toLowerCase(),
     location: getFormString(form, 'location'),
-    totersOrderNumber: getFormString(form, 'totersOrderNumber'),
+    dateOfPurchase: getFormString(form, 'dateOfPurchase'),
   };
 }
 
@@ -230,9 +230,30 @@ function validateOrderInput(input) {
     return 'A valid email is required.';
   }
   if (!input.location) return 'Location is required.';
-  if (!input.totersOrderNumber) return 'Toters order number is required.';
+  if (!isValidPurchaseDate(input.dateOfPurchase)) {
+    return 'A valid date of purchase is required.';
+  }
+  if (input.dateOfPurchase > getTodayDate()) {
+    return 'Date of purchase cannot be in the future.';
+  }
 
   return null;
+}
+
+/**
+ * @param {string} value
+ */
+function isValidPurchaseDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const date = new Date(`${value}T00:00:00Z`);
+  return (
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
+
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /**
@@ -464,7 +485,7 @@ function buildCustomerInput(input) {
  * @param {OrderFormInput} input
  */
 function buildWarrantyCustomerTags(input) {
-  return [WARRANTY_CUSTOMER_TAG, input.totersOrderNumber];
+  return [WARRANTY_CUSTOMER_TAG, input.dateOfPurchase];
 }
 
 /**
@@ -478,9 +499,9 @@ function buildWarrantyCustomerMetafields(ownerId, input) {
   return [
     withOwner({
       namespace: WARRANTY_METAFIELD_NAMESPACE,
-      key: WARRANTY_ORDER_METAFIELD_KEY,
-      type: 'single_line_text_field',
-      value: input.totersOrderNumber,
+      key: WARRANTY_PURCHASE_DATE_METAFIELD_KEY,
+      type: 'date',
+      value: input.dateOfPurchase,
     }),
     withOwner({
       namespace: WARRANTY_METAFIELD_NAMESPACE,
@@ -583,9 +604,9 @@ function escapeShopifySearchValue(value) {
   return JSON.stringify(value);
 }
 
-const WARRANTY_CUSTOMER_TAG = 'Toters Order';
+const WARRANTY_CUSTOMER_TAG = 'Toters';
 const WARRANTY_METAFIELD_NAMESPACE = 'custom';
-const WARRANTY_ORDER_METAFIELD_KEY = 'toters_order_number';
+const WARRANTY_PURCHASE_DATE_METAFIELD_KEY = 'date_of_purchase';
 const WARRANTY_LOCATION_METAFIELD_KEY = 'warranty_location';
 const WARRANTY_PHONE_METAFIELD_KEY = 'warranty_phone';
 
@@ -703,7 +724,7 @@ const CUSTOMER_ADDRESS_CREATE_MUTATION = `
  *   phone: string;
  *   email: string;
  *   location: string;
- *   totersOrderNumber: string;
+ *   dateOfPurchase: string;
  * }} OrderFormInput
  */
 
