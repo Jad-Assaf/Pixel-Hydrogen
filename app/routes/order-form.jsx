@@ -151,7 +151,7 @@ export default function OrderFormPage() {
                     name="totersOrderNumber"
                     type="text"
                     autoComplete="off"
-                    placeholder="TOT-123456"
+                    placeholder="#123456"
                     required
                   />
                 </label>
