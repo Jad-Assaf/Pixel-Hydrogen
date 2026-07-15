@@ -9,6 +9,7 @@ import {
   ScrollRestoration,
   useRouteLoaderData,
   useNavigation,
+  useLocation,
 } from 'react-router';
 import {useEffect, useState} from 'react';
 import favicon from '~/assets/mini-logo.webp';
@@ -93,8 +94,7 @@ export async function loader(args) {
       country: args.context.storefront.i18n.country,
       language: args.context.storefront.i18n.language,
     },
-    metaPixelId:
-      env.PUBLIC_META_PIXEL_ID || env.PUBLIC_FACEBOOK_PIXEL_ID || '',
+    metaPixelId: env.PUBLIC_META_PIXEL_ID || env.PUBLIC_FACEBOOK_PIXEL_ID || '',
     googlePixelId:
       env.PUBLIC_GOOGLE_PIXEL_ID ||
       env.PUBLIC_GA_MEASUREMENT_ID ||
@@ -126,10 +126,9 @@ async function loadCriticalData({context}) {
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  const {
-    collectionIds,
-    collectionHandles,
-  } = getMenuCollectionReferences(header?.menu?.items || []);
+  const {collectionIds, collectionHandles} = getMenuCollectionReferences(
+    header?.menu?.items || [],
+  );
   let menuCollectionAvailability = {};
   let menuCollectionMedia = {};
 
@@ -184,7 +183,11 @@ async function loadCriticalData({context}) {
     handleResults.forEach((result, index) => {
       const requestedHandle = collectionHandles[index];
       const collection = result?.collection;
-      const resolvedHandle = (collection?.handle || requestedHandle || '').toLowerCase();
+      const resolvedHandle = (
+        collection?.handle ||
+        requestedHandle ||
+        ''
+      ).toLowerCase();
       if (!resolvedHandle) return;
       const hasProducts = Boolean(collection?.products?.nodes?.length);
       menuCollectionAvailability[`handle:${resolvedHandle}`] = hasProducts;
@@ -534,10 +537,13 @@ const MENU_COLLECTION_BY_HANDLE_QUERY = `#graphql
 export default function App() {
   /** @type {RootLoader} */
   const data = useRouteLoaderData('root');
+  const location = useLocation();
 
   if (!data) {
     return <Outlet />;
   }
+
+  const isStandaloneOrderForm = /\/order-form\/?$/.test(location.pathname);
 
   return (
     <Analytics.Provider
@@ -546,9 +552,15 @@ export default function App() {
       consent={data.consent}
     >
       <TrackingEvents />
-      <PageLayout {...data}>
-        <Outlet />
-      </PageLayout>
+      {isStandaloneOrderForm ? (
+        <main className="pz-standalone-main">
+          <Outlet />
+        </main>
+      ) : (
+        <PageLayout {...data}>
+          <Outlet />
+        </PageLayout>
+      )}
     </Analytics.Provider>
   );
 }

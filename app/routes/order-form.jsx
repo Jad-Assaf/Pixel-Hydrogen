@@ -1,5 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
 import {data, Form, useActionData, useNavigation} from 'react-router';
+import fullLogo from '~/assets/full-logo.avif';
 import orderFormStyles from '~/styles/order-form.css?url';
 
 export function links() {
@@ -65,175 +65,130 @@ export default function OrderFormPage() {
   const action = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state !== 'idle';
-  const [isPopupOpen, setIsPopupOpen] = useState(Boolean(action?.ok));
-  const closeButtonRef = useRef(null);
-
-  useEffect(() => {
-    if (!action?.ok) return;
-
-    setIsPopupOpen(true);
-  }, [action?.ok]);
-
-  useEffect(() => {
-    if (!isPopupOpen) return undefined;
-
-    closeButtonRef.current?.focus();
-
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        closePage();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPopupOpen]);
-
-  const closePage = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.replace('/');
-  };
 
   return (
     <div className="pz-order-page">
       <section className="pz-order-shell" aria-labelledby="order-form-title">
-        <div className="pz-order-intro">
-          <h1 id="order-form-title">Activate Your Warranty</h1>
-          <p>Register your information to activate your warranty</p>
+        <div className="pz-order-logo" aria-label="Pixel Zones">
+          <img src={fullLogo} alt="Pixel Zones" width="220" height="56" />
         </div>
 
         {!action?.ok ? (
-          <Form className="pz-order-form" method="post">
-            <div className="pz-order-form-header">
-              <div>
-                <p className="pz-order-form-label">Customer Details</p>
-                <h2>Warranty activation form</h2>
+          <>
+            <div className="pz-order-intro">
+              <h1 id="order-form-title">Activate Your Warranty</h1>
+              <p>Register your information to activate your warranty</p>
+            </div>
+
+            <Form className="pz-order-form" method="post">
+              <div className="pz-order-form-header">
+                <div>
+                  <p className="pz-order-form-label">Customer Details</p>
+                  <h2>Warranty activation form</h2>
+                </div>
               </div>
-            </div>
 
-            <div className="pz-order-grid">
-              <label className="pz-order-field">
-                <span>Name</span>
-                <input
-                  name="name"
-                  type="text"
-                  autoComplete="given-name"
-                  placeholder="Jad"
-                  required
-                />
-              </label>
+              <div className="pz-order-grid">
+                <label className="pz-order-field">
+                  <span>Name</span>
+                  <input
+                    name="name"
+                    type="text"
+                    autoComplete="given-name"
+                    placeholder="Jad"
+                    required
+                  />
+                </label>
 
-              <label className="pz-order-field">
-                <span>Family Name</span>
-                <input
-                  name="familyName"
-                  type="text"
-                  autoComplete="family-name"
-                  placeholder="Haddad"
-                  required
-                />
-              </label>
+                <label className="pz-order-field">
+                  <span>Family Name</span>
+                  <input
+                    name="familyName"
+                    type="text"
+                    autoComplete="family-name"
+                    placeholder="Haddad"
+                    required
+                  />
+                </label>
 
-              <label className="pz-order-field">
-                <span>Phone Number</span>
-                <input
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  inputMode="tel"
-                  placeholder="+961 81 539 339"
-                  required
-                />
-              </label>
+                <label className="pz-order-field">
+                  <span>Phone Number</span>
+                  <input
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    placeholder="+961 81 539 339"
+                    required
+                  />
+                </label>
 
-              <label className="pz-order-field">
-                <span>Email</span>
-                <input
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="name@example.com"
-                  required
-                />
-              </label>
+                <label className="pz-order-field">
+                  <span>Email</span>
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                    required
+                  />
+                </label>
 
-              <label className="pz-order-field pz-order-field--wide">
-                <span>Location</span>
-                <input
-                  name="location"
-                  type="text"
-                  autoComplete="street-address"
-                  placeholder="Beirut, Achrafieh"
-                  required
-                />
-              </label>
+                <label className="pz-order-field pz-order-field--wide">
+                  <span>Location</span>
+                  <input
+                    name="location"
+                    type="text"
+                    autoComplete="street-address"
+                    placeholder="Beirut, Achrafieh"
+                    required
+                  />
+                </label>
 
-              <label className="pz-order-field pz-order-field--wide">
-                <span>Toters Order Number</span>
-                <input
-                  name="totersOrderNumber"
-                  type="text"
-                  autoComplete="off"
-                  placeholder="TOT-123456"
-                  required
-                />
-              </label>
-            </div>
+                <label className="pz-order-field pz-order-field--wide">
+                  <span>Toters Order Number</span>
+                  <input
+                    name="totersOrderNumber"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="TOT-123456"
+                    required
+                  />
+                </label>
+              </div>
 
-            <div className="pz-order-actions">
-              <button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit details'}
-              </button>
-            </div>
+              <div className="pz-order-actions">
+                <button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Submitting...' : 'Submit details'}
+                </button>
+              </div>
 
-            {action?.error ? (
-              <p className="pz-order-error" role="alert">
-                {action.error}
-              </p>
-            ) : null}
-          </Form>
-        ) : null}
-
-        {action?.ok && isPopupOpen ? (
-          <div
-            className="pz-order-popup-backdrop"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) {
-                closePage();
-              }
-            }}
+              {action?.error ? (
+                <p className="pz-order-error" role="alert">
+                  {action.error}
+                </p>
+              ) : null}
+            </Form>
+          </>
+        ) : (
+          <section
+            className="pz-order-success"
+            role="status"
+            aria-live="polite"
+            aria-labelledby="warranty-success-title"
           >
-            <section
-              className="pz-order-popup"
-              role="dialog"
-              aria-modal="true"
-              aria-live="polite"
-              aria-labelledby="warranty-success-title"
-            >
-              <span className="pz-order-popup-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </span>
-              <h2 id="warranty-success-title">
-                Your warranty has been successfully activated.
-              </h2>
-              <button
-                className="pz-order-popup-close"
-                type="button"
-                onClick={closePage}
-                ref={closeButtonRef}
-              >
-                Close
-              </button>
-            </section>
-          </div>
-        ) : null}
+            <span className="pz-order-success-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+            <h1 id="order-form-title">Activate Your Warranty</h1>
+            <h2 id="warranty-success-title">
+              Your warranty has been successfully activated.
+            </h2>
+            <p>You can close this page now.</p>
+          </section>
+        )}
       </section>
     </div>
   );
@@ -304,13 +259,7 @@ async function upsertWarrantyCustomer(env, input) {
     );
   }
 
-  if (!emailCustomer?.id && phoneCustomer?.id) {
-    throw new Error(
-      'This phone number belongs to a customer with a different email address.',
-    );
-  }
-
-  const existingCustomer = emailCustomer;
+  const existingCustomer = emailCustomer || phoneCustomer;
 
   if (existingCustomer?.id) {
     const customer = await updateWarrantyCustomer(
@@ -347,18 +296,22 @@ async function upsertWarrantyCustomer(env, input) {
 async function findCustomerMatches(env, input) {
   const response = await adminGraphql(env, CUSTOMER_MATCH_QUERY, {
     emailQuery: `email:${escapeShopifySearchValue(input.email)}`,
-    phoneQuery: `phone:${escapeShopifySearchValue(input.phone)}`,
+    phoneQuery: `phone:${input.phone}`,
   });
-  const emailCustomer = response.byEmail?.nodes?.find(
-    (customer) =>
-      String(customer.email || '')
-        .trim()
-        .toLowerCase() === input.email,
-  );
+  const emailNodes = response.byEmail?.nodes || [];
+  const emailCustomer =
+    emailNodes.find(
+      (customer) =>
+        String(customer.email || '')
+          .trim()
+          .toLowerCase() === input.email,
+    ) || emailNodes[0];
   const submittedPhoneDigits = getPhoneDigits(input.phone);
-  const phoneCustomer = response.byPhone?.nodes?.find(
-    (customer) => getPhoneDigits(customer.phone) === submittedPhoneDigits,
-  );
+  const phoneNodes = response.byPhone?.nodes || [];
+  const phoneCustomer =
+    phoneNodes.find(
+      (customer) => getPhoneDigits(customer.phone) === submittedPhoneDigits,
+    ) || phoneNodes[0];
 
   return {
     emailCustomer: emailCustomer || null,
