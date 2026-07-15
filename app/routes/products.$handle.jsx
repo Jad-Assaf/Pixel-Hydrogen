@@ -187,6 +187,8 @@ export default function Product() {
 
   const variantImage = selectedVariant?.image ?? null;
   const variantImageId = variantImage?.id || null;
+  const isAvailableInStore =
+    product.availability?.value?.trim().toLowerCase() !== 'online';
 
   const images = useMemo(() => {
     const baseImages = product.images?.nodes ?? [];
@@ -920,26 +922,28 @@ export default function Product() {
             </button>
             <h3 id="pz-availability-title">Available at:</h3>
             <ul className="pz-availability-options">
-              <li>
-                <span
-                  className={`pz-availability-dot${
-                    isStoreOpenNow ? ' is-open' : ' is-closed'
-                  }`}
-                  aria-hidden="true"
-                />
-                <div className="pz-availability-option-text">
-                  <p>
-                    Sami Solh Avenu, Beirut, &nbsp;
-                    <span
-                      className={`pz-availability-status${
-                        isStoreOpenNow ? ' is-open' : ' is-closed'
-                      }`}
-                    >
-                      {isStoreOpenNow ? 'Open' : 'Closed'}
-                    </span>
-                  </p>
-                </div>
-              </li>
+              {isAvailableInStore ? (
+                <li>
+                  <span
+                    className={`pz-availability-dot${
+                      isStoreOpenNow ? ' is-open' : ' is-closed'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div className="pz-availability-option-text">
+                    <p>
+                      Sami Solh Avenu, Beirut, &nbsp;
+                      <span
+                        className={`pz-availability-status${
+                          isStoreOpenNow ? ' is-open' : ' is-closed'
+                        }`}
+                      >
+                        {isStoreOpenNow ? 'Open' : 'Closed'}
+                      </span>
+                    </p>
+                  </div>
+                </li>
+              ) : null}
               <li>
                 <span className="pz-availability-dot" aria-hidden="true" />
                 <span>Available Online</span>
@@ -1067,7 +1071,7 @@ function getBeirutStoreStatus(now = new Date()) {
   );
   const minutesSinceMidnight = hour * 60 + minute;
 
-  return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight < 20 * 60;
+  return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight < 22 * 60;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
@@ -1117,6 +1121,9 @@ const PRODUCT_FRAGMENT = `#graphql
     description
     encodedVariantExistence
     encodedVariantAvailability
+    availability: metafield(namespace: "custom", key: "availability") {
+      value
+    }
     images(first: 20) {
       nodes {
         id
