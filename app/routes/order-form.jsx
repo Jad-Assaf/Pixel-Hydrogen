@@ -152,6 +152,7 @@ export default function OrderFormPage() {
                     type="date"
                     autoComplete="off"
                     max={getTodayDate()}
+                    onClick={openDatePicker}
                     required
                   />
                 </label>
@@ -257,10 +258,24 @@ function getTodayDate() {
 }
 
 /**
+ * @param {React.MouseEvent<HTMLInputElement>} event
+ */
+function openDatePicker(event) {
+  if (typeof event.currentTarget.showPicker !== 'function') return;
+
+  try {
+    event.currentTarget.showPicker();
+  } catch {
+    // Browsers without programmatic picker support still use the native control.
+  }
+}
+
+/**
  * @param {string} phone
  */
 function normalizePhone(phone) {
-  return phone.replace(/[^\d+]/g, '');
+  const digits = getComparablePhone(phone);
+  return digits ? `+${digits}` : '';
 }
 
 /**
@@ -320,19 +335,17 @@ async function findCustomerMatches(env, input) {
     phoneQuery: `phone:${input.phone}`,
   });
   const emailNodes = response.byEmail?.nodes || [];
-  const emailCustomer =
-    emailNodes.find(
-      (customer) =>
-        String(customer.email || '')
-          .trim()
-          .toLowerCase() === input.email,
-    ) || emailNodes[0];
-  const submittedPhoneDigits = getPhoneDigits(input.phone);
+  const emailCustomer = emailNodes.find(
+    (customer) =>
+      String(customer.email || '')
+        .trim()
+        .toLowerCase() === input.email,
+  );
+  const submittedPhone = getComparablePhone(input.phone);
   const phoneNodes = response.byPhone?.nodes || [];
-  const phoneCustomer =
-    phoneNodes.find(
-      (customer) => getPhoneDigits(customer.phone) === submittedPhoneDigits,
-    ) || phoneNodes[0];
+  const phoneCustomer = phoneNodes.find(
+    (customer) => getComparablePhone(customer.phone) === submittedPhone,
+  );
 
   return {
     emailCustomer: emailCustomer || null,
@@ -343,8 +356,17 @@ async function findCustomerMatches(env, input) {
 /**
  * @param {string | null | undefined} phone
  */
-function getPhoneDigits(phone) {
-  return String(phone || '').replace(/\D/g, '');
+function getComparablePhone(phone) {
+  let digits = String(phone || '').replace(/\D/g, '');
+
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('961')) return digits;
+  if (digits.length === 9 && digits.startsWith('0')) {
+    return `961${digits.slice(1)}`;
+  }
+  if (digits.length === 8) return `961${digits}`;
+
+  return digits;
 }
 
 /**
