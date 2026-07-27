@@ -1,11 +1,11 @@
 import {Analytics} from '@shopify/hydrogen';
-import {useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import awardsImage from '~/assets/10_ae56715c-d54b-43b2-ba43-a64209c8feb5 (9).webp';
 import {AddToCartButton} from '~/components/AddToCartButton';
 import {AskForPriceLink} from '~/components/AskForPriceLink';
 import {useAside} from '~/components/Aside';
-import {PlusIcon} from '~/components/Icons';
+import {ArrowIcon, PlusIcon} from '~/components/Icons';
 import {ProductPrice} from '~/components/ProductPrice';
 import {isZeroPrice} from '~/lib/pricing';
 
@@ -18,6 +18,7 @@ const BEBIRD_HERO_VIDEO =
   'https://bebird.com/cdn/shop/videos/c/vp/67e61707564c4fe7b0c38f944d683eb6/67e61707564c4fe7b0c38f944d683eb6.HD-720p-1.6Mbps-57149734.mp4?v=0';
 const BEBIRD_HERO_POSTER =
   'https://bebird.com/cdn/shop/files/preview_images/67e61707564c4fe7b0c38f944d683eb6.thumbnail.0000000000_800x.jpg?v=1757475863';
+const BEBIRD_AWARDS_VIDEO_ID = 'cJairfrdRb8';
 
 const PRODUCT_STORIES = {
   'bebird-earsight-plus-smart-visual-ear-cleaner-blue-white': {
@@ -40,6 +41,7 @@ const PRODUCT_STORIES = {
 };
 
 export function BebirdBrandRoute({products}) {
+  const heroVideoRef = useViewportAutoplayVideo();
   const visibleProducts = BEBIRD_PRODUCT_HANDLES.map((handle) =>
     products.find((product) => product.handle === handle),
   ).filter(Boolean);
@@ -51,8 +53,8 @@ export function BebirdBrandRoute({products}) {
       <section className="pz-bebird-hero" aria-labelledby="bebird-title">
         <div className="pz-bebird-hero-media">
           <video
+            ref={heroVideoRef}
             className="pz-bebird-hero-video"
-            autoPlay
             muted
             loop
             playsInline
@@ -107,6 +109,8 @@ export function BebirdBrandRoute({products}) {
           loading="lazy"
         />
       </section>
+
+      <BebirdAwardsVideo />
 
       {secondProduct ? (
         <BebirdProductStory
@@ -173,7 +177,6 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
         <BebirdProductGallery
           images={images}
           productTitle={product.title}
-          productUrl={productUrl}
           imageLoading={imageLoading}
         />
 
@@ -241,14 +244,51 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
   );
 }
 
-function BebirdProductGallery({
-  images,
-  productTitle,
-  productUrl,
-  imageLoading,
-}) {
+function BebirdProductGallery({images, productTitle, imageLoading}) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const touchStartX = useRef(null);
+  const ignoreClick = useRef(false);
   const selectedImage = images[selectedIndex] || images[0];
+  const hasMultipleImages = images.length > 1;
+
+  function showPreviousImage() {
+    if (!hasMultipleImages) return;
+    setSelectedIndex((index) => (index - 1 + images.length) % images.length);
+  }
+
+  function showNextImage() {
+    if (!hasMultipleImages) return;
+    setSelectedIndex((index) => (index + 1) % images.length);
+  }
+
+  function handleNavigationClick(direction) {
+    if (ignoreClick.current) {
+      ignoreClick.current = false;
+      return;
+    }
+
+    if (direction === 'previous') {
+      showPreviousImage();
+    } else {
+      showNextImage();
+    }
+  }
+
+  function handleTouchEnd(event) {
+    if (touchStartX.current === null) return;
+
+    const distance = event.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (Math.abs(distance) < 40) return;
+    ignoreClick.current = true;
+
+    if (distance < 0) {
+      showNextImage();
+    } else {
+      showPreviousImage();
+    }
+  }
 
   if (!selectedImage) {
     return <div className="pz-bebird-gallery pz-bebird-gallery--empty" />;
@@ -256,11 +296,16 @@ function BebirdProductGallery({
 
   return (
     <div className="pz-bebird-gallery">
-      <Link
+      <div
         className="pz-bebird-gallery-main"
-        to={productUrl}
-        prefetch="intent"
-        aria-label={`View ${productTitle}`}
+        role="group"
+        aria-label={`${productTitle} image ${selectedIndex + 1} of ${
+          images.length
+        }`}
+        onTouchStart={(event) => {
+          touchStartX.current = event.touches[0].clientX;
+        }}
+        onTouchEnd={handleTouchEnd}
       >
         <img
           key={selectedImage.id}
@@ -270,9 +315,29 @@ function BebirdProductGallery({
           height={selectedImage.height || 1200}
           loading={imageLoading}
         />
-      </Link>
+        {hasMultipleImages ? (
+          <>
+            <button
+              className="pz-bebird-gallery-arrow pz-bebird-gallery-arrow--previous"
+              type="button"
+              aria-label="Show previous image"
+              onClick={() => handleNavigationClick('previous')}
+            >
+              <ArrowIcon direction="left" />
+            </button>
+            <button
+              className="pz-bebird-gallery-arrow pz-bebird-gallery-arrow--next"
+              type="button"
+              aria-label="Show next image"
+              onClick={() => handleNavigationClick('next')}
+            >
+              <ArrowIcon direction="right" />
+            </button>
+          </>
+        ) : null}
+      </div>
 
-      {images.length > 1 ? (
+      {hasMultipleImages ? (
         <div
           className="pz-bebird-gallery-thumbnails"
           aria-label={`${productTitle} images`}
@@ -301,6 +366,61 @@ function BebirdProductGallery({
   );
 }
 
+function BebirdAwardsVideo() {
+  const iframeRef = useRef(null);
+  const shouldPlay = useRef(false);
+
+  const sendYouTubeCommand = useCallback((command) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({
+        event: 'command',
+        func: command,
+        args: [],
+      }),
+      'https://www.youtube.com',
+    );
+  }, []);
+
+  const syncPlayback = useCallback(() => {
+    sendYouTubeCommand('mute');
+    sendYouTubeCommand(shouldPlay.current ? 'playVideo' : 'pauseVideo');
+  }, [sendYouTubeCommand]);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        shouldPlay.current =
+          entry.isIntersecting && entry.intersectionRatio >= 0.35;
+        syncPlayback();
+      },
+      {threshold: [0, 0.35, 0.75]},
+    );
+
+    observer.observe(iframe);
+    return () => observer.disconnect();
+  }, [syncPlayback]);
+
+  return (
+    <section
+      className="pz-bebird-awards-video"
+      aria-label="Bebird at the NAACP Image Awards"
+    >
+      <iframe
+        ref={iframeRef}
+        src={`https://www.youtube.com/embed/${BEBIRD_AWARDS_VIDEO_ID}?enablejsapi=1&playsinline=1&controls=1&rel=0&autoplay=0&mute=1`}
+        title="Bebird Shines at the 56th NAACP Image Awards"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        allowFullScreen
+        onLoad={syncPlayback}
+      />
+    </section>
+  );
+}
+
 function BebirdMissingProduct({name, sectionId}) {
   return (
     <section id={sectionId} className="pz-bebird-product pz-bebird-missing">
@@ -308,6 +428,34 @@ function BebirdMissingProduct({name, sectionId}) {
       <h2>{name}</h2>
     </section>
   );
+}
+
+function useViewportAutoplayVideo() {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.35) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      },
+      {threshold: [0, 0.35, 0.75]},
+    );
+
+    observer.observe(video);
+    return () => {
+      observer.disconnect();
+      video.pause();
+    };
+  }, []);
+
+  return videoRef;
 }
 
 function getStoryVariant(product, story) {
