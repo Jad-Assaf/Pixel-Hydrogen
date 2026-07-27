@@ -1,0 +1,491 @@
+.pz-bebird-page {
+  --bebird-coral: #ff5c7a;
+  --bebird-mint: #bbf5df;
+  --bebird-ice: #eaf3f5;
+  --bebird-ink: #111416;
+  overflow: hidden;
+  background: #fff;
+  color: var(--bebird-ink);
+}
+
+.pz-bebird-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #111416;
+  color: #fff;
+}
+
+.pz-bebird-hero-video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pz-bebird-hero-shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+.pz-bebird-hero-copy {
+  position: absolute;
+  z-index: 1;
+  left: clamp(1.25rem, 5vw, 5.5rem);
+  bottom: clamp(4.75rem, 10vh, 8rem);
+  max-width: min(760px, calc(100% - 2.5rem));
+}
+
+.pz-bebird-hero-copy p,
+.pz-bebird-hero-copy span {
+  margin: 0;
+  font-size: clamp(0.72rem, 1vw, 0.9rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pz-bebird-hero-copy h1 {
+  margin: 0.12em 0 0.08em;
+  color: #fff;
+  font-size: clamp(5rem, 16vw, 13rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 0.78;
+}
+
+.pz-bebird-hero-copy span {
+  display: block;
+  font-size: clamp(0.85rem, 1.25vw, 1.15rem);
+}
+
+.pz-bebird-scroll-cue {
+  position: absolute;
+  z-index: 1;
+  right: clamp(1.25rem, 4vw, 4.5rem);
+  bottom: clamp(2rem, 5vh, 4rem);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pz-bebird-scroll-cue span {
+  display: block;
+  width: 3.5rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.pz-bebird-product {
+  width: 100%;
+  padding: clamp(4rem, 9vw, 9rem) clamp(1rem, 4vw, 4.5rem);
+}
+
+.pz-bebird-product--coral {
+  background: #fff;
+}
+
+.pz-bebird-product--ink {
+  background: var(--bebird-ink);
+  color: #fff;
+}
+
+.pz-bebird-product-intro,
+.pz-bebird-product-layout {
+  width: min(1480px, 100%);
+  margin-inline: auto;
+}
+
+.pz-bebird-product-intro {
+  display: grid;
+  grid-template-columns: minmax(3rem, 0.22fr) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 3rem);
+  align-items: end;
+  margin-bottom: clamp(2.5rem, 6vw, 6rem);
+}
+
+.pz-bebird-product-number {
+  align-self: start;
+  color: var(--bebird-coral);
+  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-weight: 800;
+}
+
+.pz-bebird-product-intro p,
+.pz-bebird-product-vendor {
+  margin: 0 0 0.65rem;
+  color: var(--bebird-coral);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pz-bebird-product-intro h2 {
+  max-width: 1040px;
+  margin: 0;
+  color: inherit;
+  font-size: clamp(2.7rem, 7vw, 7.5rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.92;
+}
+
+.pz-bebird-product-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.72fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+
+.pz-bebird-product--ink .pz-bebird-product-layout {
+  grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.5fr);
+}
+
+.pz-bebird-product--ink .pz-bebird-media-grid {
+  order: 2;
+}
+
+.pz-bebird-product--ink .pz-bebird-product-copy {
+  order: 1;
+}
+
+.pz-bebird-media-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(250px, 1fr));
+  gap: clamp(0.65rem, 1.2vw, 1.1rem);
+  min-width: 0;
+  min-height: min(780px, 70vw);
+}
+
+.pz-bebird-media {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bebird-ice);
+}
+
+.pz-bebird-media--1 {
+  grid-column: 1 / span 8;
+  grid-row: 1 / span 2;
+}
+
+.pz-bebird-media--2 {
+  grid-column: 9 / -1;
+  grid-row: 1;
+}
+
+.pz-bebird-media--3 {
+  grid-column: 9 / -1;
+  grid-row: 2;
+}
+
+.pz-bebird-media--4,
+.pz-bebird-media--5 {
+  display: none;
+}
+
+.pz-bebird-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pz-bebird-media:hover img {
+  transform: scale(1.025);
+}
+
+.pz-bebird-product-copy {
+  position: sticky;
+  top: 7rem;
+  padding-top: 0.25rem;
+}
+
+.pz-bebird-product-copy h3 {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(2rem, 3.8vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.98;
+}
+
+.pz-bebird-product-description {
+  margin: 1.5rem 0 0;
+  color: #50585d;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.65;
+}
+
+.pz-bebird-product--ink .pz-bebird-product-description {
+  color: #bdc5c8;
+}
+
+.pz-bebird-product-details {
+  display: grid;
+  margin-top: 2rem;
+  border-top: 1px solid rgba(17, 20, 22, 0.16);
+}
+
+.pz-bebird-product--ink .pz-bebird-product-details {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pz-bebird-product-details span {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(17, 20, 22, 0.16);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pz-bebird-product--ink .pz-bebird-product-details span {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pz-bebird-purchase {
+  margin-top: 2rem;
+}
+
+.pz-bebird-purchase .product-price {
+  justify-content: flex-start;
+  color: inherit;
+}
+
+.pz-bebird-purchase .product-price-current {
+  color: inherit;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+}
+
+.pz-bebird-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.pz-bebird-primary-action,
+.pz-bebird-secondary-action {
+  min-height: 3.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 1px solid var(--bebird-ink);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pz-bebird-primary-action {
+  background: var(--bebird-coral);
+  border-color: var(--bebird-coral);
+  color: #111416;
+}
+
+.pz-bebird-primary-action:hover {
+  background: var(--bebird-mint);
+  border-color: var(--bebird-mint);
+  color: #111416;
+}
+
+.pz-bebird-primary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pz-bebird-primary-action svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.pz-bebird-secondary-action {
+  background: transparent;
+  color: inherit;
+}
+
+.pz-bebird-product--ink .pz-bebird-secondary-action {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pz-bebird-secondary-action:hover {
+  background: var(--bebird-ink);
+  color: #fff;
+}
+
+.pz-bebird-product--ink .pz-bebird-secondary-action:hover {
+  background: #fff;
+  color: var(--bebird-ink);
+}
+
+.pz-bebird-awards {
+  padding: clamp(4rem, 8vw, 8rem) 0 0;
+  overflow: hidden;
+  background: var(--bebird-mint);
+  color: var(--bebird-ink);
+}
+
+.pz-bebird-awards-heading {
+  width: min(1480px, calc(100% - clamp(2rem, 8vw, 9rem)));
+  margin: 0 auto clamp(2.5rem, 5vw, 5rem);
+}
+
+.pz-bebird-awards-heading p {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.pz-bebird-awards-heading h2 {
+  max-width: 1100px;
+  margin: 0;
+  color: inherit;
+  font-size: clamp(2.5rem, 6vw, 6.5rem);
+  letter-spacing: 0;
+  line-height: 0.95;
+}
+
+.pz-bebird-awards > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pz-bebird-missing {
+  min-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--bebird-ice);
+}
+
+.pz-bebird-missing span {
+  color: var(--bebird-coral);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pz-bebird-missing h2 {
+  margin: 0.5rem 0 0;
+  font-size: clamp(3rem, 8vw, 8rem);
+  letter-spacing: 0;
+}
+
+@media (max-width: 900px) {
+  .pz-bebird-hero {
+    min-height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .pz-bebird-hero-video {
+    width: 100vw;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .pz-bebird-hero-copy {
+    left: 1rem;
+    bottom: 1.15rem;
+  }
+
+  .pz-bebird-hero-copy h1 {
+    font-size: clamp(3.5rem, 19vw, 7rem);
+  }
+
+  .pz-bebird-hero-copy p {
+    display: none;
+  }
+
+  .pz-bebird-scroll-cue {
+    display: none;
+  }
+
+  .pz-bebird-product-layout,
+  .pz-bebird-product--ink .pz-bebird-product-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pz-bebird-product--ink .pz-bebird-media-grid,
+  .pz-bebird-product--ink .pz-bebird-product-copy {
+    order: initial;
+  }
+
+  .pz-bebird-media-grid {
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+
+  .pz-bebird-media--1 {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .pz-bebird-media--2,
+  .pz-bebird-media--3,
+  .pz-bebird-media--4 {
+    display: block;
+    grid-column: auto;
+    grid-row: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .pz-bebird-product-copy {
+    position: static;
+    max-width: 680px;
+  }
+}
+
+@media (max-width: 560px) {
+  .pz-bebird-hero-copy span {
+    font-size: 0.65rem;
+  }
+
+  .pz-bebird-product {
+    padding-inline: 0.85rem;
+  }
+
+  .pz-bebird-product-intro {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .pz-bebird-product-intro h2 {
+    font-size: clamp(2.3rem, 12vw, 4rem);
+  }
+
+  .pz-bebird-media-grid {
+    gap: 0.45rem;
+  }
+
+  .pz-bebird-awards-heading {
+    width: calc(100% - 1.7rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-bebird-media img {
+    transition: none;
+  }
+}

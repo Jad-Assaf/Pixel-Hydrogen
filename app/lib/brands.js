@@ -50,6 +50,8 @@ import xiaomiLogo from '~/assets/xiaomi.jpg';
 
 const whoopLogo =
   'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/whoop-logo.jpg?v=1782419794';
+const bebirdLogo =
+  'https://bebird.com/cdn/shop/files/7c10b1179027476fbf91ba42f7050b90.png?v=1761099916&width=420';
 
 const FAMILY_ORDER = [
   'minimal',
@@ -599,6 +601,19 @@ export const BRANDS = [
     summary:
       'Baseus tends to win on versatility, especially for people assembling a whole ecosystem of small but useful helpers.',
     palette: {accent: '#2563eb', accentSoft: 'rgba(37, 99, 235, 0.18)'},
+  }),
+  createBrand({
+    name: 'Bebird',
+    handle: 'bebird',
+    logo: bebirdLogo,
+    family: 'lifestyle',
+    headline: 'Visual ear care designed for confident, precise routines.',
+    summary:
+      'Bebird combines a live camera view with compact care tools, bringing clarity and control to everyday ear cleaning.',
+    palette: {
+      accent: '#ff5c7a',
+      accentSoft: 'rgba(255, 92, 122, 0.16)',
+    },
   }),
   createBrand({
     name: 'Belkin',

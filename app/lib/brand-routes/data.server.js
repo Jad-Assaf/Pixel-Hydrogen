@@ -19,6 +19,25 @@ export async function loadBrandProducts(storefront, handles) {
   return results.map((result) => result?.product).filter(Boolean);
 }
 
+export async function loadEditorialBrandProducts(storefront, handles) {
+  const uniqueHandles = [...new Set((handles || []).filter(Boolean))];
+  const results = await Promise.all(
+    uniqueHandles.map((handle) =>
+      storefront
+        .query(BRAND_EDITORIAL_PRODUCT_QUERY, {
+          cache: storefront.CacheShort(),
+          variables: {handle},
+        })
+        .catch((error) => {
+          console.error(`[brand-route] Failed to load ${handle}`, error);
+          return null;
+        }),
+    ),
+  );
+
+  return results.map((result) => result?.product).filter(Boolean);
+}
+
 export async function loadConfiguredBrandSections(storefront, sections) {
   const loadedSections = await Promise.all(
     sections.map(async (section) => {
@@ -271,6 +290,63 @@ const BRAND_FEATURED_PRODUCT_QUERY = `#graphql
   ) @inContext(country: $country, language: $language) {
     product(handle: $handle) {
       ...BrandVariantProduct
+    }
+  }
+`;
+
+const BRAND_EDITORIAL_PRODUCT_QUERY = `#graphql
+  ${MONEY_FRAGMENT}
+
+  query BrandEditorialProduct(
+    $country: CountryCode
+    $language: LanguageCode
+    $handle: String!
+  ) @inContext(country: $country, language: $language) {
+    product(handle: $handle) {
+      id
+      handle
+      title
+      vendor
+      description
+      images(first: 16) {
+        nodes {
+          id
+          altText
+          url
+          width
+          height
+        }
+      }
+      selectedOrFirstAvailableVariant {
+        id
+        availableForSale
+        selectedOptions {
+          name
+          value
+        }
+        price {
+          ...BrandMoney
+        }
+        compareAtPrice {
+          ...BrandMoney
+        }
+      }
+      variants(first: 50) {
+        nodes {
+          id
+          availableForSale
+          selectedOptions {
+            name
+            value
+          }
+          price {
+            ...BrandMoney
+          }
+          compareAtPrice {
+            ...BrandMoney
+          }
+        }
+      }
     }
   }
 `;

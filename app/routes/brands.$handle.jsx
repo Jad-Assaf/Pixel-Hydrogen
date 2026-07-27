@@ -10,6 +10,10 @@ import {
   BlackSharkBrandRoute,
 } from '~/components/brand-routes/BlackSharkBrandRoute';
 import {
+  BEBIRD_PRODUCT_HANDLES,
+  BebirdBrandRoute,
+} from '~/components/brand-routes/BebirdBrandRoute';
+import {
   DECODED_PRODUCT_SEARCH_QUERIES,
   DecodedBrandRoute,
 } from '~/components/brand-routes/DecodedBrandRoute';
@@ -32,15 +36,20 @@ import {
 import {getBrandByHandle} from '~/lib/brands';
 import {
   loadBrandCollection,
+  loadEditorialBrandProducts,
   loadBrandProducts,
   loadBrandSearchProducts,
   loadConfiguredBrandSections,
 } from '~/lib/brand-routes/data.server';
 import {getBrandThemeVars, mergeProducts} from '~/lib/brand-routes/utils';
 import brandRouteStyles from '~/styles/brands-handle.css?url';
+import bebirdBrandStyles from '~/styles/bebird-brand.css?url';
 
 export function links() {
-  return [{rel: 'stylesheet', href: brandRouteStyles}];
+  return [
+    {rel: 'stylesheet', href: brandRouteStyles},
+    {rel: 'stylesheet', href: bebirdBrandStyles},
+  ];
 }
 
 /**
@@ -79,6 +88,18 @@ export async function loader({context, params}) {
     return {
       brand,
       beatsProducts,
+    };
+  }
+
+  if (brand.handle === 'bebird') {
+    const bebirdProducts = await loadEditorialBrandProducts(
+      storefront,
+      BEBIRD_PRODUCT_HANDLES,
+    );
+
+    return {
+      brand,
+      bebirdProducts,
     };
   }
 
@@ -178,6 +199,10 @@ export default function BrandRoute() {
 
   if (data.brand.handle === 'beats') {
     return <BeatsBrandRoute brand={data.brand} products={data.beatsProducts} />;
+  }
+
+  if (data.brand.handle === 'bebird') {
+    return <BebirdBrandRoute products={data.bebirdProducts || []} />;
   }
 
   if (data.brand.handle === 'black-shark') {
