@@ -248,8 +248,27 @@ function BebirdProductGallery({images, productTitle, imageLoading}) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const touchStartX = useRef(null);
   const ignoreClick = useRef(false);
+  const preloadedImages = useRef(new Set());
   const selectedImage = images[selectedIndex] || images[0];
   const hasMultipleImages = images.length > 1;
+
+  function preloadAdjacentImages() {
+    if (!hasMultipleImages || typeof Image === 'undefined') return;
+
+    const adjacentIndexes = [
+      (selectedIndex - 1 + images.length) % images.length,
+      (selectedIndex + 1) % images.length,
+    ];
+
+    adjacentIndexes.forEach((index) => {
+      const url = withImageWidth(images[index].url, 1200);
+      if (preloadedImages.current.has(url)) return;
+
+      const image = new Image();
+      image.src = url;
+      preloadedImages.current.add(url);
+    });
+  }
 
   function showPreviousImage() {
     if (!hasMultipleImages) return;
@@ -309,11 +328,20 @@ function BebirdProductGallery({images, productTitle, imageLoading}) {
       >
         <img
           key={selectedImage.id}
-          src={withImageWidth(selectedImage.url, 1400)}
+          src={withImageWidth(selectedImage.url, 1000)}
+          srcSet={`${withImageWidth(selectedImage.url, 720)} 720w, ${withImageWidth(
+            selectedImage.url,
+            1000,
+          )} 1000w, ${withImageWidth(selectedImage.url, 1400)} 1400w`}
+          sizes="(max-width: 900px) calc(100vw - 30px), 68vw"
           alt={selectedImage.altText || productTitle}
           width={selectedImage.width || 1200}
           height={selectedImage.height || 1200}
           loading={imageLoading}
+          fetchPriority={
+            selectedIndex === 0 && imageLoading === 'eager' ? 'high' : 'auto'
+          }
+          onLoad={preloadAdjacentImages}
         />
         {hasMultipleImages ? (
           <>
@@ -352,7 +380,7 @@ function BebirdProductGallery({images, productTitle, imageLoading}) {
               onClick={() => setSelectedIndex(index)}
             >
               <img
-                src={withImageWidth(image.url, 240)}
+                src={withImageWidth(image.url, 180)}
                 alt=""
                 width={image.width || 240}
                 height={image.height || 240}
