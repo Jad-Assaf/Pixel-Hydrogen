@@ -45,6 +45,7 @@ export default async function handleRequest(
     'https://www.facebook.com',
   ];
   const wetrackedDomains = ['https://pixel.wetracked.io'];
+  const bebirdDomains = ['https://bebird.com'];
   const commonSelf = ["'self'"];
   const imageSources = [
     ...commonSelf,
@@ -57,6 +58,7 @@ export default async function handleRequest(
     ...instagramMediaDomains,
     ...metaTrackingDomains,
     ...wetrackedDomains,
+    ...bebirdDomains,
   ];
   const scriptSources = [
     ...commonSelf,
@@ -82,7 +84,12 @@ export default async function handleRequest(
       ...wetrackedDomains,
     ],
     imgSrc: imageSources,
-    mediaSrc: [...commonSelf, ...youtubeDomains, ...instagramMediaDomains],
+    mediaSrc: [
+      ...commonSelf,
+      ...youtubeDomains,
+      ...instagramMediaDomains,
+      ...bebirdDomains,
+    ],
     frameSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
     childSrc: [...commonSelf, ...youtubeDomains, ...googleFrameDomains],
   });

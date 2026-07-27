@@ -308,7 +308,7 @@ const BRAND_EDITORIAL_PRODUCT_QUERY = `#graphql
       title
       vendor
       description
-      images(first: 16) {
+      images(first: 100) {
         nodes {
           id
           altText

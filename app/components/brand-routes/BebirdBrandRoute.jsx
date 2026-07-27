@@ -1,4 +1,5 @@
 import {Analytics} from '@shopify/hydrogen';
+import {useState} from 'react';
 import {Link} from 'react-router';
 import awardsImage from '~/assets/10_ae56715c-d54b-43b2-ba43-a64209c8feb5 (9).webp';
 import {AddToCartButton} from '~/components/AddToCartButton';
@@ -48,27 +49,28 @@ export function BebirdBrandRoute({products}) {
   return (
     <main className="pz-bebird-page">
       <section className="pz-bebird-hero" aria-labelledby="bebird-title">
-        <video
-          className="pz-bebird-hero-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster={BEBIRD_HERO_POSTER}
-        >
-          <source src={BEBIRD_HERO_VIDEO} type="video/mp4" />
-        </video>
-        <div className="pz-bebird-hero-shade" aria-hidden="true" />
+        <div className="pz-bebird-hero-media">
+          <video
+            className="pz-bebird-hero-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={BEBIRD_HERO_POSTER}
+          >
+            <source src={BEBIRD_HERO_VIDEO} type="video/mp4" />
+          </video>
+        </div>
         <div className="pz-bebird-hero-copy">
           <p>Visual care / reimagined</p>
           <h1 id="bebird-title">bebird</h1>
           <span>Ear care you can see.</span>
+          <a className="pz-bebird-scroll-cue" href="#earsight-ultra">
+            Discover
+            <span aria-hidden="true" />
+          </a>
         </div>
-        <a className="pz-bebird-scroll-cue" href="#earsight-ultra">
-          Discover
-          <span aria-hidden="true" />
-        </a>
       </section>
 
       {firstProduct ? (
@@ -145,7 +147,7 @@ export function BebirdBrandRoute({products}) {
 
 function BebirdProductStory({product, story, sectionId, imageLoading}) {
   const variant = getStoryVariant(product, story);
-  const images = product.images?.nodes?.slice(0, 5) || [];
+  const images = product.images?.nodes || [];
   const description = getShortDescription(
     product.description,
     story.fallbackDescription,
@@ -168,25 +170,12 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
       </div>
 
       <div className="pz-bebird-product-layout">
-        <div className="pz-bebird-media-grid">
-          {images.map((image, index) => (
-            <Link
-              key={image.id}
-              className={`pz-bebird-media pz-bebird-media--${index + 1}`}
-              to={productUrl}
-              prefetch="intent"
-              aria-label={`View ${product.title}`}
-            >
-              <img
-                src={withImageWidth(image.url, index === 0 ? 1200 : 720)}
-                alt={image.altText || product.title}
-                width={image.width || 900}
-                height={image.height || 900}
-                loading={index < 2 ? imageLoading : 'lazy'}
-              />
-            </Link>
-          ))}
-        </div>
+        <BebirdProductGallery
+          images={images}
+          productTitle={product.title}
+          productUrl={productUrl}
+          imageLoading={imageLoading}
+        />
 
         <div className="pz-bebird-product-copy">
           <p className="pz-bebird-product-vendor">Bebird / EarSight</p>
@@ -249,6 +238,66 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
         </div>
       </div>
     </section>
+  );
+}
+
+function BebirdProductGallery({
+  images,
+  productTitle,
+  productUrl,
+  imageLoading,
+}) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedImage = images[selectedIndex] || images[0];
+
+  if (!selectedImage) {
+    return <div className="pz-bebird-gallery pz-bebird-gallery--empty" />;
+  }
+
+  return (
+    <div className="pz-bebird-gallery">
+      <Link
+        className="pz-bebird-gallery-main"
+        to={productUrl}
+        prefetch="intent"
+        aria-label={`View ${productTitle}`}
+      >
+        <img
+          key={selectedImage.id}
+          src={withImageWidth(selectedImage.url, 1400)}
+          alt={selectedImage.altText || productTitle}
+          width={selectedImage.width || 1200}
+          height={selectedImage.height || 1200}
+          loading={imageLoading}
+        />
+      </Link>
+
+      {images.length > 1 ? (
+        <div
+          className="pz-bebird-gallery-thumbnails"
+          aria-label={`${productTitle} images`}
+        >
+          {images.map((image, index) => (
+            <button
+              key={image.id}
+              className="pz-bebird-gallery-thumbnail"
+              type="button"
+              aria-label={`Show image ${index + 1} of ${images.length}`}
+              aria-pressed={index === selectedIndex}
+              onClick={() => setSelectedIndex(index)}
+            >
+              <img
+                src={withImageWidth(image.url, 240)}
+                alt=""
+                width={image.width || 240}
+                height={image.height || 240}
+                loading={index < 4 ? imageLoading : 'lazy'}
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

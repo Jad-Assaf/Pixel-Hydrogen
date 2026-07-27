@@ -1,20 +1,46 @@
+.pz-main:has(.pz-bebird-page) {
+  width: 100vw;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.pz-main > .pz-bebird-page {
+  padding: 10px;
+}
+
 .pz-bebird-page {
   --bebird-coral: #ff5c7a;
   --bebird-mint: #bbf5df;
   --bebird-ice: #eaf3f5;
   --bebird-ink: #111416;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
   overflow: hidden;
   background: #fff;
   color: var(--bebird-ink);
 }
 
 .pz-bebird-hero {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--bebird-ice);
+  color: var(--bebird-ink);
+}
+
+.pz-bebird-hero-media {
   position: relative;
   width: 100%;
   min-height: 100svh;
   overflow: hidden;
+  border-radius: 10px;
   background: #111416;
-  color: #fff;
 }
 
 .pz-bebird-hero-video {
@@ -26,19 +52,12 @@
   object-fit: cover;
 }
 
-.pz-bebird-hero-shade {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.22);
-  pointer-events: none;
-}
-
 .pz-bebird-hero-copy {
-  position: absolute;
-  z-index: 1;
-  left: clamp(1.25rem, 5vw, 5.5rem);
-  bottom: clamp(4.75rem, 10vh, 8rem);
-  max-width: min(760px, calc(100% - 2.5rem));
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  padding: clamp(2rem, 5vw, 5rem);
 }
 
 .pz-bebird-hero-copy p,
@@ -51,8 +70,9 @@
 }
 
 .pz-bebird-hero-copy h1 {
+  grid-column: 1;
   margin: 0.12em 0 0.08em;
-  color: #fff;
+  color: var(--bebird-ink);
   font-size: clamp(5rem, 16vw, 13rem);
   font-weight: 800;
   letter-spacing: 0;
@@ -60,19 +80,18 @@
 }
 
 .pz-bebird-hero-copy span {
+  grid-column: 1;
   display: block;
   font-size: clamp(0.85rem, 1.25vw, 1.15rem);
 }
 
 .pz-bebird-scroll-cue {
-  position: absolute;
-  z-index: 1;
-  right: clamp(1.25rem, 4vw, 4.5rem);
-  bottom: clamp(2rem, 5vh, 4rem);
+  grid-column: 2;
+  grid-row: 1 / span 3;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #fff;
+  color: var(--bebird-ink);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -89,7 +108,9 @@
 
 .pz-bebird-product {
   width: 100%;
+  overflow: hidden;
   padding: clamp(4rem, 9vw, 9rem) clamp(1rem, 4vw, 4.5rem);
+  border-radius: 10px;
 }
 
 .pz-bebird-product--coral {
@@ -153,7 +174,7 @@
   grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.5fr);
 }
 
-.pz-bebird-product--ink .pz-bebird-media-grid {
+.pz-bebird-product--ink .pz-bebird-gallery {
   order: 2;
 }
 
@@ -161,53 +182,72 @@
   order: 1;
 }
 
-.pz-bebird-media-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(250px, 1fr));
-  gap: clamp(0.65rem, 1.2vw, 1.1rem);
+.pz-bebird-gallery {
   min-width: 0;
-  min-height: min(780px, 70vw);
 }
 
-.pz-bebird-media {
-  position: relative;
+.pz-bebird-gallery-main {
   display: block;
+  aspect-ratio: 1 / 1;
   min-width: 0;
   overflow: hidden;
+  border-radius: 10px;
   background: var(--bebird-ice);
 }
 
-.pz-bebird-media--1 {
-  grid-column: 1 / span 8;
-  grid-row: 1 / span 2;
+.pz-bebird-gallery-main img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition:
+    opacity 180ms ease,
+    transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.pz-bebird-media--2 {
-  grid-column: 9 / -1;
-  grid-row: 1;
+.pz-bebird-gallery-main:hover img {
+  transform: scale(1.025);
 }
 
-.pz-bebird-media--3 {
-  grid-column: 9 / -1;
-  grid-row: 2;
+.pz-bebird-gallery-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.pz-bebird-media--4,
-.pz-bebird-media--5 {
-  display: none;
+.pz-bebird-gallery-thumbnail {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--bebird-ice);
+  cursor: pointer;
 }
 
-.pz-bebird-media img {
+.pz-bebird-gallery-thumbnail[aria-pressed='true'] {
+  border-color: var(--bebird-coral);
+}
+
+.pz-bebird-gallery-thumbnail:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.pz-bebird-gallery-thumbnail img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.pz-bebird-media:hover img {
-  transform: scale(1.025);
+.pz-bebird-gallery--empty {
+  min-height: 35rem;
+  border-radius: 10px;
+  background: var(--bebird-ice);
 }
 
 .pz-bebird-product-copy {
@@ -340,6 +380,7 @@
 .pz-bebird-awards {
   padding: clamp(4rem, 8vw, 8rem) 0 0;
   overflow: hidden;
+  border-radius: 10px;
   background: var(--bebird-mint);
   color: var(--bebird-ink);
 }
@@ -370,6 +411,7 @@
   display: block;
   width: 100%;
   height: auto;
+  border-radius: 10px;
 }
 
 .pz-bebird-missing {
@@ -395,18 +437,22 @@
 @media (max-width: 900px) {
   .pz-bebird-hero {
     min-height: auto;
+  }
+
+  .pz-bebird-hero-media {
+    min-height: 0;
     aspect-ratio: 16 / 9;
   }
 
   .pz-bebird-hero-video {
-    width: 100vw;
-    height: auto;
-    min-height: 100%;
+    position: static;
+    width: 100%;
+    height: 100%;
   }
 
   .pz-bebird-hero-copy {
-    left: 1rem;
-    bottom: 1.15rem;
+    display: block;
+    padding: 1.25rem;
   }
 
   .pz-bebird-hero-copy h1 {
@@ -426,30 +472,20 @@
     grid-template-columns: 1fr;
   }
 
-  .pz-bebird-product--ink .pz-bebird-media-grid,
+  .pz-bebird-product--ink .pz-bebird-gallery,
   .pz-bebird-product--ink .pz-bebird-product-copy {
     order: initial;
   }
 
-  .pz-bebird-media-grid {
-    min-height: 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto;
+  .pz-bebird-gallery-thumbnails {
+    display: flex;
+    overflow-x: auto;
+    padding: 2px 0 6px;
+    scrollbar-width: thin;
   }
 
-  .pz-bebird-media--1 {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    aspect-ratio: 1 / 1;
-  }
-
-  .pz-bebird-media--2,
-  .pz-bebird-media--3,
-  .pz-bebird-media--4 {
-    display: block;
-    grid-column: auto;
-    grid-row: auto;
-    aspect-ratio: 1 / 1;
+  .pz-bebird-gallery-thumbnail {
+    flex: 0 0 5rem;
   }
 
   .pz-bebird-product-copy {
@@ -475,17 +511,13 @@
     font-size: clamp(2.3rem, 12vw, 4rem);
   }
 
-  .pz-bebird-media-grid {
-    gap: 0.45rem;
-  }
-
   .pz-bebird-awards-heading {
     width: calc(100% - 1.7rem);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pz-bebird-media img {
+  .pz-bebird-gallery-main img {
     transition: none;
   }
 }
