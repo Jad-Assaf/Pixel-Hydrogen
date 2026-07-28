@@ -188,9 +188,9 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
       className={`pz-bebird-product pz-bebird-product--${story.accent}`}
     >
       <div className="pz-bebird-product-intro">
-        <span className="pz-bebird-product-number">{story.number}</span>
+        <span className="pz-bebird-product-number">{story.number}</span>{' '}
+        <p>{story.kicker}</p>
         <div>
-          <p>{story.kicker}</p>
           <h3>{story.statement}</h3>
         </div>
       </div>
