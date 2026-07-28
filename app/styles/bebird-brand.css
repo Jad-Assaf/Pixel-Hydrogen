@@ -350,7 +350,13 @@
 
 .pz-bebird-variant[aria-pressed='true'] {
   border-color: var(--bebird-coral);
+  color: #fff;
   box-shadow: inset 0 0 0 1px var(--bebird-coral);
+}
+
+.pz-bebird-variant:hover,
+.pz-bebird-variant:focus-visible {
+  color: #fff;
 }
 
 .pz-bebird-variant[data-available='false'] {
