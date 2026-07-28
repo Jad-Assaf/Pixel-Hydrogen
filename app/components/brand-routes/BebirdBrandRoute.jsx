@@ -190,8 +190,8 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
       <div className="pz-bebird-product-intro">
         <span className="pz-bebird-product-number">{story.number}</span>
         <div>
-          <p>{story.kicker}</p>
           <h3>{story.statement}</h3>
+          <p>{story.kicker}</p>
         </div>
       </div>
 
