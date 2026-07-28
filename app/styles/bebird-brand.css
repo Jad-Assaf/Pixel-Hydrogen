@@ -134,7 +134,7 @@
   display: grid;
   grid-template-columns: minmax(3rem, 0.22fr) minmax(0, 1fr);
   gap: clamp(1rem, 3vw, 3rem);
-  align-items: end;
+  align-items: start;
   margin-bottom: clamp(2.5rem, 6vw, 6rem);
 }
 
@@ -155,7 +155,7 @@
   text-transform: uppercase;
 }
 
-.pz-bebird-product-intro h2 {
+.pz-bebird-product-intro h3 {
   max-width: 1040px;
   margin: 0;
   color: inherit;
@@ -163,6 +163,7 @@
   font-weight: 700;
   letter-spacing: 0;
   line-height: 0.92;
+  text-align: left;
 }
 
 .pz-bebird-product-layout {
@@ -428,8 +429,8 @@
 }
 
 .pz-bebird-primary-action {
-  background: var(--bebird-coral);
-  border-color: var(--bebird-coral);
+  background: #fff;
+  border-color: #fff;
   color: #111416;
 }
 
@@ -615,7 +616,7 @@
     grid-template-columns: 2rem minmax(0, 1fr);
   }
 
-  .pz-bebird-product-intro h2 {
+  .pz-bebird-product-intro h3 {
     font-size: clamp(2.3rem, 12vw, 4rem);
   }
 
