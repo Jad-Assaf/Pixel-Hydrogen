@@ -320,6 +320,13 @@ const BRAND_EDITORIAL_PRODUCT_QUERY = `#graphql
       selectedOrFirstAvailableVariant {
         id
         availableForSale
+        image {
+          id
+          altText
+          url
+          width
+          height
+        }
         selectedOptions {
           name
           value
@@ -335,6 +342,13 @@ const BRAND_EDITORIAL_PRODUCT_QUERY = `#graphql
         nodes {
           id
           availableForSale
+          image {
+            id
+            altText
+            url
+            width
+            height
+          }
           selectedOptions {
             name
             value

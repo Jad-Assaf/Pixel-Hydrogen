@@ -211,6 +211,12 @@ export type BrandEditorialProductQuery = {
       };
       selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+          image?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'altText' | 'url' | 'width' | 'height'
+            >
+          >;
           selectedOptions: Array<
             Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
           >;
@@ -223,6 +229,12 @@ export type BrandEditorialProductQuery = {
       variants: {
         nodes: Array<
           Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            image?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
             selectedOptions: Array<
               Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
             >;
@@ -3160,7 +3172,7 @@ interface GeneratedQueryTypes {
     return: BrandFeaturedProductQuery;
     variables: BrandFeaturedProductQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment BrandMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n\n  query BrandEditorialProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      handle\n      title\n      vendor\n      description\n      images(first: 100) {\n        nodes {\n          id\n          altText\n          url\n          width\n          height\n        }\n      }\n      selectedOrFirstAvailableVariant {\n        id\n        availableForSale\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandMoney\n        }\n        compareAtPrice {\n          ...BrandMoney\n        }\n      }\n      variants(first: 50) {\n        nodes {\n          id\n          availableForSale\n          selectedOptions {\n            name\n            value\n          }\n          price {\n            ...BrandMoney\n          }\n          compareAtPrice {\n            ...BrandMoney\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment BrandMoney on MoneyV2 {\n    amount\n    currencyCode\n  }\n\n\n  query BrandEditorialProduct(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      handle\n      title\n      vendor\n      description\n      images(first: 100) {\n        nodes {\n          id\n          altText\n          url\n          width\n          height\n        }\n      }\n      selectedOrFirstAvailableVariant {\n        id\n        availableForSale\n        image {\n          id\n          altText\n          url\n          width\n          height\n        }\n        selectedOptions {\n          name\n          value\n        }\n        price {\n          ...BrandMoney\n        }\n        compareAtPrice {\n          ...BrandMoney\n        }\n      }\n      variants(first: 50) {\n        nodes {\n          id\n          availableForSale\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n          selectedOptions {\n            name\n            value\n          }\n          price {\n            ...BrandMoney\n          }\n          compareAtPrice {\n            ...BrandMoney\n          }\n        }\n      }\n    }\n  }\n': {
     return: BrandEditorialProductQuery;
     variables: BrandEditorialProductQueryVariables;
   };

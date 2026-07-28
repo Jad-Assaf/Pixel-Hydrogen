@@ -1,5 +1,5 @@
 import {Analytics} from '@shopify/hydrogen';
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router';
 import awardsImage from '~/assets/10_ae56715c-d54b-43b2-ba43-a64209c8feb5 (9).webp';
 import {AddToCartButton} from '~/components/AddToCartButton';
@@ -10,8 +10,8 @@ import {ProductPrice} from '~/components/ProductPrice';
 import {isZeroPrice} from '~/lib/pricing';
 
 export const BEBIRD_PRODUCT_HANDLES = [
-  'bebird-earsight-ultra-2k-smart-visual-ear-cleaner',
   'bebird-earsight-plus-smart-visual-ear-cleaner-blue-white',
+  'bebird-earsight-ultra-2k-smart-visual-ear-cleaner',
 ];
 
 const BEBIRD_HERO_VIDEO =
@@ -22,7 +22,7 @@ const BEBIRD_AWARDS_VIDEO_ID = 'cJairfrdRb8';
 
 const PRODUCT_STORIES = {
   'bebird-earsight-plus-smart-visual-ear-cleaner-blue-white': {
-    number: '02',
+    number: '01',
     kicker: 'Everyday clarity',
     statement: 'See the routine. Guide every movement.',
     accent: 'coral',
@@ -31,7 +31,7 @@ const PRODUCT_STORIES = {
       'A compact visual ear cleaner that brings a live view and steady control to everyday care.',
   },
   'bebird-earsight-ultra-2k-smart-visual-ear-cleaner': {
-    number: '01',
+    number: '02',
     kicker: 'Sharper detail',
     statement: 'A closer look, with 2K precision.',
     accent: 'ink',
@@ -68,7 +68,7 @@ export function BebirdBrandRoute({products}) {
           <p>Visual care / reimagined</p>
           <h1 id="bebird-title">bebird</h1>
           <span>Ear care you can see.</span>
-          <a className="pz-bebird-scroll-cue" href="#earsight-ultra">
+          <a className="pz-bebird-scroll-cue" href="#earsight-plus">
             Discover
             <span aria-hidden="true" />
           </a>
@@ -79,14 +79,11 @@ export function BebirdBrandRoute({products}) {
         <BebirdProductStory
           product={firstProduct}
           story={PRODUCT_STORIES[firstProduct.handle]}
-          sectionId="earsight-ultra"
+          sectionId="earsight-plus"
           imageLoading="eager"
         />
       ) : (
-        <BebirdMissingProduct
-          name="EarSight Ultra"
-          sectionId="earsight-ultra"
-        />
+        <BebirdMissingProduct name="EarSight Plus" sectionId="earsight-plus" />
       )}
 
       <section
@@ -116,11 +113,14 @@ export function BebirdBrandRoute({products}) {
         <BebirdProductStory
           product={secondProduct}
           story={PRODUCT_STORIES[secondProduct.handle]}
-          sectionId="earsight-plus"
+          sectionId="earsight-ultra"
           imageLoading="lazy"
         />
       ) : (
-        <BebirdMissingProduct name="EarSight Plus" sectionId="earsight-plus" />
+        <BebirdMissingProduct
+          name="EarSight Ultra"
+          sectionId="earsight-ultra"
+        />
       )}
 
       {visibleProducts.length ? (
@@ -150,13 +150,35 @@ export function BebirdBrandRoute({products}) {
 }
 
 function BebirdProductStory({product, story, sectionId, imageLoading}) {
-  const variant = getStoryVariant(product, story);
-  const images = product.images?.nodes || [];
+  const initialVariant = getStoryVariant(product, story);
+  const productVariants = product.variants?.nodes;
+  const productImages = product.images?.nodes;
+  const variants = useMemo(() => productVariants || [], [productVariants]);
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    initialVariant?.id || null,
+  );
+  const variant =
+    variants.find((item) => item.id === selectedVariantId) || initialVariant;
+  const images = useMemo(
+    () =>
+      mergeProductImages(
+        productImages || [],
+        variants.map((item) => item.image),
+      ),
+    [productImages, variants],
+  );
+  const showVariantSelector =
+    product.handle ===
+      'bebird-earsight-plus-smart-visual-ear-cleaner-blue-white' &&
+    variants.length > 1;
   const description = getShortDescription(
     product.description,
     story.fallbackDescription,
   );
-  const productUrl = getProductUrl(product.handle, story.preferredOption);
+  const productUrl = getProductUrl(
+    product.handle,
+    variant?.selectedOptions?.[0] || story.preferredOption,
+  );
   const shouldAskForPrice = isZeroPrice(variant?.price);
   const {open} = useAside();
 
@@ -178,11 +200,43 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
           images={images}
           productTitle={product.title}
           imageLoading={imageLoading}
+          requestedImageId={variant?.image?.id}
         />
 
         <div className="pz-bebird-product-copy">
           <p className="pz-bebird-product-vendor">Bebird / EarSight</p>
           <h3>{product.title}</h3>
+          {showVariantSelector ? (
+            <div
+              className="pz-bebird-variants"
+              aria-label={`${product.title} variants`}
+            >
+              <p>Choose a color</p>
+              <div className="pz-bebird-variant-options">
+                {variants.map((item) => (
+                  <button
+                    key={item.id}
+                    className="pz-bebird-variant"
+                    type="button"
+                    aria-pressed={item.id === variant?.id}
+                    data-available={item.availableForSale}
+                    onClick={() => setSelectedVariantId(item.id)}
+                  >
+                    {item.image ? (
+                      <img
+                        src={withImageWidth(item.image.url, 160)}
+                        alt=""
+                        width={item.image.width || 160}
+                        height={item.image.height || 160}
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <span>{getVariantLabel(item)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <p className="pz-bebird-product-description">{description}</p>
 
           <div className="pz-bebird-product-details">
@@ -244,13 +298,31 @@ function BebirdProductStory({product, story, sectionId, imageLoading}) {
   );
 }
 
-function BebirdProductGallery({images, productTitle, imageLoading}) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+function BebirdProductGallery({
+  images,
+  productTitle,
+  imageLoading,
+  requestedImageId,
+}) {
+  const [selectedIndex, setSelectedIndex] = useState(() => {
+    const requestedIndex = images.findIndex(
+      (image) => image.id === requestedImageId,
+    );
+    return requestedIndex >= 0 ? requestedIndex : 0;
+  });
   const touchStartX = useRef(null);
   const ignoreClick = useRef(false);
   const preloadedImages = useRef(new Set());
   const selectedImage = images[selectedIndex] || images[0];
   const hasMultipleImages = images.length > 1;
+
+  useEffect(() => {
+    if (!requestedImageId) return;
+    const requestedIndex = images.findIndex(
+      (image) => image.id === requestedImageId,
+    );
+    if (requestedIndex >= 0) setSelectedIndex(requestedIndex);
+  }, [images, requestedImageId]);
 
   function preloadAdjacentImages() {
     if (!hasMultipleImages || typeof Image === 'undefined') return;
@@ -510,6 +582,16 @@ function getVariantLabel(variant) {
       .filter((value) => value !== 'Default Title')
       .join(' / ') || 'Default'
   );
+}
+
+function mergeProductImages(productImages, variantImages) {
+  const imagesById = new Map();
+
+  [...productImages, ...variantImages.filter(Boolean)].forEach((image) => {
+    imagesById.set(image.id, image);
+  });
+
+  return [...imagesById.values()];
 }
 
 function getProductUrl(handle, preferredOption) {

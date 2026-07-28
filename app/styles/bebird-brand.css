@@ -13,7 +13,7 @@
 }
 
 .pz-bebird-page {
-  --bebird-coral: #ff5c7a;
+  --bebird-coral: #f97316;
   --bebird-mint: #bbf5df;
   --bebird-ice: #e2ebed;
   --bebird-ink: #111416;
@@ -307,6 +307,65 @@
   font-weight: 700;
   letter-spacing: 0;
   line-height: 0.98;
+}
+
+.pz-bebird-variants {
+  margin-top: 1.75rem;
+}
+
+.pz-bebird-variants > p {
+  margin: 0 0 0.7rem;
+  color: #bdc5c8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pz-bebird-variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.pz-bebird-variant {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  min-width: 8.5rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pz-bebird-variant[aria-pressed='true'] {
+  border-color: var(--bebird-coral);
+  box-shadow: inset 0 0 0 1px var(--bebird-coral);
+}
+
+.pz-bebird-variant[data-available='false'] {
+  opacity: 0.55;
+}
+
+.pz-bebird-variant img {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 7px;
+  background: var(--bebird-ice);
+}
+
+.pz-bebird-variant span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+  font-weight: 750;
 }
 
 .pz-bebird-product-description {
