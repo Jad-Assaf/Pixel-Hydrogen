@@ -19,6 +19,21 @@
   --carbon-white: #ffffff;
   --carbon-orange: #f97316;
   --carbon-blue: #2878ff;
+  --carbon-weave:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035) 0,
+      rgba(255, 255, 255, 0.035) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.7) 0,
+      rgba(0, 0, 0, 0.7) 3px,
+      transparent 3px,
+      transparent 9px
+    );
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -37,25 +52,11 @@
 
 .pz-carbonize-hero {
   position: relative;
-  min-height: clamp(36rem, 78svh, 48rem);
+  min-height: 28rem;
   overflow: hidden;
   border-radius: 8px;
   background-color: var(--carbon-black);
-  background-image:
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.035) 0,
-      rgba(255, 255, 255, 0.035) 2px,
-      transparent 2px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0, 0.7) 0,
-      rgba(0, 0, 0, 0.7) 3px,
-      transparent 3px,
-      transparent 9px
-    );
+  background-image: var(--carbon-weave);
 }
 
 .pz-carbonize-hero::after {
@@ -74,7 +75,7 @@
   justify-content: center;
   min-height: inherit;
   width: min(72rem, 100%);
-  padding: clamp(2rem, 6vw, 6rem);
+  padding: 3rem clamp(2rem, 6vw, 6rem);
 }
 
 .pz-carbonize-hero-content > p:first-child,
@@ -142,10 +143,12 @@
 .pz-carbonize-nav {
   position: sticky;
   z-index: 5;
-  top: 0;
+  top: 62px;
   display: flex;
   justify-content: center;
   gap: 0;
+  width: min(480px, calc(100vw - 1.2rem));
+  margin-inline: auto;
   overflow-x: auto;
   border-radius: 8px;
   background: var(--carbon-orange);
@@ -176,86 +179,9 @@
   padding: 6rem max(1rem, calc((100vw - 1500px) / 2));
   border-radius: 8px;
   background-color: var(--carbon-black);
-  background-image:
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.045) 0,
-      rgba(255, 255, 255, 0.045) 3px,
-      transparent 3px,
-      transparent 10px
-    ),
-    repeating-linear-gradient(
-      45deg,
-      rgba(0, 0, 0, 0.7) 0,
-      rgba(0, 0, 0, 0.7) 4px,
-      transparent 4px,
-      transparent 11px
-    );
-  background-size: 14px 14px;
+  background-image: var(--carbon-weave);
+  color: var(--carbon-white);
   scroll-margin-top: 4rem;
-}
-
-.pz-carbonize-section--aramid {
-  background-color: var(--carbon-silver);
-  background-image:
-    repeating-linear-gradient(
-      118deg,
-      rgba(8, 10, 11, 0.09) 0,
-      rgba(8, 10, 11, 0.09) 2px,
-      transparent 2px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      62deg,
-      rgba(255, 255, 255, 0.42) 0,
-      rgba(255, 255, 255, 0.42) 2px,
-      transparent 2px,
-      transparent 9px
-    );
-  background-size: 12px 12px;
-  color: var(--carbon-black);
-}
-
-.pz-carbonize-section#wallets {
-  background-color: #101315;
-  background-image:
-    repeating-conic-gradient(
-      from 18deg at 30% 35%,
-      rgba(255, 255, 255, 0.055) 0deg 14deg,
-      transparent 14deg 42deg,
-      rgba(0, 0, 0, 0.5) 42deg 67deg,
-      transparent 67deg 95deg
-    ),
-    repeating-conic-gradient(
-      from 205deg at 72% 68%,
-      rgba(40, 120, 255, 0.035) 0deg 12deg,
-      transparent 12deg 48deg,
-      rgba(249, 115, 22, 0.03) 48deg 62deg,
-      transparent 62deg 100deg
-    );
-  background-size:
-    46px 40px,
-    54px 48px;
-}
-
-.pz-carbonize-section--keys {
-  background-color: var(--carbon-graphite);
-  background-image:
-    repeating-linear-gradient(
-      132deg,
-      rgba(255, 255, 255, 0.04) 0,
-      rgba(255, 255, 255, 0.04) 2px,
-      transparent 2px,
-      transparent 9px
-    ),
-    repeating-linear-gradient(
-      48deg,
-      rgba(0, 0, 0, 0.55) 0,
-      rgba(0, 0, 0, 0.55) 3px,
-      transparent 3px,
-      transparent 10px
-    );
-  background-size: 13px 13px;
 }
 
 .pz-carbonize-section-heading {
@@ -292,10 +218,6 @@
   line-height: 1.65;
 }
 
-.pz-carbonize-section--aramid .pz-carbonize-section-copy {
-  color: #51595d;
-}
-
 .pz-carbonize-model-stack,
 .pz-carbonize-split-groups {
   display: grid;
@@ -313,10 +235,6 @@
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.22);
   scroll-margin-top: 5rem;
-}
-
-.pz-carbonize-section--aramid .pz-carbonize-product-group {
-  border-color: rgba(8, 10, 11, 0.2);
 }
 
 .pz-carbonize-product-group-heading {
@@ -363,12 +281,14 @@
 
 .pz-carbonize-page .pz-product-media {
   aspect-ratio: 1 / 1;
-  border-radius: 0;
+  overflow: hidden;
+  border-radius: 5px;
   background: var(--carbon-silver);
 }
 
 .pz-carbonize-page .pz-product-image {
   object-fit: contain;
+  border-radius: 5px;
   transition: transform 300ms ease;
 }
 
@@ -392,9 +312,10 @@
   text-align: left;
 }
 
-.pz-carbonize-page .pz-product-price,
-.pz-carbonize-page .pz-product-price-current {
-  color: var(--carbon-white);
+.pz-carbonize-page .product-price,
+.pz-carbonize-page .product-price-current,
+.pz-carbonize-page .product-price-compare {
+  color: var(--carbon-white) !important;
 }
 
 .pz-carbonize-page .pz-product-variant-slot {
@@ -410,19 +331,6 @@
 .pz-carbonize-page .pz-card-cart-btn:hover {
   background: transparent;
   color: var(--carbon-orange);
-}
-
-.pz-carbonize-section--aramid .pz-product-card {
-  border-color: rgba(8, 10, 11, 0.18);
-  background: var(--carbon-white);
-}
-
-.pz-carbonize-section--aramid .pz-product-meta,
-.pz-carbonize-section--aramid .pz-product-card-footer,
-.pz-carbonize-section--aramid .pz-product-meta h3,
-.pz-carbonize-section--aramid .pz-product-price,
-.pz-carbonize-section--aramid .pz-product-price-current {
-  color: var(--carbon-black);
 }
 
 .pz-carbonize-empty {
@@ -479,13 +387,13 @@
   }
 
   .pz-carbonize-hero {
-    min-height: 40rem;
+    min-height: 30rem;
   }
 
   .pz-carbonize-hero-content {
-    justify-content: flex-end;
+    justify-content: center;
     width: 100%;
-    padding: 2rem 1rem 3rem;
+    padding: 2rem 1rem;
   }
 
   .pz-carbonize-hero h1 {
