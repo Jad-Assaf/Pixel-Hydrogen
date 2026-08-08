@@ -66,18 +66,6 @@
   pointer-events: none;
 }
 
-.pz-carbonize-hero-product {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  right: clamp(1rem, 7vw, 8rem);
-  width: min(48vw, 42rem);
-  height: min(68vh, 42rem);
-  object-fit: contain;
-  filter: drop-shadow(0 2.5rem 3rem rgba(0, 0, 0, 0.55));
-  transform: translateY(-50%) rotate(7deg);
-}
-
 .pz-carbonize-hero-content {
   position: relative;
   z-index: 2;
@@ -85,7 +73,7 @@
   flex-direction: column;
   justify-content: center;
   min-height: inherit;
-  width: min(54rem, 62%);
+  width: min(72rem, 100%);
   padding: clamp(2rem, 6vw, 6rem);
 }
 
@@ -187,32 +175,87 @@
 .pz-carbonize-section {
   padding: 6rem max(1rem, calc((100vw - 1500px) / 2));
   border-radius: 8px;
-  background: var(--carbon-black);
+  background-color: var(--carbon-black);
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 3px,
+      transparent 3px,
+      transparent 10px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.7) 0,
+      rgba(0, 0, 0, 0.7) 4px,
+      transparent 4px,
+      transparent 11px
+    );
+  background-size: 14px 14px;
   scroll-margin-top: 4rem;
 }
 
 .pz-carbonize-section--aramid {
-  background: var(--carbon-silver);
+  background-color: var(--carbon-silver);
+  background-image:
+    repeating-linear-gradient(
+      118deg,
+      rgba(8, 10, 11, 0.09) 0,
+      rgba(8, 10, 11, 0.09) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      62deg,
+      rgba(255, 255, 255, 0.42) 0,
+      rgba(255, 255, 255, 0.42) 2px,
+      transparent 2px,
+      transparent 9px
+    );
+  background-size: 12px 12px;
   color: var(--carbon-black);
+}
+
+.pz-carbonize-section#wallets {
+  background-color: #101315;
+  background-image:
+    repeating-conic-gradient(
+      from 18deg at 30% 35%,
+      rgba(255, 255, 255, 0.055) 0deg 14deg,
+      transparent 14deg 42deg,
+      rgba(0, 0, 0, 0.5) 42deg 67deg,
+      transparent 67deg 95deg
+    ),
+    repeating-conic-gradient(
+      from 205deg at 72% 68%,
+      rgba(40, 120, 255, 0.035) 0deg 12deg,
+      transparent 12deg 48deg,
+      rgba(249, 115, 22, 0.03) 48deg 62deg,
+      transparent 62deg 100deg
+    );
+  background-size:
+    46px 40px,
+    54px 48px;
 }
 
 .pz-carbonize-section--keys {
   background-color: var(--carbon-graphite);
   background-image:
     repeating-linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.025) 0,
-      rgba(255, 255, 255, 0.025) 1px,
-      transparent 1px,
-      transparent 7px
+      132deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 2px,
+      transparent 2px,
+      transparent 9px
     ),
     repeating-linear-gradient(
-      135deg,
-      rgba(0, 0, 0, 0.4) 0,
-      rgba(0, 0, 0, 0.4) 2px,
-      transparent 2px,
-      transparent 8px
+      48deg,
+      rgba(0, 0, 0, 0.55) 0,
+      rgba(0, 0, 0, 0.55) 3px,
+      transparent 3px,
+      transparent 10px
     );
+  background-size: 13px 13px;
 }
 
 .pz-carbonize-section-heading {
@@ -354,6 +397,10 @@
   color: var(--carbon-white);
 }
 
+.pz-carbonize-page .pz-product-variant-slot {
+  display: none;
+}
+
 .pz-carbonize-page .pz-card-cart-btn {
   border-color: var(--carbon-orange);
   background: var(--carbon-orange);
@@ -433,14 +480,6 @@
 
   .pz-carbonize-hero {
     min-height: 40rem;
-  }
-
-  .pz-carbonize-hero-product {
-    top: 40%;
-    right: -3rem;
-    width: 82vw;
-    height: 24rem;
-    opacity: 0.72;
   }
 
   .pz-carbonize-hero-content {

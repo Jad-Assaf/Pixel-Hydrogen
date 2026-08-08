@@ -1,7 +1,7 @@
 import {Analytics} from '@shopify/hydrogen';
 import {Link} from 'react-router';
 import {BrandVariantCard} from '~/components/brand-routes/BrandVariantCard';
-import {getProductCardEntries, withImageWidth} from '~/lib/brand-routes/utils';
+import {getProductCardEntries} from '~/lib/brand-routes/utils';
 
 const PHONE_GROUPS = [
   {
@@ -52,25 +52,10 @@ export function CarbonizeBrandRoute({brand, products}) {
   const standardKeyOrganizers = keyOrganizers.filter(
     (product) => !isAirKeyOrganizer(product),
   );
-  const heroProduct = carbonCases[0] || aramidCases[0] || catalog[0] || null;
-  const heroImage =
-    heroProduct?.selectedOrFirstAvailableVariant?.image ||
-    heroProduct?.featuredImage;
 
   return (
     <main className="pz-carbonize-page">
       <header className="pz-carbonize-hero">
-        {heroImage ? (
-          <img
-            className="pz-carbonize-hero-product"
-            src={withImageWidth(heroImage.url, 1200)}
-            alt={heroImage.altText || heroProduct.title}
-            width={heroImage.width || 1200}
-            height={heroImage.height || 1200}
-            loading="eager"
-            fetchPriority="high"
-          />
-        ) : null}
         <div className="pz-carbonize-hero-content">
           <p>Real carbon fiber / everyday equipment</p>
           <h1>CARBONIZE</h1>
@@ -155,7 +140,7 @@ export function CarbonizeBrandRoute({brand, products}) {
             id="forged-wallets"
             title="Forged Wallets"
             copy="Black and colored forged finishes, each with a different fiber field."
-            entries={getDefaultEntries(forgedWallets)}
+            entries={getColorEntries(forgedWallets)}
           />
         </div>
       </section>
@@ -181,7 +166,7 @@ export function CarbonizeBrandRoute({brand, products}) {
           <CarbonizeProductGroup
             brand={brand}
             id="air-key-organizers"
-            title="Air Key Organizers"
+            title="AirKey Organizers"
             copy="AirKey construction in woven and forged carbon finishes."
             entries={getColorEntries(airKeyOrganizers)}
           />
