@@ -13,6 +13,7 @@ import {
   BEBIRD_PRODUCT_HANDLES,
   BebirdBrandRoute,
 } from '~/components/brand-routes/BebirdBrandRoute';
+import {CarbonizeBrandRoute} from '~/components/brand-routes/CarbonizeBrandRoute';
 import {
   DECODED_PRODUCT_SEARCH_QUERIES,
   DecodedBrandRoute,
@@ -44,11 +45,13 @@ import {
 import {getBrandThemeVars, mergeProducts} from '~/lib/brand-routes/utils';
 import brandRouteStyles from '~/styles/brands-handle.css?url';
 import bebirdBrandStyles from '~/styles/bebird-brand.css?url';
+import carbonizeBrandStyles from '~/styles/carbonize-brand.css?url';
 
 export function links() {
   return [
     {rel: 'stylesheet', href: brandRouteStyles},
     {rel: 'stylesheet', href: bebirdBrandStyles},
+    {rel: 'stylesheet', href: carbonizeBrandStyles},
   ];
 }
 
@@ -100,6 +103,18 @@ export async function loader({context, params}) {
     return {
       brand,
       bebirdProducts,
+    };
+  }
+
+  if (brand.handle === 'carbonize') {
+    const carbonizeProducts = await loadBrandSearchProducts(storefront, [
+      'vendor:Carbonize',
+      'vendor:CARBONIZE',
+    ]);
+
+    return {
+      brand,
+      carbonizeProducts,
     };
   }
 
@@ -203,6 +218,15 @@ export default function BrandRoute() {
 
   if (data.brand.handle === 'bebird') {
     return <BebirdBrandRoute products={data.bebirdProducts || []} />;
+  }
+
+  if (data.brand.handle === 'carbonize') {
+    return (
+      <CarbonizeBrandRoute
+        brand={data.brand}
+        products={data.carbonizeProducts || []}
+      />
+    );
   }
 
   if (data.brand.handle === 'black-shark') {

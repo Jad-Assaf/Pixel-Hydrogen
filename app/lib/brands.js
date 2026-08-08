@@ -52,6 +52,8 @@ const whoopLogo =
   'https://cdn.shopify.com/s/files/1/0769/7317/9187/files/whoop-logo.jpg?v=1782419794';
 const bebirdLogo =
   'https://bebird.com/cdn/shop/files/7c10b1179027476fbf91ba42f7050b90.png?v=1761099916&width=420';
+const carbonizeLogo =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="900" height="240" viewBox="0 0 900 240"%3E%3Crect width="900" height="240" fill="black"/%3E%3Ctext x="450" y="148" fill="white" font-family="Arial,sans-serif" font-size="92" font-weight="800" letter-spacing="18" text-anchor="middle"%3ECARBONIZE%3C/text%3E%3C/svg%3E';
 
 const FAMILY_ORDER = [
   'minimal',
@@ -659,6 +661,21 @@ export const BRANDS = [
     summary:
       'BOYA is a practical starting point for microphones and creator audio kits that need to be easy to deploy.',
     palette: {accent: '#2563eb', accentSoft: 'rgba(37, 99, 235, 0.18)'},
+  }),
+  createBrand({
+    name: 'Carbonize',
+    handle: 'carbonize',
+    logo: carbonizeLogo,
+    family: 'minimal',
+    headline: 'Real carbon fiber equipment for phones and everyday carry.',
+    summary:
+      'Carbonize shapes woven and forged carbon into slim cases, wallets, and key organizers built for daily use.',
+    palette: {
+      accent: '#f97316',
+      accentSoft: 'rgba(249, 115, 22, 0.18)',
+      ink: '#080a0b',
+      surface: '#e7ebed',
+    },
   }),
   createBrand({
     name: 'Decoded',
